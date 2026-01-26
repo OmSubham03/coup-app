@@ -53,6 +53,13 @@ Players take turns in clockwise order. On your turn, you must perform one action
 - The last player with at least one card (influence) remaining wins the game.
 - In a 2-player game, the player who eliminates the other's last influence wins.
 
+## Inquisitor Variant
+In the Inquisitor variant, the Ambassador is replaced by the Inquisitor.
+
+- **Inquire** (Inquisitor): Draw 1 card from the Court Deck, then return 1 card to the deck.
+- **Interrogate** (Inquisitor): Choose a player. That player selects one of their facedown influence cards. The Inquisitor may allow them to keep it, or replace it with the top card of the Court Deck. If the deck is empty, the card is kept.
+- **Blocks:** The Inquisitor can block Steal.
+
 ## Strategy Tips
 - Bluffing is key: You can lie about your cards to deceive opponents.
 - Pay attention to what cards have been revealed or discarded to deduce what others might have.

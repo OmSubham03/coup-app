@@ -6,6 +6,7 @@ import { GameState, CharacterType } from "@/lib/game-logic";
 import { AlertTriangle, Shield, Swords, Target } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { CHARACTER_IMAGES, getVariantConfig } from "@/lib/variants";
 
 interface BlockChallengePanelProps {
     gameState: GameState;
@@ -15,14 +16,6 @@ interface BlockChallengePanelProps {
     onPass: () => void;
 }
 
-const CHARACTER_IMAGES: Record<CharacterType, string> = {
-    Duke: "/textures/duke.jpg",
-    Assassin: "/textures/assassin.jpg",
-    Captain: "/textures/captain.jpg",
-    Ambassador: "/textures/ambassador.jpg",
-    Contessa: "/textures/contessa.jpg",
-};
-
 export function BlockChallengePanel({
     gameState,
     myPlayerId,
@@ -31,6 +24,7 @@ export function BlockChallengePanel({
     onPass,
 }: BlockChallengePanelProps) {
     const myPlayer = gameState.players.find(p => p.id === myPlayerId);
+    const variantConfig = getVariantConfig(gameState.variant);
 
     if (!myPlayer || !myPlayer.isAlive) return null;
 
@@ -48,6 +42,7 @@ export function BlockChallengePanel({
             (target && target.id === myPlayerId);
 
         const isTargeted = target?.id === myPlayerId;
+        const blockCharacters = variantConfig.actionRequirements[gameState.pendingAction.type]?.blockingCharacters || [];
 
         if (!canBlock || hasPassed) {
             return (
@@ -97,50 +92,27 @@ export function BlockChallengePanel({
                     </p>
 
                     <div className="space-y-2">
-                        {gameState.pendingAction.type === 'foreign_aid' && (
-                            <Button
-                                onClick={() => onBlock('Duke')}
-                                className="w-full bg-purple-600 hover:bg-purple-700 h-14 flex items-center justify-start gap-3 px-4"
-                            >
-                                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/50">
-                                    <Image src={CHARACTER_IMAGES.Duke} alt="Duke" fill className="object-cover" />
-                                </div>
-                                <span className="font-bold">Block with Duke</span>
-                            </Button>
-                        )}
-
-                        {gameState.pendingAction.type === 'assassinate' && target?.id === myPlayerId && (
-                            <Button
-                                onClick={() => onBlock('Contessa')}
-                                className="w-full bg-red-600 hover:bg-red-700 h-14 flex items-center justify-start gap-3 px-4"
-                            >
-                                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/50">
-                                    <Image src={CHARACTER_IMAGES.Contessa} alt="Contessa" fill className="object-cover" />
-                                </div>
-                                <span className="font-bold">Block with Contessa</span>
-                            </Button>
-                        )}
-
-                        {gameState.pendingAction.type === 'steal' && target?.id === myPlayerId && (
+                        {blockCharacters.length > 0 && (gameState.pendingAction.type === 'foreign_aid' || target?.id === myPlayerId) && (
                             <>
-                                <Button
-                                    onClick={() => onBlock('Captain')}
-                                    className="w-full bg-cyan-600 hover:bg-cyan-700 h-14 flex items-center justify-start gap-3 px-4"
-                                >
-                                    <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/50">
-                                        <Image src={CHARACTER_IMAGES.Captain} alt="Captain" fill className="object-cover" />
-                                    </div>
-                                    <span className="font-bold">Block with Captain</span>
-                                </Button>
-                                <Button
-                                    onClick={() => onBlock('Ambassador')}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-700 h-14 flex items-center justify-start gap-3 px-4"
-                                >
-                                    <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/50">
-                                        <Image src={CHARACTER_IMAGES.Ambassador} alt="Ambassador" fill className="object-cover" />
-                                    </div>
-                                    <span className="font-bold">Block with Ambassador</span>
-                                </Button>
+                                {blockCharacters.map((character) => (
+                                    <Button
+                                        key={character}
+                                        onClick={() => onBlock(character)}
+                                        className={`w-full h-14 flex items-center justify-start gap-3 px-4 ${character === 'Duke'
+                                            ? 'bg-purple-600 hover:bg-purple-700'
+                                            : character === 'Contessa'
+                                                ? 'bg-red-600 hover:bg-red-700'
+                                                : character === 'Captain'
+                                                    ? 'bg-cyan-600 hover:bg-cyan-700'
+                                                    : 'bg-indigo-600 hover:bg-indigo-700'
+                                            }`}
+                                    >
+                                        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/50">
+                                            <Image src={CHARACTER_IMAGES[character]} alt={character} fill className="object-cover" />
+                                        </div>
+                                        <span className="font-bold">Block with {character}</span>
+                                    </Button>
+                                ))}
                             </>
                         )}
 

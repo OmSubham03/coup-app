@@ -65,10 +65,10 @@ export function StartingPlayerRoulette({ players, startingPlayerId, onComplete }
     }, [players, startingPlayerId, onComplete]);
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
             <div className="max-w-2xl w-full space-y-12 text-center">
                 <div className="space-y-2">
-                    <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse">
+                    <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-600 animate-pulse">
                         {isFinished ? "Starting Player Selected!" : "Choosing Starting Player..."}
                     </h2>
                     <p className="text-slate-400 text-lg">The fates are deciding who goes first</p>

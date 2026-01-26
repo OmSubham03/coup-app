@@ -40,6 +40,24 @@ The PartyKit server will run on `localhost:1999` and handle all real-time multip
 
 See [Rules.md](./Rules.md) for the complete game rules.
 
+## Variants & Routing
+
+The app supports variant-first routing:
+
+- Standard: /standard
+- Inquisitor: /inquisitor
+
+Create/join/game routes live under each variant, for example:
+
+- /standard/create
+- /standard/join
+- /standard/game/ABCD
+- /inquisitor/create
+- /inquisitor/join
+- /inquisitor/game/ABCD
+
+Legacy routes (/create, /join, /game/[code]) redirect to /standard.
+
 ## Technologies Used
 
 - **Next.js** - Frontend framework with App Router

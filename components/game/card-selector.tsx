@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Card as GameCard } from "@/lib/game-logic";
 import { Skull } from "lucide-react";
 import Image from "next/image";
+import { CHARACTER_IMAGES } from "@/lib/variants";
 
 interface CardSelectorProps {
     cards: GameCard[];
@@ -14,14 +15,6 @@ interface CardSelectorProps {
     selectCount: number;
     onConfirm: (selectedCardIds: string[]) => void;
 }
-
-const CHARACTER_IMAGES: Record<string, string> = {
-    Duke: "/textures/duke.jpg",
-    Assassin: "/textures/assassin.jpg",
-    Captain: "/textures/captain.jpg",
-    Ambassador: "/textures/ambassador.jpg",
-    Contessa: "/textures/contessa.jpg",
-};
 
 export function CardSelector({
     cards,
@@ -115,7 +108,7 @@ export function CardSelector({
                         <Button
                             onClick={handleConfirm}
                             disabled={selectedCards.length !== selectCount}
-                            className="w-full h-12 text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
+                            className="w-full h-12 text-lg bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
                         >
                             Confirm Selection
                         </Button>

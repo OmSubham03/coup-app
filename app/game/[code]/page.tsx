@@ -1,12 +1,13 @@
-import { CoupGameClient } from "@/components/game/coup-game-client";
+import { redirect } from "next/navigation";
 
 interface GamePageProps {
     params: Promise<{
-        code: string
-    }>
+        code: string;
+    }>;
 }
 
 export default async function GamePage({ params }: GamePageProps) {
     const { code } = await params;
-    return <CoupGameClient roomCode={code} />;
+
+    redirect(`/standard/game/${code}`);
 }

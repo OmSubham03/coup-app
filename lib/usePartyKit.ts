@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import PartySocket from "partysocket";
 import type { GameState, ActionRequest, BlockRequest, ChallengeRequest } from "./game-logic";
+import { normalizeVariant, VariantKey } from "./variants";
 
 interface PlayerConnection {
     id: string;
@@ -19,6 +20,7 @@ type ServerMessage =
 
 interface UsePartyCoupParams {
     roomCode: string;
+    variant?: VariantKey | string;
     action?: string;
     onKicked?: () => void;
 }
@@ -40,14 +42,19 @@ interface UsePartyCoupReturn {
     challengeAction: (challenge: ChallengeRequest) => void;
     passChallenge: () => void;
     exchangeCards: (keptCardIds: string[]) => void;
+    interrogateSelect: (cardId: string) => void;
+    interrogateDecision: (decision: "keep" | "replace") => void;
     loseInfluence: (cardId: string) => void;
     returnToLobby: () => void;
 }
 
 export function usePartyCoup(params: string | UsePartyCoupParams): UsePartyCoupReturn {
     const roomCode = typeof params === 'string' ? params : params.roomCode;
+    const variant = typeof params === 'string' ? undefined : params.variant;
     const action = typeof params === 'string' ? undefined : params.action;
     const onKicked = typeof params === 'string' ? undefined : params.onKicked;
+    const normalizedVariant = variant ? normalizeVariant(variant) : undefined;
+    const roomId = normalizedVariant ? `${normalizedVariant}-${roomCode}` : roomCode;
 
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [players, setPlayers] = useState<PlayerConnection[]>([]);
@@ -55,19 +62,12 @@ export function usePartyCoup(params: string | UsePartyCoupParams): UsePartyCoupR
     const [error, setError] = useState<string | null>(null);
     const [hostId, setHostId] = useState<string | null>(null);
     const socketRef = useRef<PartySocket | null>(null);
-    const [myId, setMyId] = useState<string | null>(null);
-
-    // Generate or retrieve persistent player ID
     const [playerId] = useState<string>(() => {
-        if (typeof window !== 'undefined') {
-            let id = sessionStorage.getItem("coup_player_id");
-            if (!id) {
-                id = crypto.randomUUID();
-                sessionStorage.setItem("coup_player_id", id);
-            }
-            return id;
-        }
-        return "";
+        if (typeof window === 'undefined') return "";
+        const id = crypto.randomUUID();
+        sessionStorage.setItem("coup_player_id", id);
+        sessionStorage.setItem("coup_tab_id", crypto.randomUUID());
+        return id;
     });
 
     // Use ref to store the latest callback without triggering re-renders
@@ -82,9 +82,10 @@ export function usePartyCoup(params: string | UsePartyCoupParams): UsePartyCoupR
         // Create PartySocket connection
         const socket = new PartySocket({
             host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999",
-            room: roomCode,
+            room: roomId,
             query: {
                 ...(action ? { action } : {}),
+                ...(normalizedVariant ? { variant: normalizedVariant } : {}),
                 playerId
             },
         });
@@ -95,7 +96,6 @@ export function usePartyCoup(params: string | UsePartyCoupParams): UsePartyCoupR
             console.log("Connected to PartyKit server");
             setIsConnected(true);
             setError(null);
-            setMyId(playerId);
         });
 
         socket.addEventListener("message", (event) => {
@@ -153,7 +153,7 @@ export function usePartyCoup(params: string | UsePartyCoupParams): UsePartyCoupR
             socket.close();
             socketRef.current = null;
         };
-    }, [roomCode, playerId, action]);
+    }, [roomId, playerId, action, normalizedVariant]);
 
     const sendMessage = useCallback((message: object) => {
         if (socketRef.current && isConnected) {
@@ -197,6 +197,14 @@ export function usePartyCoup(params: string | UsePartyCoupParams): UsePartyCoupR
         sendMessage({ type: "exchange", payload: { keptCardIds } });
     }, [sendMessage]);
 
+    const interrogateSelect = useCallback((cardId: string) => {
+        sendMessage({ type: "interrogate-select", payload: { cardId } });
+    }, [sendMessage]);
+
+    const interrogateDecision = useCallback((decision: "keep" | "replace") => {
+        sendMessage({ type: "interrogate-decision", payload: { decision } });
+    }, [sendMessage]);
+
     const loseInfluence = useCallback((cardId: string) => {
         sendMessage({ type: "lose-influence", payload: { cardId } });
     }, [sendMessage]);
@@ -222,6 +230,8 @@ export function usePartyCoup(params: string | UsePartyCoupParams): UsePartyCoupR
         challengeAction,
         passChallenge,
         exchangeCards,
+        interrogateSelect,
+        interrogateDecision,
         loseInfluence,
         returnToLobby,
     };

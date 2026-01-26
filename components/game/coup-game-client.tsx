@@ -1,6 +1,7 @@
 "use client";
 
 import { usePartyCoup } from "@/lib/usePartyKit";
+import { normalizeVariant, VariantKey } from "@/lib/variants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +12,15 @@ import { GamePlay } from "@/components/game/game-play";
 
 interface CoupGameClientProps {
     roomCode: string;
+    variant: VariantKey | string;
 }
 
-export function CoupGameClient({ roomCode }: CoupGameClientProps) {
+export function CoupGameClient({ roomCode, variant }: CoupGameClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const action = searchParams.get("action");
+    const normalizedVariant = normalizeVariant(variant);
+    const basePath = `/${normalizedVariant}`;
     const [playerName, setPlayerName] = useState("");
     const [hasJoined, setHasJoined] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -40,12 +44,15 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
         challengeAction,
         passChallenge,
         exchangeCards,
+        interrogateSelect,
+        interrogateDecision,
         loseInfluence,
         returnToLobby,
     } = usePartyCoup({
         roomCode,
+        variant: normalizedVariant,
         action: action || undefined,
-        onKicked: () => router.push('/join'),
+        onKicked: () => router.push(`${basePath}/join`),
     });
 
     const handleCopyCode = () => {
@@ -78,7 +85,7 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
                     <div className="text-center space-y-4">
                         <h1 className="text-2xl font-bold text-destructive">Connection Error</h1>
                         <p className="text-lg">{error}</p>
-                        <Button onClick={() => router.push('/join')}>Go Back</Button>
+                        <Button onClick={() => router.push(`${basePath}/join`)}>Go Back</Button>
                     </div>
                 </div>
             );
@@ -99,7 +106,7 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => router.push("/join")}
+                        onClick={() => router.push(`${basePath}/join`)}
                         className="gap-2 text-slate-400 hover:text-white hover:bg-slate-800"
                     >
                         <ArrowLeft className="size-4" />
@@ -165,7 +172,7 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
                 <div className="w-full max-w-3xl space-y-4">
                     <Button
                         variant="ghost"
-                        onClick={() => router.push("/")}
+                        onClick={() => router.push(basePath)}
                         className="gap-2 text-slate-400 hover:text-white hover:bg-slate-800 self-start"
                     >
                         <ArrowLeft className="size-4" />
@@ -251,7 +258,7 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
                                     </div>
                                 )}
 
-                                <div className="space-y-3 min-h-[240px]">
+                                <div className="space-y-3 min-h-60">
                                     {players.map((player, index) => (
                                         <div
                                             key={player.id}
@@ -284,7 +291,7 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
                                     ))}
 
                                     {players.length === 0 && (
-                                        <div className="flex flex-col items-center justify-center h-[240px] text-slate-500 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/20">
+                                        <div className="flex flex-col items-center justify-center h-60 text-slate-500 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/20">
                                             <Users className="size-12 mb-4 opacity-20" />
                                             <p className="text-lg font-medium">Waiting for players to join...</p>
                                         </div>
@@ -306,7 +313,7 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
                                     onClick={startGame}
                                     className={`w-full h-16 text-xl font-bold uppercase tracking-wider transition-all ${players.length < 2 || !isHost
                                         ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white shadow-lg hover:scale-[1.02]"
+                                        : "bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white shadow-lg hover:scale-[1.02]"
                                         }`}
                                     disabled={players.length < 2 || !isHost}
                                     size="lg"
@@ -339,7 +346,6 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
     return (
         <GamePlay
             gameState={gameState}
-            playerName={playerName}
             myPlayerId={playerId}
             onAction={performAction}
             onBlock={blockAction}
@@ -347,9 +353,10 @@ export function CoupGameClient({ roomCode }: CoupGameClientProps) {
             onChallenge={challengeAction}
             onPassChallenge={passChallenge}
             onExchangeCards={exchangeCards}
+            onInterrogateSelect={interrogateSelect}
+            onInterrogateDecision={interrogateDecision}
             onLoseInfluence={loseInfluence}
             onReturnToLobby={returnToLobby}
-            isHost={isHost}
             error={error}
         />
     );

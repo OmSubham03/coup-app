@@ -7,7 +7,9 @@
 // TYPES AND INTERFACES
 // ============================================================================
 
-export type CharacterType = 'Duke' | 'Assassin' | 'Captain' | 'Ambassador' | 'Contessa';
+import { getVariantConfig, normalizeVariant, VariantKey } from "./variants";
+
+export type CharacterType = 'Duke' | 'Assassin' | 'Captain' | 'Ambassador' | 'Contessa' | 'Inquisitor';
 
 export type ActionType =
     | 'income'
@@ -16,7 +18,9 @@ export type ActionType =
     | 'tax'
     | 'assassinate'
     | 'steal'
-    | 'exchange';
+    | 'exchange'
+    | 'interrogate'
+    | 'inquire';
 
 export type BlockType = 'block_foreign_aid' | 'block_assassinate' | 'block_steal';
 
@@ -57,6 +61,7 @@ export interface ChallengeRequest {
 
 export interface GameState {
     id: string;
+    variant: VariantKey;
     players: Player[];
     currentPlayerIndex: number;
     courtDeck: Card[];
@@ -66,6 +71,11 @@ export interface GameState {
     pendingBlock: BlockRequest | null;
     pendingChallenge: ChallengeRequest | null;
     pendingExchangeCards: Card[] | null;
+    pendingInterrogate: {
+        targetId: string;
+        selectedCardId?: string;
+        actorDecision?: 'keep' | 'replace';
+    } | null;
     pendingInfluenceLoss: string | null; // Player ID who needs to choose a card to reveal
     passedPlayers: string[];
     winner: string | null;
@@ -80,6 +90,8 @@ export type GamePhase =
     | 'challenge_window' // Players can challenge action or block
     | 'resolving'      // Resolving action/challenge/block
     | 'exchange'       // Ambassador is choosing cards to exchange
+    | 'interrogate_select'  // Inquisitor target selects a card
+    | 'interrogate_decision' // Inquisitor decides keep/replace
     | 'lose_influence' // Player must choose a card to reveal
     | 'game_over';
 
@@ -93,60 +105,12 @@ export interface GameLogEntry {
 }
 
 // ============================================================================
-// CHARACTER ABILITIES
-// ============================================================================
-
-export const CHARACTER_ACTIONS: Record<CharacterType, ActionType | null> = {
-    Duke: 'tax',
-    Assassin: 'assassinate',
-    Captain: 'steal',
-    Ambassador: 'exchange',
-    Contessa: null, // Contessa only blocks
-};
-
-export const ACTION_REQUIREMENTS: Record<ActionType, {
-    character?: CharacterType;
-    cost?: number;
-    needsTarget?: boolean;
-    canBeBlocked?: boolean;
-    blockingCharacters?: CharacterType[];
-}> = {
-    income: {},
-    foreign_aid: {
-        canBeBlocked: true,
-        blockingCharacters: ['Duke'],
-    },
-    coup: {
-        cost: 7,
-        needsTarget: true,
-    },
-    tax: {
-        character: 'Duke',
-    },
-    assassinate: {
-        character: 'Assassin',
-        cost: 3,
-        needsTarget: true,
-        canBeBlocked: true,
-        blockingCharacters: ['Contessa'],
-    },
-    steal: {
-        character: 'Captain',
-        needsTarget: true,
-        canBeBlocked: true,
-        blockingCharacters: ['Captain', 'Ambassador'],
-    },
-    exchange: {
-        character: 'Ambassador',
-    },
-};
-
-// ============================================================================
 // GAME INITIALIZATION
 // ============================================================================
 
-export function createDeck(): Card[] {
-    const characters: CharacterType[] = ['Duke', 'Assassin', 'Captain', 'Ambassador', 'Contessa'];
+export function createDeck(variant?: VariantKey): Card[] {
+    const variantConfig = getVariantConfig(variant);
+    const characters: CharacterType[] = variantConfig.characters;
     const deck: Card[] = [];
 
     characters.forEach((character) => {
@@ -171,12 +135,13 @@ export function shuffleDeck(deck: Card[]): Card[] {
     return shuffled;
 }
 
-export function initializeGame(playersList: { id: string; name: string }[]): GameState {
+export function initializeGame(playersList: { id: string; name: string }[], variant?: VariantKey): GameState {
     if (playersList.length < 2 || playersList.length > 6) {
         throw new Error('Game requires 2-6 players');
     }
 
-    const deck = createDeck();
+    const normalizedVariant = normalizeVariant(variant);
+    const deck = createDeck(normalizedVariant);
     const players: Player[] = [];
 
     // Deal 2 cards to each player
@@ -196,6 +161,7 @@ export function initializeGame(playersList: { id: string; name: string }[]): Gam
 
     return {
         id: `game-${Date.now()}`,
+        variant: normalizedVariant,
         players,
         currentPlayerIndex: startingPlayerIndex,
         courtDeck: deck,
@@ -205,6 +171,7 @@ export function initializeGame(playersList: { id: string; name: string }[]): Gam
         pendingBlock: null,
         pendingChallenge: null,
         pendingExchangeCards: null,
+        pendingInterrogate: null,
         pendingInfluenceLoss: null,
         passedPlayers: [],
         winner: null,
@@ -266,7 +233,12 @@ export function canPerformAction(
         return { valid: false, reason: 'Not in action phase' };
     }
 
-    const requirements = ACTION_REQUIREMENTS[action];
+    const variantConfig = getVariantConfig(state.variant);
+    if (!variantConfig.availableActions.includes(action)) {
+        return { valid: false, reason: 'Action not available in this variant' };
+    }
+
+    const requirements = variantConfig.actionRequirements[action];
 
     // Check coin cost
     if (requirements.cost && player.coins < requirements.cost) {
@@ -313,7 +285,7 @@ export function canBlock(
         return { valid: false, reason: 'Player not found or eliminated' };
     }
 
-    const requirements = ACTION_REQUIREMENTS[state.pendingAction.type];
+    const requirements = getVariantConfig(state.variant).actionRequirements[state.pendingAction.type];
     if (!requirements.canBeBlocked) {
         return { valid: false, reason: 'Action cannot be blocked' };
     }
@@ -388,9 +360,9 @@ export function performAction(state: GameState, action: ActionRequest): GameStat
 
     const newState = { ...state };
     const actor = getPlayer(newState, action.actorId)!;
+    const requirements = getVariantConfig(newState.variant).actionRequirements[action.type];
 
     // Deduct cost if any
-    const requirements = ACTION_REQUIREMENTS[action.type];
     if (requirements.cost) {
         actor.coins -= requirements.cost;
     }
@@ -497,6 +469,26 @@ export function resolveAction(state: GameState): void {
             state.phase = 'exchange';
             addLog(state, `${actor.name} exchanges cards`, actor.id, action.type);
             return; // Don't end turn yet
+
+        case 'inquire':
+            // Inquisitor draw 1, return 1
+            const inquiryCards: Card[] = [];
+            if (state.courtDeck.length > 0) {
+                inquiryCards.push(state.courtDeck.pop()!);
+            }
+            state.pendingExchangeCards = inquiryCards;
+            state.phase = 'exchange';
+            addLog(state, `${actor.name} inquires from the court`, actor.id, action.type);
+            return;
+
+        case 'interrogate':
+            if (target) {
+                state.pendingInterrogate = { targetId: target.id };
+                state.phase = 'interrogate_select';
+                addLog(state, `${actor.name} interrogates ${target.name}`, actor.id, action.type, target.id);
+                return; // Wait for target selection and actor decision
+            }
+            break;
     }
 
     state.pendingAction = null;
@@ -673,7 +665,7 @@ export function passChallenge(state: GameState, playerId: string): GameState {
                 // Action unchallenged
                 // Check if it can be blocked
                 const action = newState.pendingAction!;
-                const requirements = ACTION_REQUIREMENTS[action.type];
+                const requirements = getVariantConfig(newState.variant).actionRequirements[action.type];
 
                 if (requirements.canBeBlocked) {
                     newState.phase = 'block_window';
@@ -758,7 +750,7 @@ export function loseInfluence(state: GameState, playerId: string, cardId?: strin
 
                     // Check if action can be blocked
                     const actionType = state.pendingAction!.type;
-                    const requirements = ACTION_REQUIREMENTS[actionType];
+                    const requirements = getVariantConfig(state.variant).actionRequirements[actionType];
 
                     if (requirements.canBeBlocked) {
                         // Action is valid, but can still be blocked
@@ -819,6 +811,104 @@ export function exchangeCards(
 
     newState.pendingAction = null;
     newState.pendingExchangeCards = null;
+    endTurn(newState);
+
+    return newState;
+}
+
+export function selectInterrogateCard(
+    state: GameState,
+    playerId: string,
+    cardId: string
+): GameState {
+    if (state.phase !== 'interrogate_select' || !state.pendingInterrogate || !state.pendingAction) {
+        throw new Error('Not in interrogate selection phase');
+    }
+
+    if (state.pendingInterrogate.targetId !== playerId) {
+        throw new Error('Only the target can select a card');
+    }
+
+    const newState = { ...state };
+    const target = getPlayer(newState, playerId);
+    if (!target) {
+        throw new Error('Target not found');
+    }
+
+    const selectedCard = target.cards.find(card => card.id === cardId && !card.revealed);
+    if (!selectedCard) {
+        throw new Error('Invalid card selection');
+    }
+
+    if (!newState.pendingInterrogate) {
+        throw new Error('Interrogate state missing');
+    }
+
+    newState.pendingInterrogate = {
+        targetId: newState.pendingInterrogate.targetId,
+        selectedCardId: selectedCard.id,
+    };
+    newState.phase = 'interrogate_decision';
+    addLog(newState, `${target.name} selects a card for interrogation`, target.id, 'interrogate', target.id);
+
+    return newState;
+}
+
+export function decideInterrogate(
+    state: GameState,
+    playerId: string,
+    decision: 'keep' | 'replace'
+): GameState {
+    if (state.phase !== 'interrogate_decision' || !state.pendingInterrogate || !state.pendingAction) {
+        throw new Error('Not in interrogate decision phase');
+    }
+
+    const actorId = state.pendingAction.actorId;
+    if (playerId !== actorId) {
+        throw new Error('Only the actor can decide');
+    }
+
+    const newState = { ...state };
+    const actor = getPlayer(newState, actorId)!;
+    const pendingInterrogate = newState.pendingInterrogate;
+    if (!pendingInterrogate) {
+        throw new Error('Interrogate state missing');
+    }
+    const target = getPlayer(newState, pendingInterrogate.targetId);
+    const selectedCardId = pendingInterrogate.selectedCardId;
+
+    if (!target || !selectedCardId) {
+        newState.pendingInterrogate = null;
+        newState.pendingAction = null;
+        endTurn(newState);
+        return newState;
+    }
+
+    const selectedIndex = target.cards.findIndex(card => card.id === selectedCardId && !card.revealed);
+    if (selectedIndex === -1) {
+        newState.pendingInterrogate = null;
+        newState.pendingAction = null;
+        endTurn(newState);
+        return newState;
+    }
+
+    if (decision === 'replace' && newState.courtDeck.length > 0) {
+        const [removedCard] = target.cards.splice(selectedIndex, 1);
+        newState.courtDeck.push(removedCard);
+        newState.courtDeck = shuffleDeck(newState.courtDeck);
+
+        const newCard = newState.courtDeck.pop();
+        if (newCard) {
+            target.cards.push(newCard);
+        }
+
+        addLog(newState, `${actor.name} replaces ${target.name}'s card`, actor.id, 'interrogate', target.id);
+    } else {
+        addLog(newState, `${actor.name} allows ${target.name} to keep the card`, actor.id, 'interrogate', target.id);
+    }
+
+    newState.pendingInterrogate = null;
+    newState.pendingAction = null;
     endTurn(newState);
 
     return newState;
@@ -906,7 +996,17 @@ export function eliminatePlayer(state: GameState, playerId: string): GameState {
         return newState;
     }
 
-    // 5. If they were supposed to lose influence
+    // 5. If they were involved in an interrogation
+    if (newState.pendingInterrogate &&
+        (newState.pendingInterrogate.targetId === playerId || newState.pendingAction?.actorId === playerId)) {
+        addLog(newState, `Interrogation cancelled because a player disconnected`);
+        newState.pendingInterrogate = null;
+        newState.pendingAction = null;
+        endTurn(newState);
+        return newState;
+    }
+
+    // 6. If they were supposed to lose influence
     if (newState.pendingInfluenceLoss === playerId) {
         // They are already dead, so we just need to move on.
         // We need to know what to do next.
@@ -958,6 +1058,7 @@ export function endTurn(state: GameState): void {
     state.pendingBlock = null;
     state.pendingChallenge = null;
     state.passedPlayers = [];
+    state.pendingInterrogate = null;
 
     // Check if deck needs reshuffling
     if (state.courtDeck.length === 0 && state.discardPile.length > 0) {
@@ -1031,6 +1132,8 @@ export const GameLogic = {
     // Influence
     loseInfluence,
     exchangeCards,
+    selectInterrogateCard,
+    decideInterrogate,
     eliminatePlayer,
 
     // Turn management
@@ -1044,7 +1147,7 @@ export const GameLogic = {
 
 export function resetGame(state: GameState): GameState {
     const playersList = state.players.map(p => ({ id: p.id, name: p.name }));
-    const newState = initializeGame(playersList);
+    const newState = initializeGame(playersList, state.variant);
     // Preserve the original game ID if needed, but a new one is fine too.
     // Let's keep the ID to avoid confusion if clients are tracking it.
     newState.id = state.id;

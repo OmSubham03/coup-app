@@ -1,5 +1,6 @@
 import type * as Party from "partykit/server";
-import { GameState, initializeGame, performAction, blockAction, passBlock, challengeAction, passChallenge, exchangeCards, loseInfluence, eliminatePlayer, resetGame, ActionRequest, BlockRequest, ChallengeRequest } from "../lib/game-logic";
+import { ActionRequest, BlockRequest, ChallengeRequest, GameState, blockAction, challengeAction, decideInterrogate, eliminatePlayer, exchangeCards, initializeGame, loseInfluence, passBlock, passChallenge, performAction, selectInterrogateCard } from "../lib/game-logic";
+import { isVariantKey, normalizeVariant } from "../lib/variants";
 
 type MessageType =
   | { type: "join"; payload: { playerName: string } }
@@ -12,6 +13,8 @@ type MessageType =
   | { type: "challenge"; payload: ChallengeRequest }
   | { type: "pass-challenge" }
   | { type: "exchange"; payload: { keptCardIds: string[] } }
+  | { type: "interrogate-select"; payload: { cardId: string } }
+  | { type: "interrogate-decision"; payload: { decision: "keep" | "replace" } }
   | { type: "lose-influence"; payload: { cardId: string } }
   | { type: "get-state" }
   | { type: "ping" };
@@ -31,10 +34,19 @@ export default class CoupServer implements Party.Server {
 
   constructor(readonly party: Party.Party) { }
 
+  private getVariantFromRoomId(roomId: string): "standard" | "inquisitor" {
+    const [maybeVariant] = roomId.split("-");
+    return isVariantKey(maybeVariant) ? maybeVariant : "standard";
+  }
+
   async onStart() {
     // Load game state from storage if it exists
     const savedState = await this.party.storage.get<GameState>("gameState");
     if (savedState) {
+      if (!savedState.variant) {
+        const variantFromRoom = this.getVariantFromRoomId(this.party.id);
+        savedState.variant = normalizeVariant(variantFromRoom);
+      }
       this.gameState = savedState;
     }
 
@@ -188,7 +200,9 @@ export default class CoupServer implements Party.Server {
           }
 
           const playerList = Array.from(this.players.values());
-          this.gameState = initializeGame(playerList);
+          const variantFromRoom = this.getVariantFromRoomId(this.party.id);
+          const variant = this.gameState?.variant ?? normalizeVariant(variantFromRoom);
+          this.gameState = initializeGame(playerList, variant);
 
           await this.saveState();
 
@@ -376,6 +390,36 @@ export default class CoupServer implements Party.Server {
           if (!playerId) return;
 
           this.gameState = exchangeCards(this.gameState, playerId, msg.payload.keptCardIds);
+          await this.saveState();
+
+          this.party.broadcast(JSON.stringify({
+            type: "state",
+            payload: this.gameState,
+          }));
+          break;
+        }
+
+        case "interrogate-select": {
+          if (!this.gameState) return;
+
+          if (!playerId) return;
+
+          this.gameState = selectInterrogateCard(this.gameState, playerId, msg.payload.cardId);
+          await this.saveState();
+
+          this.party.broadcast(JSON.stringify({
+            type: "state",
+            payload: this.gameState,
+          }));
+          break;
+        }
+
+        case "interrogate-decision": {
+          if (!this.gameState) return;
+
+          if (!playerId) return;
+
+          this.gameState = decideInterrogate(this.gameState, playerId, msg.payload.decision);
           await this.saveState();
 
           this.party.broadcast(JSON.stringify({

@@ -4,12 +4,13 @@ import { useCallback } from "react";
 import { GameBoard } from "./game-board";
 import { BlockChallengePanel } from "./block-challenge-panel";
 import { CardSelector } from "./card-selector";
-import { GameState, ActionType, CharacterType, ActionRequest, BlockRequest, ChallengeRequest } from "@/lib/game-logic";
+import { GameState, ActionType, CharacterType, ActionRequest, BlockRequest, ChallengeRequest, Card } from "@/lib/game-logic";
 import { useGameSounds } from "@/hooks/use-game-sounds";
+import Image from "next/image";
+import { CHARACTER_IMAGES } from "@/lib/variants";
 
 interface GamePlayProps {
     gameState: GameState;
-    playerName: string;
     myPlayerId: string;
     onAction: (action: ActionRequest) => void;
     onBlock: (block: BlockRequest) => void;
@@ -17,15 +18,65 @@ interface GamePlayProps {
     onChallenge: (challenge: ChallengeRequest) => void;
     onPassChallenge: () => void;
     onExchangeCards: (keptCardIds: string[]) => void;
+    onInterrogateSelect: (cardId: string) => void;
+    onInterrogateDecision: (decision: "keep" | "replace") => void;
     onLoseInfluence: (cardId: string) => void;
     onReturnToLobby: () => void;
-    isHost: boolean;
     error?: string | null;
+}
+
+function InterrogateDecisionModal({
+    card,
+    targetName,
+    onKeep,
+    onReplace,
+}: {
+    card: Card | null;
+    targetName: string;
+    onKeep: () => void;
+    onReplace: () => void;
+}) {
+    if (!card) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-linear-to-br from-slate-800 to-slate-900 border-2 border-purple-500 max-w-xl w-full rounded-xl p-6 space-y-6">
+                <div className="space-y-2">
+                    <h2 className="text-2xl font-bold text-purple-300">Interrogate Decision</h2>
+                    <p className="text-slate-300">
+                        {targetName} revealed a card. Choose whether they keep it or replace it from the deck.
+                    </p>
+                </div>
+                <div className="flex justify-center">
+                    <div className="w-40 h-56 relative rounded-lg overflow-hidden border border-slate-600 shadow-xl">
+                        <Image src={CHARACTER_IMAGES[card.character]} alt={card.character} fill className="object-cover" />
+                        <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-black/90 via-black/50 to-transparent p-2 pt-8">
+                            <p className="text-center text-white font-bold text-sm shadow-black drop-shadow-md">{card.character}</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                        onClick={onKeep}
+                        className="h-12 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                    >
+                        Keep Card
+                    </button>
+                    <button
+                        onClick={onReplace}
+                        className="h-12 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                    >
+                        Replace Card
+                    </button>
+                </div>
+                <p className="text-xs text-slate-400">If the deck is empty, replace will keep the card.</p>
+            </div>
+        </div>
+    );
 }
 
 export function GamePlay({
     gameState,
-    playerName,
     myPlayerId,
     onAction,
     onBlock,
@@ -33,9 +84,10 @@ export function GamePlay({
     onChallenge,
     onPassChallenge,
     onExchangeCards,
+    onInterrogateSelect,
+    onInterrogateDecision,
     onLoseInfluence,
     onReturnToLobby,
-    isHost,
     error,
 }: GamePlayProps) {
     // Initialize game sounds
@@ -106,6 +158,22 @@ export function GamePlay({
         gameState.pendingExchangeCards &&
         myPlayerId === gameState.pendingAction?.actorId;
 
+    const needsToSelectInterrogate = myPlayer &&
+        gameState.phase === 'interrogate_select' &&
+        gameState.pendingInterrogate?.targetId === myPlayerId;
+
+    const needsToDecideInterrogate = myPlayer &&
+        gameState.phase === 'interrogate_decision' &&
+        gameState.pendingAction?.actorId === myPlayerId;
+
+    const interrogateTarget = gameState.pendingInterrogate?.targetId
+        ? gameState.players.find(p => p.id === gameState.pendingInterrogate?.targetId)
+        : null;
+
+    const interrogateCard = interrogateTarget && gameState.pendingInterrogate?.selectedCardId
+        ? interrogateTarget.cards.find(c => c.id === gameState.pendingInterrogate?.selectedCardId) || null
+        : null;
+
     if (!myPlayerId) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -121,7 +189,6 @@ export function GamePlay({
                 myPlayerId={myPlayerId}
                 onAction={handleAction}
                 onReturnToLobby={onReturnToLobby}
-                isHost={isHost}
             />
 
             {/* Block/Challenge Panel - Overlay */}
@@ -151,6 +218,27 @@ export function GamePlay({
                     description={`Choose ${myPlayer!.cards.filter(c => !c.revealed).length} cards to keep. The rest will be returned to the deck.`}
                     selectCount={myPlayer!.cards.filter(c => !c.revealed).length}
                     onConfirm={onExchangeCards}
+                />
+            )}
+
+            {/* Interrogate Selection (Target) */}
+            {needsToSelectInterrogate && (
+                <CardSelector
+                    cards={myPlayer!.cards}
+                    title="Interrogate"
+                    description="Select a card to reveal to the Inquisitor."
+                    selectCount={1}
+                    onConfirm={(cardIds) => onInterrogateSelect(cardIds[0])}
+                />
+            )}
+
+            {/* Interrogate Decision (Actor) */}
+            {needsToDecideInterrogate && interrogateTarget && (
+                <InterrogateDecisionModal
+                    card={interrogateCard}
+                    targetName={interrogateTarget.name}
+                    onKeep={() => onInterrogateDecision("keep")}
+                    onReplace={() => onInterrogateDecision("replace")}
                 />
             )}
 

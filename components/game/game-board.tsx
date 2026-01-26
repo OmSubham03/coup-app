@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GameState, ActionType, CharacterType, Player, GameLogEntry } from "@/lib/game-logic";
-import { Coins, Crown, Skull, Shield, Users, BookOpen, X, History, Swords, AlertTriangle, RefreshCw, Hourglass, Target } from "lucide-react";
+import { Coins, Crown, Skull, Shield, Users, BookOpen, X, History, Swords, AlertTriangle, RefreshCw, Hourglass, Target, Eye } from "lucide-react";
 import Image from "next/image";
 import { RulesModal } from "./rules-modal";
 import { StartingPlayerRoulette } from "./starting-player-roulette";
+import { CHARACTER_IMAGES, getVariantConfig } from "@/lib/variants";
 
 interface TargetSelectionModalProps {
     isOpen: boolean;
@@ -78,25 +79,16 @@ interface GameBoardProps {
     myPlayerId: string;
     onAction: (action: ActionType, targetId?: string) => void;
     onReturnToLobby: () => void;
-    isHost: boolean;
 }
 
-const CHARACTER_IMAGES: Record<CharacterType, string> = {
-    Duke: "/textures/duke.jpg",
-    Assassin: "/textures/assassin.jpg",
-    Captain: "/textures/captain.jpg",
-    Ambassador: "/textures/ambassador.jpg",
-    Contessa: "/textures/contessa.jpg",
-};
-
-const formatLogMessage = (message: string, players: { name: string }[]) => {
-    const characters = ["Duke", "Assassin", "Captain", "Ambassador", "Contessa"];
+const formatLogMessage = (message: string, players: { name: string }[], characters: CharacterType[]) => {
     const characterColors: Record<string, string> = {
         Duke: "text-purple-400 font-bold",
         Assassin: "text-red-400 font-bold",
         Captain: "text-cyan-400 font-bold",
         Ambassador: "text-indigo-400 font-bold",
         Contessa: "text-orange-400 font-bold",
+        Inquisitor: "text-emerald-400 font-bold",
     };
 
     const playerColors = [
@@ -120,7 +112,7 @@ const formatLogMessage = (message: string, players: { name: string }[]) => {
     const parts = message.split(regex);
 
     return parts.map((part, index) => {
-        if (characters.includes(part)) {
+        if (characters.includes(part as CharacterType)) {
             return <span key={index} className={characterColors[part]}>{part}</span>;
         }
         const playerIndex = players.findIndex(p => p.name === part);
@@ -173,7 +165,7 @@ function VictoryCountdown({
     );
 }
 
-function GameLogList({ groupedLogs, players }: { groupedLogs: Record<string, GameLogEntry[]>, players: Player[] }) {
+function GameLogList({ groupedLogs, players, characters }: { groupedLogs: Record<string, GameLogEntry[]>, players: Player[], characters: CharacterType[] }) {
     return (
         <div className="py-6 space-y-8">
             {Object.entries(groupedLogs).reverse().map(([turn, logs]) => (
@@ -215,10 +207,14 @@ function GameLogList({ groupedLogs, players }: { groupedLogs: Record<string, Gam
                                 Icon = Swords;
                                 iconColor = "text-red-400";
                                 iconBg = "bg-red-500/10";
-                            } else if (entry.message.includes("exchange")) {
+                            } else if (entry.message.includes("exchange") || entry.message.includes("inquire")) {
                                 Icon = RefreshCw;
                                 iconColor = "text-indigo-400";
                                 iconBg = "bg-indigo-500/10";
+                            } else if (entry.message.includes("interrogate")) {
+                                Icon = Eye;
+                                iconColor = "text-emerald-400";
+                                iconBg = "bg-emerald-500/10";
                             }
 
                             return (
@@ -235,7 +231,7 @@ function GameLogList({ groupedLogs, players }: { groupedLogs: Record<string, Gam
                                     <div className="flex-1 min-w-0">
                                         <div className="bg-slate-900/40 border border-slate-800/60 rounded-xl p-3.5 hover:bg-slate-800/40 hover:border-slate-700/60 transition-all duration-200 group-hover:shadow-md group-hover:shadow-black/20">
                                             <p className="text-sm text-slate-300 leading-relaxed wrap-break-word">
-                                                {formatLogMessage(entry.message, players)}
+                                                {formatLogMessage(entry.message, players, characters)}
                                             </p>
                                             <p className="text-[10px] text-slate-600 mt-2 font-medium uppercase tracking-wide flex items-center gap-1">
                                                 <History className="size-3" />
@@ -275,17 +271,18 @@ function DeckView({ count }: { count: number }) {
             </div>
 
             {/* Count badge */}
-            <div className="absolute -bottom-2 -right-2 bg-slate-900 text-slate-200 text-xs font-bold px-1.5 py-0.5 rounded-full border border-slate-700 shadow-sm z-10 min-w-[1.5rem] text-center">
+            <div className="absolute -bottom-2 -right-2 bg-slate-900 text-slate-200 text-xs font-bold px-1.5 py-0.5 rounded-full border border-slate-700 shadow-sm z-10 min-w-6 text-center">
                 {count}
             </div>
         </div>
     )
 }
 
-export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, isHost }: GameBoardProps) {
+export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby }: GameBoardProps) {
     const [showRules, setShowRules] = useState(false);
     const [selectedTargetAction, setSelectedTargetAction] = useState<ActionType | null>(null);
     const [hasSeenRoulette, setHasSeenRoulette] = useState(false);
+    const variantConfig = getVariantConfig(gameState.variant);
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     const myPlayer = gameState.players.find(p => p.id === myPlayerId);
@@ -313,7 +310,7 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
 
     return (
         <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col lg:flex-row overflow-hidden">
-            <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
+            <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} variant={gameState.variant} />
 
             {showRoulette && (
                 <StartingPlayerRoulette
@@ -338,8 +335,8 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                     <div className="flex justify-between items-center bg-slate-800/50 backdrop-blur-sm rounded-lg p-4 border border-slate-700">
                         <div className="flex items-center gap-4">
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-                                    Coup
+                                <h1 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-600">
+                                    Coup — {variantConfig.label}
                                 </h1>
                             </div>
                             <Button
@@ -398,6 +395,10 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                                         return player.id === gameState.pendingInfluenceLoss;
                                     case 'block_window':
                                         return gameState.pendingAction?.actorId !== player.id && !gameState.passedPlayers.includes(player.id);
+                                    case 'interrogate_select':
+                                        return player.id === gameState.pendingInterrogate?.targetId;
+                                    case 'interrogate_decision':
+                                        return player.id === gameState.pendingAction?.actorId;
                                     case 'challenge_window':
                                         if (gameState.pendingBlock) {
                                             return gameState.pendingBlock.blockerId !== player.id && !gameState.passedPlayers.includes(player.id);
@@ -506,7 +507,7 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                                                             fill
                                                             className="object-cover"
                                                         />
-                                                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 pt-6">
+                                                        <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-black/90 via-black/50 to-transparent p-2 pt-6">
                                                             <p className="text-center text-white font-bold text-sm shadow-black drop-shadow-md">{card.character}</p>
                                                         </div>
                                                     </div>
@@ -531,7 +532,7 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                     {/* Action Area / Status Messages */}
                     <div className="space-y-4">
                         {isMyTurn && gameState.phase === 'action' && myPlayer.isAlive && (
-                            <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 backdrop-blur-sm rounded-lg p-6 border-2 border-purple-500/50 shadow-xl">
+                            <div className="bg-linear-to-r from-purple-900/30 to-pink-900/30 backdrop-blur-sm rounded-lg p-6 border-2 border-purple-500/50 shadow-xl">
                                 <h2 className="text-2xl font-bold mb-4 text-purple-300 flex items-center gap-2">
                                     <Crown className="size-6" />
                                     Choose Your Action
@@ -543,8 +544,8 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                                         className="h-auto py-4 flex flex-col items-start bg-green-600 hover:bg-green-700 transition-all hover:scale-105"
                                         disabled={myPlayer.coins >= 10}
                                     >
-                                        <span className="text-lg font-bold">Income</span>
-                                        <span className="text-xs opacity-80">+1 coin (safe)</span>
+                                        <span className="text-lg font-bold">{variantConfig.actionUi.income.label}</span>
+                                        <span className="text-xs opacity-80">{variantConfig.actionUi.income.description}</span>
                                     </Button>
 
                                     <Button
@@ -552,28 +553,29 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                                         className="h-auto py-4 flex flex-col items-start bg-blue-600 hover:bg-blue-700 transition-all hover:scale-105"
                                         disabled={myPlayer.coins >= 10}
                                     >
-                                        <span className="text-lg font-bold">Foreign Aid</span>
-                                        <span className="text-xs opacity-80">+2 coins (blockable)</span>
+                                        <span className="text-lg font-bold">{variantConfig.actionUi.foreign_aid.label}</span>
+                                        <span className="text-xs opacity-80">{variantConfig.actionUi.foreign_aid.description}</span>
                                     </Button>
 
                                     {/* Character Actions */}
-                                    <Button
-                                        onClick={() => onAction('tax')}
-                                        className="h-auto py-4 flex flex-col items-start bg-purple-600 hover:bg-purple-700 transition-all hover:scale-105"
-                                        disabled={myPlayer.coins >= 10}
-                                    >
-                                        <span className="text-lg font-bold">Tax (Duke)</span>
-                                        <span className="text-xs opacity-80">+3 coins</span>
-                                    </Button>
-
-                                    <Button
-                                        onClick={() => onAction('exchange')}
-                                        className="h-auto py-4 flex flex-col items-start bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-105"
-                                        disabled={myPlayer.coins >= 10}
-                                    >
-                                        <span className="text-lg font-bold">Exchange (Ambassador)</span>
-                                        <span className="text-xs opacity-80">Swap cards</span>
-                                    </Button>
+                                    {variantConfig.actionGroups.character.map((action) => (
+                                        <Button
+                                            key={action}
+                                            onClick={() => onAction(action)}
+                                            className={`h-auto py-4 flex flex-col items-start transition-all hover:scale-105 ${action === 'tax'
+                                                ? 'bg-purple-600 hover:bg-purple-700'
+                                                : action === 'interrogate'
+                                                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                                                    : action === 'inquire'
+                                                        ? 'bg-indigo-600 hover:bg-indigo-700'
+                                                        : 'bg-indigo-600 hover:bg-indigo-700'
+                                                }`}
+                                            disabled={myPlayer.coins >= 10}
+                                        >
+                                            <span className="text-lg font-bold">{variantConfig.actionUi[action].label}</span>
+                                            <span className="text-xs opacity-80">{variantConfig.actionUi[action].description}</span>
+                                        </Button>
+                                    ))}
                                 </div>
 
                                 {/* Targeted Actions */}
@@ -582,43 +584,69 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                                         <h3 className="text-lg font-semibold text-purple-300 border-b border-purple-500/30 pb-2">Targeted Actions</h3>
 
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                            {/* Steal */}
-                                            <Button
-                                                onClick={() => setSelectedTargetAction('steal')}
-                                                className="h-auto py-4 flex flex-col items-start bg-cyan-900/30 border border-cyan-500 hover:bg-cyan-800 hover:text-white transition-colors"
-                                                disabled={myPlayer.coins >= 10}
-                                            >
-                                                <span className="text-lg font-bold text-cyan-400">Steal (Captain)</span>
-                                                <span className="text-xs opacity-80 text-left">Take 2 coins from opponent</span>
-                                            </Button>
+                                            {variantConfig.actionGroups.targeted.map((action) => {
+                                                if (action === 'steal') {
+                                                    return (
+                                                        <Button
+                                                            key={action}
+                                                            onClick={() => setSelectedTargetAction('steal')}
+                                                            className="h-auto py-4 flex flex-col items-start bg-cyan-900/30 border border-cyan-500 hover:bg-cyan-800 hover:text-white transition-colors"
+                                                            disabled={myPlayer.coins >= 10}
+                                                        >
+                                                            <span className="text-lg font-bold text-cyan-400">{variantConfig.actionUi.steal.label}</span>
+                                                            <span className="text-xs opacity-80 text-left">{variantConfig.actionUi.steal.description}</span>
+                                                        </Button>
+                                                    );
+                                                }
 
-                                            {/* Assassinate */}
-                                            <Button
-                                                onClick={() => setSelectedTargetAction('assassinate')}
-                                                className="h-auto py-4 flex flex-col items-start bg-red-900/30 border border-red-500 hover:bg-red-800 hover:text-white transition-colors"
-                                                disabled={myPlayer.coins >= 10 || myPlayer.coins < 3}
-                                            >
-                                                <span className="text-lg font-bold text-red-400">Assassinate (Assassin)</span>
-                                                <span className="text-xs opacity-80 text-left">Pay 3 coins to kill influence</span>
-                                            </Button>
+                                                if (action === 'assassinate') {
+                                                    return (
+                                                        <Button
+                                                            key={action}
+                                                            onClick={() => setSelectedTargetAction('assassinate')}
+                                                            className="h-auto py-4 flex flex-col items-start bg-red-900/30 border border-red-500 hover:bg-red-800 hover:text-white transition-colors"
+                                                            disabled={myPlayer.coins >= 10 || myPlayer.coins < 3}
+                                                        >
+                                                            <span className="text-lg font-bold text-red-400">{variantConfig.actionUi.assassinate.label}</span>
+                                                            <span className="text-xs opacity-80 text-left">{variantConfig.actionUi.assassinate.description}</span>
+                                                        </Button>
+                                                    );
+                                                }
 
-                                            {/* Coup */}
-                                            <Button
-                                                onClick={() => setSelectedTargetAction('coup')}
-                                                className={`h-auto py-4 flex flex-col items-start border border-orange-500 transition-colors ${myPlayer.coins >= 10
-                                                    ? "bg-orange-600 hover:bg-orange-700 text-white animate-pulse"
-                                                    : "bg-orange-900/30 hover:bg-orange-800 hover:text-white"
-                                                    }`}
-                                                disabled={myPlayer.coins < 7}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-lg font-bold text-orange-400">Coup</span>
-                                                    {myPlayer.coins >= 10 && (
-                                                        <span className="text-xs bg-yellow-500 text-black px-1 rounded font-bold">REQUIRED</span>
-                                                    )}
-                                                </div>
-                                                <span className="text-xs opacity-80 text-left">Pay 7 coins to kill influence (Unblockable)</span>
-                                            </Button>
+                                                if (action === 'interrogate') {
+                                                    return (
+                                                        <Button
+                                                            key={action}
+                                                            onClick={() => setSelectedTargetAction('interrogate')}
+                                                            className="h-auto py-4 flex flex-col items-start bg-emerald-900/30 border border-emerald-500 hover:bg-emerald-800 hover:text-white transition-colors"
+                                                            disabled={myPlayer.coins >= 10}
+                                                        >
+                                                            <span className="text-lg font-bold text-emerald-400">{variantConfig.actionUi.interrogate.label}</span>
+                                                            <span className="text-xs opacity-80 text-left">{variantConfig.actionUi.interrogate.description}</span>
+                                                        </Button>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <Button
+                                                        key={action}
+                                                        onClick={() => setSelectedTargetAction('coup')}
+                                                        className={`h-auto py-4 flex flex-col items-start border border-orange-500 transition-colors ${myPlayer.coins >= 10
+                                                            ? "bg-orange-600 hover:bg-orange-700 text-white animate-pulse"
+                                                            : "bg-orange-900/30 hover:bg-orange-800 hover:text-white"
+                                                            }`}
+                                                        disabled={myPlayer.coins < 7}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-lg font-bold text-orange-400">{variantConfig.actionUi.coup.label}</span>
+                                                            {myPlayer.coins >= 10 && (
+                                                                <span className="text-xs bg-yellow-500 text-black px-1 rounded font-bold">REQUIRED</span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-xs opacity-80 text-left">{variantConfig.actionUi.coup.description}</span>
+                                                    </Button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
@@ -680,7 +708,7 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                     </div>
                 </div>
                 <ScrollArea className="flex-1 px-6 h-full">
-                    <GameLogList groupedLogs={groupedLogs} players={gameState.players} />
+                    <GameLogList groupedLogs={groupedLogs} players={gameState.players} characters={variantConfig.characters} />
                 </ScrollArea>
             </div>
 
@@ -709,7 +737,7 @@ export function GameBoard({ gameState, myPlayerId, onAction, onReturnToLobby, is
                             </div>
                         </SheetHeader>
                         <ScrollArea className="flex-1 px-6">
-                            <GameLogList groupedLogs={groupedLogs} players={gameState.players} />
+                            <GameLogList groupedLogs={groupedLogs} players={gameState.players} characters={variantConfig.characters} />
                         </ScrollArea>
                     </SheetContent>
                 </Sheet>

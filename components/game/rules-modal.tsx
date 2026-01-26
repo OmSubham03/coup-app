@@ -3,23 +3,18 @@
 import { Button } from "@/components/ui/button";
 import { X, BookOpen } from "lucide-react";
 import Image from "next/image";
-import { CharacterType } from "@/lib/game-logic";
+import { VariantKey, getVariantConfig, CHARACTER_IMAGES } from "@/lib/variants";
 
 interface RulesModalProps {
     isOpen: boolean;
     onClose: () => void;
+    variant: VariantKey | string;
 }
 
-const CHARACTER_IMAGES: Record<CharacterType, string> = {
-    Duke: "/textures/duke.jpg",
-    Assassin: "/textures/assassin.jpg",
-    Captain: "/textures/captain.jpg",
-    Ambassador: "/textures/ambassador.jpg",
-    Contessa: "/textures/contessa.jpg",
-};
-
-export function RulesModal({ isOpen, onClose }: RulesModalProps) {
+export function RulesModal({ isOpen, onClose, variant }: RulesModalProps) {
     if (!isOpen) return null;
+
+    const variantConfig = getVariantConfig(variant);
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -55,73 +50,28 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                     <section>
                         <h3 className="text-xl font-bold text-purple-400 mb-4">Characters & Actions</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* Duke */}
-                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex gap-4">
-                                <div className="relative w-28 h-40 flex-shrink-0 rounded overflow-hidden border border-slate-600">
-                                    <Image src={CHARACTER_IMAGES.Duke} alt="Duke" fill className="object-cover" />
+                            {variantConfig.characterRules.map((rule) => (
+                                <div key={rule.character} className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex gap-4">
+                                    <div className="relative w-28 h-40 shrink-0 rounded overflow-hidden border border-slate-600">
+                                        <Image src={CHARACTER_IMAGES[rule.character]} alt={rule.character} fill className="object-cover" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-white text-lg">{rule.character}</h4>
+                                        <ul className="text-sm space-y-1 mt-1">
+                                            {rule.actions.map((action) => (
+                                                <li key={action.label}>
+                                                    <span className="text-purple-300 font-semibold">{action.label}:</span> {action.description}
+                                                </li>
+                                            ))}
+                                            {rule.blocks.map((block) => (
+                                                <li key={block.label}>
+                                                    <span className="text-blue-400 font-semibold">{block.label}:</span> {block.description}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-lg">Duke</h4>
-                                    <ul className="text-sm space-y-1 mt-1">
-                                        <li><span className="text-purple-400 font-semibold">Tax:</span> Take 3 coins.</li>
-                                        <li><span className="text-blue-400 font-semibold">Blocks:</span> Foreign Aid.</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            {/* Assassin */}
-                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex gap-4">
-                                <div className="relative w-28 h-40 flex-shrink-0 rounded overflow-hidden border border-slate-600">
-                                    <Image src={CHARACTER_IMAGES.Assassin} alt="Assassin" fill className="object-cover" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-lg">Assassin</h4>
-                                    <ul className="text-sm space-y-1 mt-1">
-                                        <li><span className="text-red-400 font-semibold">Assassinate:</span> Pay 3 coins to kill an influence.</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            {/* Captain */}
-                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex gap-4">
-                                <div className="relative w-28 h-40 flex-shrink-0 rounded overflow-hidden border border-slate-600">
-                                    <Image src={CHARACTER_IMAGES.Captain} alt="Captain" fill className="object-cover" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-lg">Captain</h4>
-                                    <ul className="text-sm space-y-1 mt-1">
-                                        <li><span className="text-cyan-400 font-semibold">Steal:</span> Take 2 coins from another player.</li>
-                                        <li><span className="text-blue-400 font-semibold">Blocks:</span> Steal.</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            {/* Ambassador */}
-                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex gap-4">
-                                <div className="relative w-28 h-40 flex-shrink-0 rounded overflow-hidden border border-slate-600">
-                                    <Image src={CHARACTER_IMAGES.Ambassador} alt="Ambassador" fill className="object-cover" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-lg">Ambassador</h4>
-                                    <ul className="text-sm space-y-1 mt-1">
-                                        <li><span className="text-indigo-400 font-semibold">Exchange:</span> Draw 2 cards, return 2.</li>
-                                        <li><span className="text-blue-400 font-semibold">Blocks:</span> Steal.</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            {/* Contessa */}
-                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 flex gap-4">
-                                <div className="relative w-28 h-40 flex-shrink-0 rounded overflow-hidden border border-slate-600">
-                                    <Image src={CHARACTER_IMAGES.Contessa} alt="Contessa" fill className="object-cover" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-lg">Contessa</h4>
-                                    <ul className="text-sm space-y-1 mt-1">
-                                        <li><span className="text-blue-400 font-semibold">Blocks:</span> Assassination.</li>
-                                    </ul>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </section>
 
@@ -129,18 +79,12 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                     <section>
                         <h3 className="text-xl font-bold text-purple-400 mb-2">General Actions</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-slate-800/30 p-3 rounded border border-slate-700">
-                                <h4 className="font-bold text-white">Income</h4>
-                                <p className="text-sm">Take 1 coin. Cannot be blocked.</p>
-                            </div>
-                            <div className="bg-slate-800/30 p-3 rounded border border-slate-700">
-                                <h4 className="font-bold text-white">Foreign Aid</h4>
-                                <p className="text-sm">Take 2 coins. Can be blocked by Duke.</p>
-                            </div>
-                            <div className="bg-slate-800/30 p-3 rounded border border-slate-700">
-                                <h4 className="font-bold text-white">Coup</h4>
-                                <p className="text-sm">Pay 7 coins. Choose a player to lose influence. Unblockable.</p>
-                            </div>
+                            {variantConfig.generalActions.map((action) => (
+                                <div key={action.label} className="bg-slate-800/30 p-3 rounded border border-slate-700">
+                                    <h4 className="font-bold text-white">{action.label}</h4>
+                                    <p className="text-sm">{action.description}</p>
+                                </div>
+                            ))}
                         </div>
                     </section>
 
@@ -149,7 +93,7 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                         <div>
                             <h3 className="text-xl font-bold text-purple-400 mb-2">Challenges</h3>
                             <p className="text-sm leading-relaxed">
-                                Any action that uses a character (Tax, Assassinate, Steal, Exchange) or any Block can be challenged.
+                                Any action that uses a character (Tax, Assassinate, Steal, {variantConfig.availableActions.includes('interrogate') ? 'Interrogate, Inquire' : 'Exchange'}) or any Block can be challenged.
                                 <br /><br />
                                 If challenged, you must prove you have the character.
                                 <br />
