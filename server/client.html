@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coup Game</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #020617; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+.container { max-width: 900px; margin: 0 auto; padding: 16px; }
+h1 { color: #f59e0b; font-size: 48px; font-weight: 900; letter-spacing: 6px; text-align: center; margin: 20px 0 8px; }
+h2 { color: #a78bfa; font-size: 20px; margin-bottom: 12px; }
+.subtitle { color: #94a3b8; text-align: center; margin-bottom: 24px; font-size: 14px; }
+.screen { display: none; }
+.screen.active { display: block; }
+.btn { padding: 14px 24px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 8px; color: #fff; transition: opacity .15s; }
+.btn:hover { opacity: .85; }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn-amber { background: #f59e0b; color: #000; }
+.btn-green { background: #16a34a; }
+.btn-blue { background: #2563eb; }
+.btn-purple { background: #7c3aed; }
+.btn-red { background: #dc2626; }
+.btn-pink { background: #ec4899; }
+.btn-cyan { background: #0891b2; }
+.btn-emerald { background: #059669; }
+.btn-indigo { background: #4f46e5; }
+.btn-outline { background: transparent; border: 1px solid #475569; color: #94a3b8; }
+.btn-sm { padding: 10px 16px; font-size: 14px; }
+.btn-half { width: 48%; display: inline-block; }
+input { background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 14px 20px; font-size: 20px; color: #e2e8f0; text-align: center; width: 100%; margin-bottom: 12px; }
+input::placeholder { color: #475569; }
+.code-display { font-size: 42px; font-weight: 900; color: #fbbf24; letter-spacing: 8px; text-align: center; background: #0f172a; padding: 16px; border-radius: 16px; border: 1px solid #1e293b; margin-bottom: 16px; }
+.card-box { display: inline-block; width: 90px; height: 120px; border-radius: 10px; border: 2px solid #7c3aed; text-align: center; font-weight: 800; font-size: 11px; margin: 4px; color: #fff; vertical-align: top; overflow: hidden; position: relative; background-size: cover; background-position: center; }
+.card-box .card-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,.85)); padding: 6px 4px 4px; font-size: 11px; font-weight: 700; text-align: center; }
+.card-revealed { opacity: .5; border-color: #475569; }
+.card-revealed .card-label { background: rgba(0,0,0,.6); }
+.card-revealed::after { content: '💀'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 28px; z-index: 2; filter: drop-shadow(0 0 4px rgba(0,0,0,.8)); }
+.card-hidden { background-image: url('/textures/card-back.svg'); border-color: #581c87; }
+.player-card { background: #0f172a; border: 2px solid #1e293b; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+.player-card.mine { border-color: #a855f7; background: #1a0a2e; }
+.player-card.current { border-color: #3b82f6; }
+.player-card.dead { opacity: .4; }
+.player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.player-name { font-weight: 700; font-size: 16px; }
+.badge { display: inline-block; background: #7c3aed; color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+.coins { color: #fbbf24; font-weight: 800; font-size: 18px; }
+.panel { border-radius: 16px; padding: 16px; margin-top: 16px; border: 2px solid; }
+.panel-block { background: #1a1a2e; border-color: #f59e0b; }
+.panel-challenge { background: #1a0a2e; border-color: #ef4444; }
+.panel-targeted { background: #2d0a0a; border-color: #ef4444; }
+.panel-action { background: #0f172a; border-color: #7c3aed; }
+.panel-exchange { background: #1e1b4b; border-color: #7c3aed; }
+.action-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.action-grid .btn { width: calc(50% - 4px); text-align: left; padding: 12px; }
+.action-label { font-size: 14px; }
+.action-desc { font-size: 11px; opacity: .7; margin-top: 2px; }
+.section-title { color: #94a3b8; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 8px; }
+.log-entry { padding: 4px 0; font-size: 13px; color: #cbd5e1; border-bottom: 1px solid #1e293b; }
+.log-turn { color: #64748b; font-size: 11px; font-weight: 700; background: #1e293b; display: inline-block; padding: 2px 8px; border-radius: 6px; margin: 8px 0 4px; }
+.waiting { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; text-align: center; color: #94a3b8; margin-top: 16px; font-style: italic; }
+.header-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #1e293b; margin-bottom: 16px; }
+.phase-text { color: #94a3b8; font-size: 12px; text-transform: capitalize; }
+.victory { text-align: center; padding: 40px 20px; }
+.victory h2 { color: #fbbf24; font-size: 40px; margin-bottom: 8px; }
+.flex-row { display: flex; gap: 8px; }
+.flex-row > * { flex: 1; }
+.card-select { cursor: pointer; transition: transform .15s; }
+.card-select:hover { transform: scale(1.05); }
+.card-select.selected { border-color: #22c55e !important; box-shadow: 0 0 12px rgba(34,197,94,.4); }
+.error { color: #ef4444; text-align: center; margin: 8px 0; }
+.player-list-item { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 12px 16px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #1e293b; }
+.variant-row { display: flex; gap: 12px; margin-bottom: 16px; }
+.variant-btn { flex: 1; padding: 14px; border-radius: 12px; border: 2px solid #334155; background: transparent; color: #64748b; font-weight: 700; font-size: 16px; cursor: pointer; text-align: center; }
+.variant-btn.active-std { border-color: #6366f1; background: #1e1b4b; color: #fff; }
+.variant-btn.active-inq { border-color: #10b981; background: #052e16; color: #fff; }
+.char-Duke { background: #581c87; border-color: #9333ea; }
+.char-Assassin { background: #991b1b; border-color: #ef4444; }
+.char-Captain { background: #155e75; border-color: #06b6d4; }
+.char-Ambassador { background: #3730a3; border-color: #6366f1; }
+.char-Contessa { background: #9a3412; border-color: #f97316; }
+.char-Inquisitor { background: #065f46; border-color: #10b981; }
+.tab-exit { padding: 8px 16px; border-radius: 8px; background: #dc2626; color: #fff; cursor: pointer; font-weight: 600; font-size: 13px; border: none; margin-left: auto; }
+.tab-exit:hover { background: #b91c1c; }
+.spectate-banner { background: #1e293b; border: 1px solid #f59e0b; border-radius: 10px; padding: 10px 16px; text-align: center; color: #fbbf24; font-weight: 600; font-size: 14px; margin-bottom: 12px; }
+#log-panel { max-height: 300px; overflow-y: auto; }
+.tab-bar { display: flex; gap: 4px; margin-bottom: 12px; }
+.tab { padding: 8px 16px; border-radius: 8px; background: #1e293b; color: #94a3b8; cursor: pointer; font-weight: 600; font-size: 13px; border: none; }
+.tab.active { background: #7c3aed; color: #fff; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- MENU SCREEN -->
+<div id="screen-menu" class="screen active">
+  <h1>COUP</h1>
+  <p class="subtitle">Bluff. Deceive. Survive.</p>
+  <div style="margin-bottom:24px">
+    <p class="section-title">Create Game</p>
+    <button class="btn btn-indigo" onclick="createGame('standard')">Standard — Classic with Ambassador</button>
+    <button class="btn btn-emerald" onclick="createGame('inquisitor')">Inquisitor — With Inquisitor variant</button>
+  </div>
+  <div>
+    <p class="section-title">Join</p>
+    <button class="btn btn-blue" onclick="showScreen('join')">Join Game</button>
+  </div>
+</div>
+
+<!-- JOIN SCREEN -->
+<div id="screen-join" class="screen">
+  <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="showScreen('menu')">← Back</button>
+  <h2>Join Game</h2>
+  <input id="join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b">
+  <div class="variant-row">
+    <div class="variant-btn active-std" id="join-var-standard" onclick="setJoinVariant('standard')">Standard</div>
+    <div class="variant-btn" id="join-var-inquisitor" onclick="setJoinVariant('inquisitor')">Inquisitor</div>
+  </div>
+  <button class="btn btn-amber" onclick="joinWithCode()">Join</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="screen-game" class="screen">
+  <!-- Name entry -->
+  <div id="name-entry">
+    <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="disconnect();showScreen('menu')">← Back</button>
+    <h2 style="text-align:center">Join Game</h2>
+    <div class="code-display" id="room-code-display"></div>
+    <input id="player-name" placeholder="Your name" maxlength="18">
+    <button class="btn btn-amber" onclick="submitName()">Join</button>
+    <div id="name-error" class="error"></div>
+  </div>
+
+  <!-- Lobby -->
+  <div id="lobby" style="display:none">
+    <div class="code-display" id="lobby-code"></div>
+    <p class="subtitle">Share this code with friends</p>
+    <p class="section-title">Players (<span id="player-count">0</span>/6)</p>
+    <div id="lobby-players"></div>
+    <button class="btn btn-green" id="start-btn" style="display:none" onclick="ws.send(JSON.stringify({type:'start-game'}))">Start Game</button>
+    <p id="lobby-wait" class="waiting" style="display:none">Waiting for host to start...</p>
+    <div id="lobby-spectate" style="display:none;margin-top:12px">
+      <button class="btn btn-cyan" onclick="requestSpectate()">👁 Spectate Game</button>
+    </div>
+    <button class="btn btn-outline" style="margin-top:12px" onclick="disconnect();showScreen('menu')">Leave Lobby</button>
+  </div>
+
+  <!-- Active game -->
+  <div id="game-active" style="display:none">
+    <div class="header-bar">
+      <div>
+        <span style="color:#f59e0b;font-weight:900;font-size:24px">COUP</span>
+        <div class="phase-text" id="phase-display"></div>
+      </div>
+      <div style="text-align:right">
+        <span style="color:#94a3b8;font-size:12px" id="turn-display"></span>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab active" id="tab-game" onclick="switchTab('game')">Game</button>
+      <button class="tab" id="tab-log" onclick="switchTab('log')">📜 Log</button>
+      <button class="tab-exit" id="exit-game-btn" onclick="exitGame()">Exit</button>
+    </div>
+
+    <div id="game-tab">
+      <div id="players-board"></div>
+      <div id="action-area"></div>
+    </div>
+
+    <div id="log-tab" style="display:none">
+      <div id="log-panel"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const isLocal = location.port === '8080' || location.hostname === 'localhost';
+const SERVER = isLocal ? location.hostname + ':8080' : location.host;
+const HTTP = location.protocol === 'https:' ? 'https://' : 'http://';
+const WS = location.protocol === 'https:' ? 'wss://' : 'ws://';
+let ws = null;
+let playerId = sessionStorage.getItem('coup_pid') || crypto.randomUUID();
+sessionStorage.setItem('coup_pid', playerId);
+let roomCode = '';
+let variant = 'standard';
+let gameState = null;
+let hostId = null;
+let joinedName = '';
+let joinVariant = 'standard';
+let isSpectating = false;
+let gameActive = false;
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-game').className = 'tab' + (tab === 'game' ? ' active' : '');
+  document.getElementById('tab-log').className = 'tab' + (tab === 'log' ? ' active' : '');
+  document.getElementById('game-tab').style.display = tab === 'game' ? '' : 'none';
+  document.getElementById('log-tab').style.display = tab === 'log' ? '' : 'none';
+}
+
+function setJoinVariant(v) {
+  joinVariant = v;
+  document.getElementById('join-var-standard').className = 'variant-btn' + (v === 'standard' ? ' active-std' : '');
+  document.getElementById('join-var-inquisitor').className = 'variant-btn' + (v === 'inquisitor' ? ' active-inq' : '');
+}
+
+async function createGame(v) {
+  variant = v;
+  try {
+    const res = await fetch(HTTP + SERVER + '/api/generate-code');
+    const data = await res.json();
+    roomCode = data.code;
+    connectWS('create');
+  } catch(e) { alert('Cannot connect to server: ' + e.message); }
+}
+
+function joinWithCode() {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (!code) return;
+  roomCode = code;
+  variant = joinVariant;
+  connectWS();
+}
+
+function connectWS(action) {
+  if (ws) ws.close();
+  const params = new URLSearchParams({ room: roomCode, playerId, variant });
+  if (action) params.set('action', action);
+  ws = new WebSocket(WS + SERVER + '/ws?' + params);
+
+  ws.onopen = () => {
+    showScreen('game');
+    document.getElementById('name-entry').style.display = '';
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('game-active').style.display = 'none';
+    document.getElementById('room-code-display').textContent = roomCode;
+    document.getElementById('name-error').textContent = '';
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    switch(msg.type) {
+      case 'waiting':
+      case 'players-updated':
+        hostId = msg.payload?.hostId;
+        gameActive = !!msg.payload?.gameActive;
+        renderLobby(msg.payload?.players || []);
+        break;
+      case 'game-started':
+        gameState = msg.payload?.gameState;
+        renderGame();
+        break;
+      case 'state':
+        if (!msg.payload) {
+          console.log('[STATE] Received null state, returning to lobby');
+          gameState = null;
+          isSpectating = false;
+          document.getElementById('game-active').style.display = 'none';
+          document.getElementById('name-entry').style.display = 'none';
+          document.getElementById('lobby').style.display = '';
+          document.getElementById('lobby-code').textContent = roomCode;
+          switchTab('game');
+          break;
+        }
+        gameState = msg.payload;
+        isSpectating = false;
+        renderGame();
+        break;
+      case 'spectate-state':
+        if (!isSpectating) break; // Ignore if not actively spectating
+        gameState = msg.payload;
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('name-entry').style.display = 'none';
+        document.getElementById('game-active').style.display = '';
+        renderGame();
+        break;
+      case 'kicked':
+        alert('You were kicked');
+        disconnect();
+        showScreen('menu');
+        break;
+      case 'error':
+        const errMsg = msg.payload?.message || 'Error';
+        if (gameState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
+        break;
+    }
+  };
+  ws.onclose = () => {};
+}
+
+function disconnect() {
+  if (ws) { ws.close(); ws = null; }
+  gameState = null;
+  isSpectating = false;
+}
+
+function exitGame() {
+  if (isSpectating) {
+    stopSpectating();
+    return;
+  }
+  if (gameState && gameState.phase !== 'game_over') {
+    if (!confirm('Exit game? Both your cards will be discarded and you will return to the lobby.')) return;
+    send('exit-game');
+  }
+}
+
+function requestSpectate() {
+  isSpectating = true;
+  send('spectate');
+}
+
+function stopSpectating() {
+  isSpectating = false;
+  gameState = null;
+  document.getElementById('game-active').style.display = 'none';
+  document.getElementById('lobby').style.display = '';
+  document.getElementById('lobby-code').textContent = roomCode;
+}
+
+function submitName() {
+  const name = document.getElementById('player-name').value.trim();
+  if (!name) return;
+  joinedName = name;
+  send('join', { playerName: name });
+  document.getElementById('name-entry').style.display = 'none';
+  document.getElementById('lobby').style.display = '';
+  document.getElementById('lobby-code').textContent = roomCode;
+}
+
+function send(type, payload) {
+  if (ws?.readyState === 1) ws.send(JSON.stringify({ type, payload }));
+}
+
+function renderLobby(players) {
+  document.getElementById('player-count').textContent = players.length;
+  const isHost = hostId === playerId;
+  let html = '';
+  for (const p of players) {
+    html += '<div class="player-list-item"><span>' + esc(p.name) +
+      (p.id === hostId ? ' 👑' : '') +
+      (p.id === playerId ? ' <span class="badge">You</span>' : '') +
+      '</span>' +
+      (isHost && p.id !== playerId ? '<button class="btn btn-red btn-sm" style="width:auto;padding:6px 12px" onclick="send(\'kick-player\',{playerId:\'' + p.id + '\'})">Kick</button>' : '') +
+      '</div>';
+  }
+  document.getElementById('lobby-players').innerHTML = html;
+  document.getElementById('start-btn').style.display = isHost ? '' : 'none';
+  document.getElementById('start-btn').disabled = players.length < 2;
+  document.getElementById('lobby-wait').style.display = isHost ? 'none' : '';
+  document.getElementById('lobby-spectate').style.display = gameActive ? '' : 'none';
+}
+
+function renderGame() {
+  if (!gameState) return;
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('name-entry').style.display = 'none';
+  document.getElementById('game-active').style.display = '';
+
+  // Show/hide exit button
+  const exitBtn = document.getElementById('exit-game-btn');
+  if (isSpectating) {
+    exitBtn.style.display = '';
+    exitBtn.textContent = 'Exit';
+  } else if (gameState.phase === 'game_over') {
+    exitBtn.style.display = 'none';
+  } else {
+    exitBtn.style.display = '';
+    exitBtn.textContent = 'Exit';
+  }
+
+  const phase = gameState.phase.replace(/_/g, ' ');
+  document.getElementById('phase-display').textContent = (isSpectating ? '\ud83d\udc41 Spectating — ' : '') + phase;
+  document.getElementById('turn-display').textContent = 'Turn ' + gameState.turn;
+
+  renderPlayers();
+  renderActions();
+  renderLog();
+}
+
+const CHAR_IMG = {
+  Duke: '/textures/duke.jpg',
+  Assassin: '/textures/assassin.jpg',
+  Captain: '/textures/captain.jpg',
+  Ambassador: '/textures/ambassador.jpg',
+  Contessa: '/textures/contessa.jpg',
+  Inquisitor: '/textures/inquisitor.png',
+};
+
+function renderPlayers() {
+  const cp = gameState.players[gameState.currentPlayerIndex];
+  let html = '';
+  for (const p of gameState.players) {
+    const isMe = p.id === playerId;
+    const isCurrent = p.id === cp.id;
+    const cls = 'player-card' + (isMe ? ' mine' : '') + (isCurrent ? ' current' : '') + (!p.isAlive ? ' dead' : '');
+    html += '<div class="' + cls + '">';
+    html += '<div class="player-header"><div>';
+    if (isCurrent) html += '👑 ';
+    html += '<span class="player-name">' + esc(p.name) + '</span>';
+    if (isMe) html += '<span class="badge">You</span>';
+    if (isCurrent) html += ' <span style="color:#3b82f6;font-size:12px">Current Turn</span>';
+    html += '</div><span class="coins">💰 ' + p.coins + '</span></div>';
+    html += '<div>';
+    for (const c of p.cards) {
+      if (c.revealed) {
+        html += '<span class="card-box card-revealed" style="background-image:url(' + CHAR_IMG[c.character] + ')"><span class="card-label">' + c.character + '</span></span>';
+      } else if (isMe) {
+        html += '<span class="card-box" style="background-image:url(' + CHAR_IMG[c.character] + ')"><span class="card-label">' + c.character + '</span></span>';
+      } else {
+        html += '<span class="card-box card-hidden"></span>';
+      }
+    }
+    html += '</div></div>';
+  }
+  document.getElementById('players-board').innerHTML = html;
+}
+
+const ACTION_INFO = {
+  income: { label: 'Income', desc: '+1 coin (safe)', color: 'btn-green' },
+  foreign_aid: { label: 'Foreign Aid', desc: '+2 coins (blockable)', color: 'btn-blue' },
+  tax: { label: 'Tax (Duke)', desc: '+3 coins', color: 'btn-purple' },
+  exchange: { label: 'Exchange (Ambassador)', desc: 'Swap cards', color: 'btn-indigo' },
+  inquire: { label: 'Inquire (Inquisitor)', desc: 'Draw 1, return 1', color: 'btn-emerald' },
+  steal: { label: 'Steal (Captain)', desc: 'Take 2 coins', color: 'btn-pink' },
+  assassinate: { label: 'Assassinate (Assassin)', desc: 'Pay 3 coins', color: 'btn-red' },
+  coup: { label: 'Coup', desc: 'Pay 7 coins', color: 'btn-purple' },
+  interrogate: { label: 'Interrogate (Inquisitor)', desc: 'Reveal & replace', color: 'btn-emerald' },
+};
+
+const ACTION_REQS = {
+  income: {},
+  foreign_aid: { canBeBlocked: true, blockingChars: ['Duke'] },
+  coup: { cost: 7, needsTarget: true },
+  tax: { character: 'Duke' },
+  assassinate: { character: 'Assassin', cost: 3, needsTarget: true, canBeBlocked: true, blockingChars: ['Contessa'] },
+  steal: { character: 'Captain', needsTarget: true, canBeBlocked: true, blockingChars: ['Captain', 'Ambassador'] },
+  exchange: { character: 'Ambassador' },
+  interrogate: { character: 'Inquisitor', needsTarget: true },
+  inquire: { character: 'Inquisitor' },
+};
+
+function getStealBlockers() {
+  return gameState.variant === 'inquisitor' ? ['Captain', 'Inquisitor'] : ['Captain', 'Ambassador'];
+}
+
+function renderActions() {
+  const area = document.getElementById('action-area');
+  const me = gameState.players.find(p => p.id === playerId);
+  const cp = gameState.players[gameState.currentPlayerIndex];
+  const isMyTurn = cp.id === playerId;
+
+  // Victory / Game Over
+  if (gameState.phase === 'game_over') {
+    const winner = gameState.players.find(p => p.id === gameState.winner);
+    const isWinner = winner?.id === playerId;
+    area.innerHTML = '<div class="victory"><div style="font-size:64px">' + (isWinner ? '🎉' : '💀') + '</div><h2>' +
+      (isWinner ? 'Victory!' : 'Game Over') + '</h2><p style="font-size:24px;margin-bottom:24px">' +
+      esc(winner?.name || '?') + ' wins!</p>' +
+      (isSpectating ? '<button class="btn btn-outline" onclick="stopSpectating()">Back to Lobby</button>' : '<button class="btn btn-purple" onclick="send(\'return-to-lobby\')">' + 'Return to Lobby</button>') + '</div>';
+    return;
+  }
+
+  // Spectator view
+  if (isSpectating) {
+    const cp = gameState.players[gameState.currentPlayerIndex];
+    area.innerHTML = '<div class="spectate-banner">\ud83d\udc41 Spectating — ' + esc(cp.name) + '\'s turn</div>';
+    return;
+  }
+
+  // Eliminated - spectating
+  if (!me || !me.isAlive) {
+    area.innerHTML = '<div class="waiting">\ud83d\udc80 You are eliminated \u2014 spectating</div>';
+    return;
+  }
+
+  // Action phase
+  if (gameState.phase === 'action' && isMyTurn) {
+    const mustCoup = me.coins >= 10;
+    const actions = gameState.variant === 'inquisitor'
+      ? ['income','foreign_aid','tax','inquire','steal','interrogate','assassinate','coup']
+      : ['income','foreign_aid','tax','exchange','steal','assassinate','coup'];
+
+    let html = '<div class="panel panel-action"><h2>⚔️ Choose Your Action</h2>';
+    if (mustCoup) {
+      html += '<p style="color:#f59e0b;margin:8px 0">You have 10+ coins — you must Coup!</p>';
+    }
+    html += '<div class="action-grid">';
+    for (const a of actions) {
+      if (mustCoup && a !== 'coup') continue;
+      const info = ACTION_INFO[a];
+      const req = ACTION_REQS[a];
+      const disabled = (req.cost && me.coins < req.cost) ? 'disabled' : '';
+      html += '<button class="btn ' + info.color + '" ' + disabled + ' onclick="actionClick(\'' + a + '\')"><div class="action-label">' + info.label + '</div><div class="action-desc">' + info.desc + '</div></button>';
+    }
+    html += '</div></div>';
+    area.innerHTML = html;
+    return;
+  }
+
+  // Block window
+  if (gameState.phase === 'block_window' && gameState.pendingAction) {
+    const hasPassed = gameState.passedPlayers?.includes(playerId);
+    const actor = gameState.players.find(p => p.id === gameState.pendingAction.actorId);
+    const target = gameState.pendingAction.targetId ? gameState.players.find(p => p.id === gameState.pendingAction.targetId) : null;
+    const canBlock = (gameState.pendingAction.type === 'foreign_aid' && gameState.pendingAction.actorId !== playerId) || (target?.id === playerId);
+
+    if (!canBlock || hasPassed) {
+      area.innerHTML = '<div class="waiting">Waiting for others to respond to ' + esc(actor?.name) + '\'s action...</div>';
+      return;
+    }
+
+    const isTargeted = target?.id === playerId;
+    const blockers = gameState.pendingAction.type === 'steal' ? getStealBlockers() : (ACTION_REQS[gameState.pendingAction.type]?.blockingChars || []);
+    let html = '<div class="panel ' + (isTargeted ? 'panel-targeted' : 'panel-block') + '">';
+    html += '<h2>' + (isTargeted ? '⚠️ You are Targeted!' : '🛡 Block Opportunity!') + '</h2>';
+    html += '<p>' + esc(actor?.name) + ' is trying to ' + gameState.pendingAction.type.replace('_', ' ') + (isTargeted ? ' YOU!' : '') + '</p>';
+    for (const ch of blockers) {
+      html += '<button class="btn char-' + ch + '" style="margin-top:8px;display:flex;align-items:center;gap:8px;justify-content:center" onclick="send(\'block\',{type:\'block_' + gameState.pendingAction.type + '\',blockerId:\'' + playerId + '\',claimedCharacter:\'' + ch + '\',targetActionId:\'' + gameState.pendingAction.actorId + '\'})"><img src="' + CHAR_IMG[ch] + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,.5)">Block with ' + ch + '</button>';
+    }
+    html += '<button class="btn btn-outline" style="margin-top:8px" onclick="send(\'pass-block\')">Allow Action</button></div>';
+    area.innerHTML = html;
+    return;
+  }
+
+  // Challenge window
+  if (gameState.phase === 'challenge_window') {
+    const hasPassed = gameState.passedPlayers?.includes(playerId);
+    let targetPid, claimedChar, desc;
+    if (gameState.pendingBlock) {
+      targetPid = gameState.pendingBlock.blockerId;
+      claimedChar = gameState.pendingBlock.claimedCharacter;
+      const blocker = gameState.players.find(p => p.id === targetPid);
+      desc = esc(blocker?.name) + ' claims ' + claimedChar + ' to block';
+    } else if (gameState.pendingAction?.claimedCharacter) {
+      targetPid = gameState.pendingAction.actorId;
+      claimedChar = gameState.pendingAction.claimedCharacter;
+      const actor = gameState.players.find(p => p.id === targetPid);
+      desc = esc(actor?.name) + ' claims to have ' + claimedChar;
+    }
+    if (!targetPid || !claimedChar || targetPid === playerId || hasPassed) {
+      area.innerHTML = '<div class="waiting">Waiting for others to respond...</div>';
+      return;
+    }
+    let html = '<div class="panel panel-challenge">';
+    html += '<h2>⚔️ Challenge Opportunity!</h2>';
+    html += '<p>' + desc + '</p>';
+    html += '<p style="color:#94a3b8;font-size:13px;margin:8px 0">If you challenge and they don\'t have ' + claimedChar + ', they lose influence.</p>';
+    html += '<button class="btn btn-red" onclick="send(\'challenge\',{challengerId:\'' + playerId + '\',targetPlayerId:\'' + targetPid + '\',claimedCharacter:\'' + claimedChar + '\',isBlockChallenge:' + (!!gameState.pendingBlock) + '})">Challenge ' + claimedChar + '</button>';
+    html += '<button class="btn btn-outline" onclick="send(\'pass-challenge\')">Allow</button></div>';
+    area.innerHTML = html;
+    return;
+  }
+
+  // Lose influence
+  if (gameState.phase === 'lose_influence' && gameState.pendingInfluenceLoss === playerId) {
+    const unrevealed = me.cards.filter(c => !c.revealed);
+    let html = '<div class="panel panel-challenge"><h2>💀 Lose Influence</h2><p>Choose a card to reveal:</p><div style="margin:12px 0">';
+    for (const c of unrevealed) {
+      html += '<button class="btn char-' + c.character + '" style="margin:4px 0;display:flex;align-items:center;gap:8px" onclick="send(\'lose-influence\',{cardId:\'' + c.id + '\'})">' +
+        '<img src="' + CHAR_IMG[c.character] + '" style="width:32px;height:32px;border-radius:6px;object-fit:cover">' + c.character + '</button>';
+    }
+    html += '</div></div>';
+    area.innerHTML = html;
+    return;
+  }
+
+  // Exchange
+  if (gameState.phase === 'exchange' && gameState.pendingAction?.actorId === playerId && gameState.pendingExchangeCards) {
+    const unrevealed = me.cards.filter(c => !c.revealed);
+    const allCards = [...unrevealed, ...gameState.pendingExchangeCards];
+    const keepCount = unrevealed.length;
+    area.innerHTML = '<div class="panel panel-exchange"><h2>🔄 Exchange Cards</h2><p>Select ' + keepCount + ' card(s) to keep:</p>' +
+      '<div id="exchange-cards" style="margin:12px 0">' +
+      allCards.map(c => '<span class="card-box card-select" style="background-image:url(' + CHAR_IMG[c.character] + ')" data-id="' + c.id + '" onclick="toggleExchange(this)"><span class="card-label">' + c.character + '</span></span>').join('') +
+      '</div><button class="btn btn-green" id="exchange-confirm" disabled onclick="confirmExchange(' + keepCount + ')">Confirm (0/' + keepCount + ')</button></div>';
+    return;
+  }
+
+  // Interrogate select
+  if (gameState.phase === 'interrogate_select' && gameState.pendingInterrogate?.targetId === playerId) {
+    const unrevealed = me.cards.filter(c => !c.revealed);
+    let html = '<div class="panel panel-exchange"><h2>🔍 Interrogation</h2><p>Select a card to show the Inquisitor:</p><div style="margin:12px 0">';
+    for (const c of unrevealed) {
+      html += '<button class="btn char-' + c.character + '" style="margin:4px 0;display:flex;align-items:center;gap:8px" onclick="send(\'interrogate-select\',{cardId:\'' + c.id + '\'})">' +
+        '<img src="' + CHAR_IMG[c.character] + '" style="width:32px;height:32px;border-radius:6px;object-fit:cover">' + c.character + '</button>';
+    }
+    html += '</div></div>';
+    area.innerHTML = html;
+    return;
+  }
+
+  // Interrogate decision
+  if (gameState.phase === 'interrogate_decision' && gameState.pendingAction?.actorId === playerId && gameState.pendingInterrogate) {
+    const target = gameState.players.find(p => p.id === gameState.pendingInterrogate.targetId);
+    const card = target?.cards.find(c => c.id === gameState.pendingInterrogate.selectedCardId);
+    if (card) {
+      area.innerHTML = '<div class="panel panel-exchange"><h2>🔍 Interrogate Decision</h2><p>' + esc(target.name) + ' revealed:</p>' +
+        '<div style="margin:12px 0"><span class="card-box" style="width:120px;height:160px;background-image:url(' + CHAR_IMG[card.character] + ')"><span class="card-label" style="font-size:14px">' + card.character + '</span></span></div>' +
+        '<div class="flex-row"><button class="btn btn-green" onclick="send(\'interrogate-decision\',{decision:\'keep\'})">Keep</button>' +
+        '<button class="btn btn-amber" onclick="send(\'interrogate-decision\',{decision:\'replace\'})">Replace</button></div></div>';
+      return;
+    }
+  }
+
+  // Default waiting
+  if (gameState.phase === 'action' && !isMyTurn) {
+    area.innerHTML = '<div class="waiting">Waiting for ' + esc(cp.name) + '\'s action...</div>';
+  } else if (gameState.phase === 'lose_influence' && gameState.pendingInfluenceLoss !== playerId) {
+    const loser = gameState.players.find(p => p.id === gameState.pendingInfluenceLoss);
+    area.innerHTML = '<div class="waiting">Waiting for ' + esc(loser?.name || '?') + ' to choose a card...</div>';
+  } else if (['exchange','interrogate_select','interrogate_decision'].includes(gameState.phase) && gameState.pendingAction?.actorId !== playerId && gameState.pendingInterrogate?.targetId !== playerId) {
+    area.innerHTML = '<div class="waiting">Waiting for another player...</div>';
+  }
+}
+
+function actionClick(action) {
+  const req = ACTION_REQS[action];
+  if (req.needsTarget) {
+    const targets = gameState.players.filter(p => p.isAlive && p.id !== playerId);
+    let html = '<div class="panel panel-action"><h2>Select Target</h2>';
+    for (const t of targets) {
+      html += '<button class="btn btn-outline" style="margin:4px 0;text-align:left" onclick="send(\'action\',{type:\'' + action + '\',actorId:\'' + playerId + '\',targetId:\'' + t.id + '\'})">' +
+        esc(t.name) + ' — 💰' + t.coins + ' 🛡' + t.cards.filter(c=>!c.revealed).length + '</button>';
+    }
+    html += '<button class="btn btn-outline" style="margin-top:8px" onclick="renderActions()">Cancel</button></div>';
+    document.getElementById('action-area').innerHTML = html;
+  } else {
+    send('action', { type: action, actorId: playerId });
+  }
+}
+
+let exchangeSelected = new Set();
+function toggleExchange(el) {
+  const id = el.dataset.id;
+  if (exchangeSelected.has(id)) { exchangeSelected.delete(id); el.classList.remove('selected'); }
+  else { exchangeSelected.add(id); el.classList.add('selected'); }
+  const btn = document.getElementById('exchange-confirm');
+  const keepCount = parseInt(btn.textContent.match(/\d+$/)?.[0] || '1');
+  btn.textContent = 'Confirm (' + exchangeSelected.size + '/' + keepCount + ')';
+  btn.disabled = exchangeSelected.size !== keepCount;
+}
+function confirmExchange(keepCount) {
+  if (exchangeSelected.size === keepCount) {
+    send('exchange', { keptCardIds: [...exchangeSelected] });
+    exchangeSelected.clear();
+  }
+}
+
+function renderLog() {
+  const log = gameState.log || [];
+  const grouped = {};
+  for (const e of log) {
+    if (!grouped[e.turn]) grouped[e.turn] = [];
+    grouped[e.turn].push(e);
+  }
+  const turns = Object.keys(grouped).map(Number).sort((a,b) => b - a);
+  let html = '';
+  for (const t of turns) {
+    html += '<div class="log-turn">Turn ' + t + '</div>';
+    for (const e of grouped[t].slice().reverse()) {
+      const time = new Date(e.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      html += '<div class="log-entry">' + esc(e.message) + ' <span style="color:#475569;font-size:10px">' + time + '</span></div>';
+    }
+  }
+  document.getElementById('log-panel').innerHTML = html;
+}
+
+function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+</script>
+</body>
+</html>

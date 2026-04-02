@@ -1,86 +1,139 @@
-# Coup Game
+# Coup Game - Mobile App
 
-A multiplayer Coup card game built with Next.js, and real-time gameplay using PartyKit.
+A mobile implementation of the Coup card game using **Go** (WebSocket server) and **React Native** (Android app).
 
-## Gameplay Preview
+## Project Structure
 
-![Gameplay 1](public/ui/1.jpg)
-![Gameplay 2](public/ui/2.jpg)
-![Gameplay 3](public/ui/3.jpg)
+```
+coup-app-2/
+├── server/          # Go WebSocket game server
+│   ├── main.go      # Server entry point, WebSocket handling
+│   └── game/        # Game logic package
+│       ├── logic.go      # Full game logic (actions, challenges, blocking)
+│       ├── errors.go     # Error definitions
+│       └── variants.go   # Standard & Inquisitor variant configs
+│
+└── mobile/          # React Native Android app
+    ├── src/
+    │   ├── App.tsx              # Root app with navigation
+    │   ├── types.ts             # TypeScript game types
+    │   ├── hooks/
+    │   │   └── useGameConnection.ts  # WebSocket connection hook
+    │   ├── screens/
+    │   │   ├── MainMenu.tsx     # Main menu
+    │   │   ├── CreateGame.tsx   # Create game flow
+    │   │   ├── JoinGame.tsx     # Join game flow
+    │   │   └── GameRoom.tsx     # In-game screen (lobby + gameplay)
+    │   └── components/
+    │       ├── GameBoard.tsx        # Player cards display
+    │       ├── ActionPanel.tsx      # Action selection
+    │       ├── BlockChallengePanel.tsx  # Block/challenge UI
+    │       ├── CardSelector.tsx     # Card picker for exchange/influence loss
+    │       └── GameLog.tsx          # Game event log
+    └── android/     # Android native project
+```
 
-## Getting Started
+## Prerequisites
 
-First, install dependencies:
+- **Go** 1.21+ (for the server)
+- **Node.js** 18+ and npm
+- **React Native CLI** (`npm install -g react-native`)
+- **Android Studio** with:
+  - Android SDK 35
+  - NDK 27.1.12297006
+  - JDK 17
+- **Android device or emulator**
+
+## Setup & Run
+
+### 1. Start the Go Server
 
 ```bash
+cd server
+go mod download
+go run main.go
+```
+
+The server starts on port **8080** and provides:
+- `ws://localhost:8080/ws` — WebSocket game endpoint
+- `GET /api/generate-code` — Generate room codes
+- `GET /api/variant-config?variant=standard` — Get variant config
+- `GET /health` — Health check
+
+### 2. Configure Server Address
+
+In `mobile/src/hooks/useGameConnection.ts` and `mobile/src/screens/CreateGame.tsx`, update `SERVER_HOST`:
+
+```typescript
+// For Android emulator connecting to host machine:
+const SERVER_HOST = '10.0.2.2:8080';
+
+// For physical device on same network:
+const SERVER_HOST = '192.168.x.x:8080';
+```
+
+### 3. Install Mobile Dependencies
+
+```bash
+cd mobile
 npm install
 ```
 
-Create a `.env.local` file in the root directory:
+### 4. Run on Android
 
 ```bash
-cp .env.local.example .env.local
+# Start Metro bundler
+npx react-native start
+
+# In another terminal
+npx react-native run-android
 ```
 
-Then, run both the PartyKit server and Next.js development server:
+### 5. Build Release APK
 
 ```bash
-# Terminal 1: Start PartyKit server
-npx partykit dev
-
-# Terminal 2: Start Next.js
-npm run dev
+cd mobile/android
+./gradlew assembleRelease
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The APK will be at: `mobile/android/app/build/outputs/apk/release/app-release.apk`
 
-The PartyKit server will run on `localhost:1999` and handle all real-time multiplayer synchronization.
+## Game Features
 
-## Game Rules
+- **Full Coup card game** with all rules implemented
+- **2-6 players** multiplayer via WebSocket
+- **Two variants**: Standard (Ambassador) and Inquisitor
+- **Real-time gameplay**: Actions, blocking, challenges
+- **Game lobby**: Create/join rooms with 5-character codes
+- **Game log**: Full event history
+- Host controls: Start game, kick players, return to lobby
 
-See [Rules.md](./Rules.md) for the complete game rules.
+## Google Play Deployment
 
-## Variants & Routing
+To publish to Google Play:
 
-The app supports variant-first routing:
+1. **Generate a release keystore**:
+   ```bash
+   keytool -genkeypair -v -storetype PKCS12 -keystore release.keystore \
+     -alias coup-key -keyalg RSA -keysize 2048 -validity 10000
+   ```
 
-- Standard: /standard
-- Inquisitor: /inquisitor
+2. **Update** `android/app/build.gradle.kts` signing config with your keystore
 
-Create/join/game routes live under each variant, for example:
+3. **Build the release bundle**:
+   ```bash
+   cd mobile/android
+   ./gradlew bundleRelease
+   ```
 
-- /standard/create
-- /standard/join
-- /standard/game/ABCD
-- /inquisitor/create
-- /inquisitor/join
-- /inquisitor/game/ABCD
-
-Legacy routes (/create, /join, /game/[code]) redirect to /standard.
-
-## Technologies Used
-
-- **Next.js** - Frontend framework with App Router
-- **PartyKit** - Real-time multiplayer synchronization and game state management
-- **Tailwind CSS** - Styling
-- **shadcn/ui** - UI components
+4. Upload the `.aab` from `app/build/outputs/bundle/release/` to Google Play Console
 
 ## Architecture
 
-The game uses a client-side architecture with PartyKit handling real-time synchronization:
-- All game logic runs on the client (`lib/game-logic.ts`)
-- PartyKit manages multiplayer state synchronization
-- Players join games using unique 4-character codes
-- Game state is shared between all players in real-time
+The Go server handles all game logic server-side — the client simply sends actions and renders state. This prevents cheating and ensures game integrity.
 
-## Learn More
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [PartyKit Documentation](https://docs.partykit.io/)
-- [React Three Fiber Documentation](https://docs.pmnd.rs/react-three-fiber)
-
-## Deploy
-
-Deploy on Vercel with PartyKit integration:
-1. Deploy the Next.js frontend on [Vercel](https://vercel.com)
-2. Deploy the PartyKit server following [PartyKit deployment guide](https://docs.partykit.io/guides/deploying-your-partykit-server/)
+Communication flow:
+1. Client opens WebSocket to server with room code + player ID
+2. Client sends JSON messages (join, action, block, challenge, etc.)
+3. Server validates, processes game logic, broadcasts updated state to all players
+4. All clients re-render based on the authoritative server state
