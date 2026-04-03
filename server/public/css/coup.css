@@ -1,0 +1,9 @@
+/* Coup-specific styles */
+h1.coup-title { color: #4f46e5; }
+
+.char-Duke { background: #581c87; border-color: #9333ea; }
+.char-Assassin { background: #991b1b; border-color: #ef4444; }
+.char-Captain { background: #155e75; border-color: #06b6d4; }
+.char-Ambassador { background: #3730a3; border-color: #6366f1; }
+.char-Contessa { background: #9a3412; border-color: #f97316; }
+.char-Inquisitor { background: #065f46; border-color: #10b981; }

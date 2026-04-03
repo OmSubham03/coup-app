@@ -24,11 +24,13 @@ var upgrader = websocket.Upgrader{
 type Room struct {
 	mu               sync.Mutex
 	code             string
-	gameType         string // "coup" or "poker"
+	gameType         string // "coup", "poker", or "ludo"
 	variant          game.VariantKey
 	gameState        *game.GameState
 	pokerState       *game.PokerState
 	pokerConfig      *PokerConfig
+	ludoState        *game.LudoState
+	ludoColors       map[string]string // playerID -> color choice
 	players          map[string]*PlayerConn // playerID -> PlayerConn
 	hostID           string
 	created          bool
@@ -78,6 +80,7 @@ func getOrCreateRoom(code string, gameType string, variant game.VariantKey) *Roo
 		gameType:         gameType,
 		variant:          variant,
 		players:          make(map[string]*PlayerConn),
+		ludoColors:       make(map[string]string),
 		connections:      make(map[string]*websocket.Conn),
 		connPlayer:       make(map[string]string),
 		disconnectTimers: make(map[string]*time.Timer),
@@ -128,6 +131,10 @@ func (r *Room) playerList() []PlayerConn {
 func (r *Room) broadcastState() {
 	if r.gameType == "poker" {
 		r.broadcastPokerState()
+		return
+	}
+	if r.gameType == "ludo" {
+		r.broadcastLudoState()
 		return
 	}
 	if r.gameState == nil {
@@ -211,6 +218,16 @@ func (r *Room) createPersonalizedPokerState(viewerID string) *game.PokerState {
 	}
 }
 
+func (r *Room) broadcastLudoState() {
+	if r.ludoState == nil {
+		return
+	}
+	data, _ := json.Marshal(OutMessage{Type: "ludo-state", Payload: r.ludoState})
+	for _, conn := range r.connections {
+		conn.WriteMessage(websocket.TextMessage, data)
+	}
+}
+
 func handleWS(w http.ResponseWriter, req *http.Request) {
 	roomCode := req.URL.Query().Get("room")
 	action := req.URL.Query().Get("action")
@@ -267,11 +284,18 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// If game already started, check reconnection
-	gameInProgress := room.gameState != nil || room.pokerState != nil
+	gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil
 	if gameInProgress {
 		isReconnecting := false
 		if room.gameType == "poker" && room.pokerState != nil {
 			for _, p := range room.pokerState.Players {
+				if p.ID == playerID {
+					isReconnecting = true
+					break
+				}
+			}
+		} else if room.gameType == "ludo" && room.ludoState != nil {
+			for _, p := range room.ludoState.Players {
 				if p.ID == playerID {
 					isReconnecting = true
 					break
@@ -299,6 +323,8 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 		if room.gameType == "poker" {
 			personalized := room.createPersonalizedPokerState(playerID)
 			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
+		} else if room.gameType == "ludo" {
+			room.sendTo(connID, OutMessage{Type: "ludo-state", Payload: room.ludoState})
 		} else {
 			room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
 		}
@@ -333,6 +359,8 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			gameInProgress := false
 			if room.gameType == "poker" {
 				gameInProgress = room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseWaiting && room.pokerState.Phase != game.PokerPhaseGameOver
+			} else if room.gameType == "ludo" {
+				gameInProgress = room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseWaiting && room.ludoState.Phase != game.LudoPhaseFinished
 			} else {
 				gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver
 			}
@@ -354,6 +382,11 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 					if room.gameType == "poker" {
 						if room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver {
 							game.PokerVoluntaryExit(room.pokerState, pID)
+							room.broadcastState()
+						}
+					} else if room.gameType == "ludo" {
+						if room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished {
+							game.LudoVoluntaryExit(room.ludoState, pID)
 							room.broadcastState()
 						}
 					} else {
@@ -432,7 +465,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		json.Unmarshal(msg.Payload, &payload)
 
-		gameInProgress := room.gameState != nil || room.pokerState != nil
+		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil
 		if gameInProgress {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "The Game Already Started"}})
 			return
@@ -485,6 +518,65 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			logPokerHands(room)
 			room.broadcast(OutMessage{Type: "poker-started", Payload: nil})
 			room.broadcastPokerState()
+		} else if room.gameType == "ludo" {
+			if len(room.players) > 4 {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Ludo supports max 4 players"}})
+				return
+			}
+			// Assign colors: use player-chosen colors or default assignment
+			availableColors := []string{"red", "green", "blue", "yellow"}
+			usedColors := make(map[string]bool)
+			ludoPlayers := make([]struct{ ID, Name, Color string }, 0, len(room.players))
+
+			// First pass: assign chosen colors
+			for _, p := range room.players {
+				if c, ok := room.ludoColors[p.ID]; ok && !usedColors[c] {
+					usedColors[c] = true
+					ludoPlayers = append(ludoPlayers, struct{ ID, Name, Color string }{p.ID, p.Name, c})
+				}
+			}
+			// Second pass: assign remaining players default colors
+			colorIdx := 0
+			for _, p := range room.players {
+				alreadyAssigned := false
+				for _, lp := range ludoPlayers {
+					if lp.ID == p.ID {
+						alreadyAssigned = true
+						break
+					}
+				}
+				if !alreadyAssigned {
+					for colorIdx < len(availableColors) && usedColors[availableColors[colorIdx]] {
+						colorIdx++
+					}
+					if colorIdx < len(availableColors) {
+						c := availableColors[colorIdx]
+						usedColors[c] = true
+						ludoPlayers = append(ludoPlayers, struct{ ID, Name, Color string }{p.ID, p.Name, c})
+						colorIdx++
+					}
+				}
+			}
+
+			// For 2 players, ensure they sit opposite (color indices 0,2 or 1,3)
+			if len(ludoPlayers) == 2 {
+				c1 := ludoPlayers[0].Color
+				c2 := ludoPlayers[1].Color
+				idx1 := game.GetLudoColorIndex(c1)
+				idx2 := game.GetLudoColorIndex(c2)
+				diff := (idx2 - idx1 + 4) % 4
+				if diff != 2 {
+					// Reassign second player to opposite color
+					oppositeIdx := (idx1 + 2) % 4
+					oppositeColors := []string{"red", "green", "blue", "yellow"}
+					ludoPlayers[1] = struct{ ID, Name, Color string }{ludoPlayers[1].ID, ludoPlayers[1].Name, oppositeColors[oppositeIdx]}
+				}
+			}
+
+			room.ludoState = game.InitializeLudoGame(ludoPlayers)
+			log.Printf("[LUDO] room=%s Ludo game started with %d players", room.code, len(ludoPlayers))
+			room.broadcast(OutMessage{Type: "ludo-started", Payload: nil})
+			room.broadcastLudoState()
 		} else {
 			room.gameState = game.InitializeGame(playerList, room.variant)
 			log.Printf("[CARDS] room=%s Coup game started", room.code)
@@ -523,6 +615,23 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				return
 			}
 			room.pokerState = nil
+		} else if room.gameType == "ludo" {
+			if room.ludoState == nil {
+				room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+				room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+					"players":    room.playerList(),
+					"hostId":     room.hostID,
+					"gameActive": false,
+					"gameType":   room.gameType,
+				}})
+				return
+			}
+			if playerID != room.hostID && room.ludoState.Phase != game.LudoPhaseFinished {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can return to lobby"}})
+				return
+			}
+			room.ludoState = nil
+			room.ludoColors = make(map[string]string)
 		} else {
 			hostShort := "(none)"
 			if len(room.hostID) >= 8 { hostShort = room.hostID[:8] }
@@ -589,6 +698,19 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				"gameActive": room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver,
 				"gameType":   room.gameType,
 			}})
+		} else if room.gameType == "ludo" {
+			if room.ludoState == nil || room.ludoState.Phase == game.LudoPhaseFinished {
+				return
+			}
+			game.LudoVoluntaryExit(room.ludoState, playerID)
+			room.broadcastState()
+			room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+			room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+				"players":    room.playerList(),
+				"hostId":     room.hostID,
+				"gameActive": room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished,
+				"gameType":   room.gameType,
+			}})
 		} else {
 			if room.gameState == nil || room.gameState.Phase == game.PhaseGameOver {
 				return
@@ -608,6 +730,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		if room.gameType == "poker" && room.pokerState != nil {
 			personalized := room.createPersonalizedPokerState("")
 			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
+		} else if room.gameType == "ludo" && room.ludoState != nil {
+			room.sendTo(connID, OutMessage{Type: "ludo-state", Payload: room.ludoState})
 		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
 		}
@@ -619,6 +743,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		gameInProgress := false
 		if room.gameType == "poker" {
 			gameInProgress = room.pokerState != nil
+		} else if room.gameType == "ludo" {
+			gameInProgress = room.ludoState != nil
 		} else {
 			gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting
 		}
@@ -756,6 +882,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		if room.gameType == "poker" && room.pokerState != nil {
 			personalized := room.createPersonalizedPokerState(playerID)
 			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
+		} else if room.gameType == "ludo" && room.ludoState != nil {
+			room.sendTo(connID, OutMessage{Type: "ludo-state", Payload: room.ludoState})
 		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
 		}
@@ -784,6 +912,51 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		game.StartNextHand(room.pokerState)
 		logPokerHands(room)
 		room.broadcastPokerState()
+
+	// Ludo actions
+	case "set-ludo-color":
+		var payload struct {
+			Color string `json:"color"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		validColors := map[string]bool{"red": true, "green": true, "blue": true, "yellow": true}
+		if !validColors[payload.Color] {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Invalid color"}})
+			return
+		}
+		// Check if color is taken by someone else
+		for pid, c := range room.ludoColors {
+			if c == payload.Color && pid != playerID {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Color already taken"}})
+				return
+			}
+		}
+		room.ludoColors[playerID] = payload.Color
+		room.broadcast(OutMessage{Type: "ludo-colors", Payload: room.ludoColors})
+
+	case "ludo-roll":
+		if room.ludoState == nil {
+			return
+		}
+		if err := game.LudoRollDice(room.ludoState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastLudoState()
+
+	case "ludo-move":
+		if room.ludoState == nil {
+			return
+		}
+		var payload struct {
+			TokenID int `json:"tokenId"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.LudoMoveToken(room.ludoState, playerID, payload.TokenID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastLudoState()
 
 	case "chat":
 		var payload struct {
@@ -861,9 +1034,11 @@ func main() {
 	http.HandleFunc("/api/generate-code", handleGenerateCode)
 	http.HandleFunc("/api/variant-config", handleVariantConfig)
 
-	// Serve static files (textures, icons, etc)
+	// Serve static files (textures, icons, css, js, etc)
 	http.Handle("/textures/", http.StripPrefix("/textures/", http.FileServer(http.Dir("public/textures"))))
 	http.Handle("/icons/", http.StripPrefix("/icons/", http.FileServer(http.Dir("public/icons"))))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("public/js"))))
 	http.HandleFunc("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/manifest+json")
 		http.ServeFile(w, r, "public/manifest.json")
