@@ -1,13 +1,11 @@
-# Dependencies
-mobile/node_modules/
-mobile/.gradle/
-
 # Build outputs
-mobile/android/app/build/
-mobile/android/build/
-mobile/android/.gradle/
 server/coup-server
 server/coup-server.exe
+webview-app/app/build/
+webview-app/build/
+webview-app/.gradle/
+webview-app/app/.cxx/
+webview-app/local.properties
 
 # IDE
 .idea/
@@ -16,6 +14,3 @@ server/coup-server.exe
 # OS files
 .DS_Store
 Thumbs.db
-
-# React Native
-mobile/.metro-health-check*
