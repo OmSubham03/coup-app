@@ -7,7 +7,7 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #020617; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
-.container { max-width: 900px; margin: 0 auto; padding: 16px; padding-top: 48px; }
+.container { max-width: 900px; margin: 0 auto; padding: 16px; padding-top: 16px; }
 h1 { color: #f59e0b; font-size: 48px; font-weight: 900; letter-spacing: 6px; text-align: center; margin: 20px 0 8px; }
 h2 { color: #a78bfa; font-size: 20px; margin-bottom: 12px; }
 .subtitle { color: #94a3b8; text-align: center; margin-bottom: 24px; font-size: 14px; }
@@ -80,8 +80,19 @@ input::placeholder { color: #475569; }
 .char-Ambassador { background: #3730a3; border-color: #6366f1; }
 .char-Contessa { background: #9a3412; border-color: #f97316; }
 .char-Inquisitor { background: #065f46; border-color: #10b981; }
-.tab-exit { padding: 8px 16px; border-radius: 8px; background: #dc2626; color: #fff; cursor: pointer; font-weight: 600; font-size: 13px; border: none; margin-left: auto; }
+.tab-rules { padding: 8px 16px; border-radius: 8px; background: #7c3aed; color: #fff; cursor: pointer; font-weight: 600; font-size: 13px; border: none; margin-left: auto; }
+.tab-rules:hover { background: #6d28d9; }
+.tab-exit { padding: 8px 16px; border-radius: 8px; background: #dc2626; color: #fff; cursor: pointer; font-weight: 600; font-size: 13px; border: none; }
 .tab-exit:hover { background: #b91c1c; }
+.rules-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.85); z-index:1000; overflow-y:auto; padding:24px 16px; }
+.rules-overlay.active { display:block; }
+.rules-content { max-width:600px; margin:0 auto; background:#0f172a; border:2px solid #7c3aed; border-radius:16px; padding:24px; }
+.rules-content h2 { color:#a78bfa; margin-bottom:16px; }
+.rules-content h3 { color:#f59e0b; margin:14px 0 6px; font-size:15px; }
+.rules-content p, .rules-content li { color:#cbd5e1; font-size:13px; line-height:1.6; }
+.rules-content ul { padding-left:18px; margin-bottom:8px; }
+.rules-close { position:sticky; top:0; text-align:right; }
+.rules-close button { background:#7c3aed; color:#fff; border:none; padding:8px 20px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; }
 .spectate-banner { background: #1e293b; border: 1px solid #f59e0b; border-radius: 10px; padding: 10px 16px; text-align: center; color: #fbbf24; font-weight: 600; font-size: 14px; margin-bottom: 12px; }
 #log-panel { max-height: 300px; overflow-y: auto; }
 .tab-bar { display: flex; gap: 4px; margin-bottom: 12px; }
@@ -160,6 +171,7 @@ input::placeholder { color: #475569; }
     <div class="tab-bar">
       <button class="tab active" id="tab-game" onclick="switchTab('game')">Game</button>
       <button class="tab" id="tab-log" onclick="switchTab('log')">📜 Log</button>
+      <button class="tab-rules" onclick="toggleRules()">Rules</button>
       <button class="tab-exit" id="exit-game-btn" onclick="exitGame()">Exit</button>
     </div>
 
@@ -674,6 +686,39 @@ function renderLog() {
 }
 
 function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function toggleRules() { document.getElementById('rules-overlay').classList.toggle('active'); }
 </script>
+
+<div class="rules-overlay" id="rules-overlay">
+  <div class="rules-content">
+    <div class="rules-close"><button onclick="toggleRules()">✕ Close</button></div>
+    <h2>📜 Coup Rules</h2>
+    <h3>Overview</h3>
+    <p>Each player starts with 2 coins and 2 hidden influence cards. Last player with influence wins.</p>
+    <h3>Actions (anyone can take)</h3>
+    <ul>
+      <li><b>Income</b> — Take 1 coin</li>
+      <li><b>Foreign Aid</b> — Take 2 coins (blockable by Duke)</li>
+      <li><b>Coup</b> — Pay 7 coins, target loses 1 influence (mandatory at 10+)</li>
+    </ul>
+    <h3>Character Actions</h3>
+    <ul>
+      <li><b>Duke</b> — Tax: Take 3 coins. Blocks Foreign Aid</li>
+      <li><b>Assassin</b> — Assassinate: Pay 3 coins, target loses influence (blockable by Contessa)</li>
+      <li><b>Captain</b> — Steal: Take 2 coins from target (blockable by Captain/Ambassador)</li>
+      <li><b>Ambassador</b> — Exchange: Draw 2 cards, keep what you want. Blocks stealing</li>
+      <li><b>Contessa</b> — Blocks assassination</li>
+    </ul>
+    <h3>Inquisitor Variant</h3>
+    <ul>
+      <li><b>Inquisitor</b> — Exchange: Draw 1 card, keep what you want. Can interrogate a player to peek at a card and optionally force them to swap it. Blocks stealing</li>
+    </ul>
+    <h3>Bluffing &amp; Challenges</h3>
+    <p>You can claim any character action regardless of your cards. Any player can challenge a claim. If the challenge succeeds (bluff caught), the liar loses influence. If the challenge fails, the challenger loses influence and the claimer swaps their revealed card.</p>
+    <h3>Blocking</h3>
+    <p>Certain actions can be blocked by claiming a counter-character. Blocks can also be challenged.</p>
+  </div>
+</div>
+
 </body>
 </html>
