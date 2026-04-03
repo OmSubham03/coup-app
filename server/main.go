@@ -580,8 +580,18 @@ func main() {
 	http.HandleFunc("/api/generate-code", handleGenerateCode)
 	http.HandleFunc("/api/variant-config", handleVariantConfig)
 
-	// Serve static files (textures, etc)
+	// Serve static files (textures, icons, etc)
 	http.Handle("/textures/", http.StripPrefix("/textures/", http.FileServer(http.Dir("public/textures"))))
+	http.Handle("/icons/", http.StripPrefix("/icons/", http.FileServer(http.Dir("public/icons"))))
+	http.HandleFunc("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/manifest+json")
+		http.ServeFile(w, r, "public/manifest.json")
+	})
+	http.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript")
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		http.ServeFile(w, r, "public/sw.js")
+	})
 
 	// Serve test client
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
