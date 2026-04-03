@@ -3,11 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Coup Game</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #020617; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
-.container { max-width: 900px; margin: 0 auto; padding: 16px; padding-top: 16px; }
+.container { max-width: 900px; margin: 0 auto; padding: 16px;padding-top: 48px; }
 h1 { color: #f59e0b; font-size: 48px; font-weight: 900; letter-spacing: 6px; text-align: center; margin: 20px 0 8px; }
 h2 { color: #a78bfa; font-size: 20px; margin-bottom: 12px; }
 .subtitle { color: #94a3b8; text-align: center; margin-bottom: 24px; font-size: 14px; }
@@ -80,9 +83,9 @@ input::placeholder { color: #475569; }
 .char-Ambassador { background: #3730a3; border-color: #6366f1; }
 .char-Contessa { background: #9a3412; border-color: #f97316; }
 .char-Inquisitor { background: #065f46; border-color: #10b981; }
-.tab-rules { padding: 8px 16px; border-radius: 8px; background: #7c3aed; color: #fff; cursor: pointer; font-weight: 600; font-size: 13px; border: none; margin-left: auto; }
+.tab-rules { padding: 8px 16px; border-radius: 8px; background: #3a8bed; color: #fff; cursor: pointer; font-weight: 600; font-size: 13px; border: none; margin-left: auto; }
 .tab-rules:hover { background: #6d28d9; }
-.tab-exit { padding: 8px 16px; border-radius: 8px; background: #dc2626; color: #fff; cursor: pointer; font-weight: 600; font-size: 13px; border: none; }
+.tab-exit { padding: 8px 16px; border-radius: 8px; background: #246dc6; color: #fff; cursor: pointer; font-weight: 600; font-size: 13px; border: none; }
 .tab-exit:hover { background: #b91c1c; }
 .rules-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.85); z-index:1000; overflow-y:auto; padding:24px 16px; }
 .rules-overlay.active { display:block; }
@@ -93,6 +96,16 @@ input::placeholder { color: #475569; }
 .rules-content ul { padding-left:18px; margin-bottom:8px; }
 .rules-close { position:sticky; top:0; text-align:right; }
 .rules-close button { background:#7c3aed; color:#fff; border:none; padding:8px 20px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; }
+.profile-bar { display:flex; align-items:center; justify-content:space-between; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px 16px; margin-bottom:20px; }
+.profile-bar .profile-name { color:#e2e8f0; font-weight:700; font-size:16px; }
+.profile-bar .profile-label { color:#64748b; font-size:12px; }
+.profile-bar .profile-edit { background:transparent; border:1px solid #475569; color:#94a3b8; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; }
+.profile-bar .profile-edit:hover { border-color:#7c3aed; color:#a78bfa; }
+.name-popup-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.85); z-index:1001; align-items:center; justify-content:center; padding:24px; }
+.name-popup-overlay.active { display:flex; }
+.name-popup { background:#0f172a; border:2px solid #7c3aed; border-radius:16px; padding:28px; max-width:400px; width:100%; text-align:center; }
+.name-popup h2 { color:#a78bfa; margin-bottom:8px; }
+.name-popup p { color:#94a3b8; font-size:13px; margin-bottom:16px; }
 .spectate-banner { background: #1e293b; border: 1px solid #f59e0b; border-radius: 10px; padding: 10px 16px; text-align: center; color: #fbbf24; font-weight: 600; font-size: 14px; margin-bottom: 12px; }
 #log-panel { max-height: 300px; overflow-y: auto; }
 .tab-bar { display: flex; gap: 4px; margin-bottom: 12px; }
@@ -107,6 +120,13 @@ input::placeholder { color: #475569; }
 <div id="screen-menu" class="screen active">
   <h1>COUP</h1>
   <p class="subtitle">Bluff. Deceive. Survive.</p>
+  <div class="profile-bar" id="profile-bar" style="display:none">
+    <div>
+      <div class="profile-label">Playing as</div>
+      <div class="profile-name" id="profile-display-name"></div>
+    </div>
+    <button class="profile-edit" onclick="showNamePopup()">Change</button>
+  </div>
   <div style="margin-bottom:24px">
     <p class="section-title">Create Game</p>
     <button class="btn btn-indigo" onclick="createGame('standard')">Standard — Classic with Ambassador</button>
@@ -249,8 +269,17 @@ function connectWS(action) {
 
   ws.onopen = () => {
     showScreen('game');
-    document.getElementById('name-entry').style.display = '';
-    document.getElementById('lobby').style.display = 'none';
+    const savedName = localStorage.getItem('coup_name');
+    if (savedName) {
+      document.getElementById('name-entry').style.display = 'none';
+      document.getElementById('lobby').style.display = '';
+      document.getElementById('lobby-code').textContent = roomCode;
+      joinedName = getFullName(savedName);
+      send('join', { playerName: joinedName });
+    } else {
+      document.getElementById('name-entry').style.display = '';
+      document.getElementById('lobby').style.display = 'none';
+    }
     document.getElementById('game-active').style.display = 'none';
     document.getElementById('room-code-display').textContent = roomCode;
     document.getElementById('name-error').textContent = '';
@@ -340,8 +369,11 @@ function stopSpectating() {
 function submitName() {
   const name = document.getElementById('player-name').value.trim();
   if (!name) return;
-  joinedName = name;
-  send('join', { playerName: name });
+  const fullName = getFullName(name);
+  joinedName = fullName;
+  localStorage.setItem('coup_name', name);
+  updateProfileBar();
+  send('join', { playerName: fullName });
   document.getElementById('name-entry').style.display = 'none';
   document.getElementById('lobby').style.display = '';
   document.getElementById('lobby-code').textContent = roomCode;
@@ -687,7 +719,70 @@ function renderLog() {
 
 function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 function toggleRules() { document.getElementById('rules-overlay').classList.toggle('active'); }
+
+function getPlayerTag() {
+  let tag = localStorage.getItem('coup_tag');
+  if (!tag) {
+    tag = String(Math.floor(1000 + Math.random() * 9000));
+    localStorage.setItem('coup_tag', tag);
+  }
+  return tag;
+}
+
+function getFullName(name) {
+  return name + '#' + getPlayerTag();
+}
+
+function updateProfileBar() {
+  const name = localStorage.getItem('coup_name');
+  const bar = document.getElementById('profile-bar');
+  if (name) {
+    bar.style.display = '';
+    document.getElementById('profile-display-name').textContent = getFullName(name);
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function showNamePopup() {
+  const popup = document.getElementById('name-popup-overlay');
+  const input = document.getElementById('popup-name-input');
+  input.value = localStorage.getItem('coup_name') || '';
+  document.getElementById('popup-tag-display').textContent = '#' + getPlayerTag();
+  popup.classList.add('active');
+  input.focus();
+}
+
+function saveNamePopup() {
+  const name = document.getElementById('popup-name-input').value.trim();
+  if (!name) return;
+  localStorage.setItem('coup_name', name);
+  updateProfileBar();
+  document.getElementById('name-popup-overlay').classList.remove('active');
+}
+
+// Init: check for saved name, show popup if first visit
+(function() {
+  const saved = localStorage.getItem('coup_name');
+  if (saved) {
+    updateProfileBar();
+  } else {
+    setTimeout(() => showNamePopup(), 300);
+  }
+})();
 </script>
+
+<div class="name-popup-overlay" id="name-popup-overlay">
+  <div class="name-popup">
+    <h2>👤 What's your name?</h2>
+    <p>This will be your display name in games</p>
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:12px">
+      <input id="popup-name-input" placeholder="Enter your name" maxlength="18" style="margin-bottom:0;flex:1" onkeydown="if(event.key==='Enter')saveNamePopup()">
+      <span id="popup-tag-display" style="color:#64748b;font-weight:800;font-size:20px;white-space:nowrap"></span>
+    </div>
+    <button class="btn btn-purple" onclick="saveNamePopup()">Save</button>
+  </div>
+</div>
 
 <div class="rules-overlay" id="rules-overlay">
   <div class="rules-content">
