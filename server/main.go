@@ -725,6 +725,29 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		game.StartNextHand(room.pokerState)
 		room.broadcastPokerState()
 
+	case "chat":
+		var payload struct {
+			Message string `json:"message"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		text := strings.TrimSpace(payload.Message)
+		if text == "" || len(text) > 500 {
+			return
+		}
+		playerName := ""
+		if p, ok := room.players[playerID]; ok {
+			playerName = p.Name
+		}
+		if playerName == "" {
+			return
+		}
+		room.broadcast(OutMessage{Type: "chat", Payload: map[string]interface{}{
+			"senderId":   playerID,
+			"senderName": playerName,
+			"message":    text,
+			"timestamp":  time.Now().UnixMilli(),
+		}})
+
 	case "ping":
 		room.sendTo(connID, OutMessage{Type: "pong"})
 	}
