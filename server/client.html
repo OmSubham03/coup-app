@@ -1301,7 +1301,7 @@ function renderPokerActions() {
   if (me.chips > callAmount && maxRaise > ps.currentBet) {
     html += '<div style="margin-top:8px;background:#0a2e0a;border:1px solid #1a5a1a;border-radius:10px;padding:12px">';
     html += '<div class="raise-amount" id="raise-display">' + raiseAmount + '</div>';
-    html += '<input type="range" class="raise-slider" id="raise-slider" min="' + minRaise + '" max="' + maxRaise + '" value="' + raiseAmount + '" oninput="updateRaise(this.value)">';
+    html += '<input type="range" class="raise-slider" id="raise-slider" min="' + minRaise + '" max="' + maxRaise + '" value="' + raiseAmount + '" step="' + ps.smallBlind + '" oninput="updateRaise(this.value)">';
     html += '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">';
     // Increment raise buttons: +SB, +5xSB, +10xSB
     const sb = ps.smallBlind;
@@ -1329,6 +1329,12 @@ function renderPokerActions() {
 
 function updateRaise(val) {
   raiseAmount = parseInt(val);
+  // Snap to nearest small blind multiple
+  if (pokerState && pokerState.smallBlind > 0) {
+    const sb = pokerState.smallBlind;
+    raiseAmount = Math.round(raiseAmount / sb) * sb;
+    if (raiseAmount < sb) raiseAmount = sb;
+  }
   const display = document.getElementById('raise-display');
   if (display) display.textContent = raiseAmount;
   const btn = document.getElementById('raise-btn');
