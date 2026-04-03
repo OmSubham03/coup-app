@@ -22,19 +22,20 @@ var upgrader = websocket.Upgrader{
 
 // Room represents a game room
 type Room struct {
-	mu           sync.Mutex
-	code         string
-	gameType     string // "coup" or "poker"
-	variant      game.VariantKey
-	gameState    *game.GameState
-	pokerState   *game.PokerState
-	pokerConfig  *PokerConfig
-	players      map[string]*PlayerConn // playerID -> PlayerConn
-	hostID       string
-	created      bool
-	connections  map[string]*websocket.Conn // connID -> ws conn
-	connPlayer   map[string]string          // connID -> playerID
-	lastActivity time.Time
+	mu               sync.Mutex
+	code             string
+	gameType         string // "coup" or "poker"
+	variant          game.VariantKey
+	gameState        *game.GameState
+	pokerState       *game.PokerState
+	pokerConfig      *PokerConfig
+	players          map[string]*PlayerConn // playerID -> PlayerConn
+	hostID           string
+	created          bool
+	connections      map[string]*websocket.Conn // connID -> ws conn
+	connPlayer       map[string]string          // connID -> playerID
+	disconnectTimers map[string]*time.Timer     // playerID -> pending elimination timer
+	lastActivity     time.Time
 }
 
 type PokerConfig struct {
@@ -73,13 +74,14 @@ func getOrCreateRoom(code string, gameType string, variant game.VariantKey) *Roo
 	}
 
 	room := &Room{
-		code:         code,
-		gameType:     gameType,
-		variant:      variant,
-		players:      make(map[string]*PlayerConn),
-		connections:  make(map[string]*websocket.Conn),
-		connPlayer:   make(map[string]string),
-		lastActivity: time.Now(),
+		code:             code,
+		gameType:         gameType,
+		variant:          variant,
+		players:          make(map[string]*PlayerConn),
+		connections:      make(map[string]*websocket.Conn),
+		connPlayer:       make(map[string]string),
+		disconnectTimers: make(map[string]*time.Timer),
+		lastActivity:     time.Now(),
 	}
 	rooms[code] = room
 	return room
@@ -257,6 +259,13 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	room.connPlayer[connID] = playerID
 	log.Printf("[ROOM] %s: stored conn %s -> player %s (total conns: %d, players: %d)", roomCode, connID[:8], playerID[:8], len(room.connections), len(room.players))
 
+	// Cancel any pending disconnect timer for this player
+	if timer, ok := room.disconnectTimers[playerID]; ok {
+		timer.Stop()
+		delete(room.disconnectTimers, playerID)
+		log.Printf("[RECONNECT] room=%s player=%s — cancelled disconnect timer", roomCode, playerID[:8])
+	}
+
 	// If game already started, check reconnection
 	gameInProgress := room.gameState != nil || room.pokerState != nil
 	if gameInProgress {
@@ -311,52 +320,85 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 		pID := room.connPlayer[connID]
 		delete(room.connPlayer, connID)
 
-		// Handle disconnect
-		if room.gameType == "poker" {
-			if room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseWaiting && room.pokerState.Phase != game.PokerPhaseGameOver && pID != "" {
-				game.PokerVoluntaryExit(room.pokerState, pID)
-				room.broadcastState()
+		// Check if this player still has another active connection
+		hasOtherConn := false
+		for _, pid := range room.connPlayer {
+			if pid == pID {
+				hasOtherConn = true
+				break
 			}
-		} else {
-			if room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver && pID != "" {
-				for _, p := range room.gameState.Players {
-					if p.ID == pID && p.IsAlive {
-						game.EliminatePlayer(room.gameState, pID)
-						room.broadcastState()
+		}
+
+		if !hasOtherConn && pID != "" {
+			gameInProgress := false
+			if room.gameType == "poker" {
+				gameInProgress = room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseWaiting && room.pokerState.Phase != game.PokerPhaseGameOver
+			} else {
+				gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver
+			}
+
+			if gameInProgress {
+				// Give 30 seconds to reconnect before eliminating
+				log.Printf("[DISCONNECT] room=%s player=%s — starting 120s reconnect grace period", room.code, pID[:8])
+				timer := time.AfterFunc(120*time.Second, func() {
+					room.mu.Lock()
+					defer room.mu.Unlock()
+					// Check again if they reconnected
+					for _, pid := range room.connPlayer {
+						if pid == pID {
+							return // They reconnected, do nothing
+						}
+					}
+					delete(room.disconnectTimers, pID)
+					log.Printf("[DISCONNECT] room=%s player=%s — grace period expired, eliminating", room.code, pID[:8])
+					if room.gameType == "poker" {
+						if room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver {
+							game.PokerVoluntaryExit(room.pokerState, pID)
+							room.broadcastState()
+						}
+					} else {
+						if room.gameState != nil && room.gameState.Phase != game.PhaseGameOver {
+							for _, p := range room.gameState.Players {
+								if p.ID == pID && p.IsAlive {
+									game.EliminatePlayer(room.gameState, pID)
+									room.broadcastState()
+									break
+								}
+							}
+						}
+					}
+					// Transfer host if needed
+					if pID == room.hostID {
+						room.hostID = ""
+						for id := range room.connPlayer {
+							pid := room.connPlayer[id]
+							if _, ok := room.players[pid]; ok {
+								room.hostID = pid
+								break
+							}
+						}
+						log.Printf("[DISCONNECT] room=%s host transferred to %s", room.code, room.hostID)
+					}
+					// Remove from players map
+					delete(room.players, pID)
+				})
+				room.disconnectTimers[pID] = timer
+			} else {
+				// In lobby — remove immediately
+				delete(room.players, pID)
+				if pID == room.hostID {
+					room.hostID = ""
+					for id := range room.players {
+						room.hostID = id
 						break
 					}
 				}
+				room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+					"players":    room.playerList(),
+					"hostId":     room.hostID,
+					"gameActive": false,
+				}})
 			}
-		}
-
-		gameActive := false
-		if room.gameType == "poker" {
-			gameActive = room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver
-		} else {
-			gameActive = room.gameState != nil && room.gameState.Phase != game.PhaseGameOver
-		}
-
-		isInLobby := !gameActive
-		if room.gameType == "poker" {
-			isInLobby = room.pokerState == nil || room.pokerState.Phase == game.PokerPhaseGameOver
-		} else {
-			isInLobby = room.gameState == nil || room.gameState.Phase == game.PhaseWaiting
-		}
-
-		if isInLobby && pID != "" {
-			delete(room.players, pID)
-			if pID == room.hostID {
-				room.hostID = ""
-				for id := range room.players {
-					room.hostID = id
-					break
-				}
-			}
-			room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
-				"players":    room.playerList(),
-				"hostId":     room.hostID,
-				"gameActive": gameActive,
-			}})
 		}
 		room.mu.Unlock()
 		conn.Close()

@@ -139,6 +139,8 @@ input::placeholder { color: #475569; }
 .chat-toast.show { opacity: 1; }
 .chat-toast-name { font-weight: 700; color: #a78bfa; margin-right: 6px; }
 .chat-toast-text { color: #e2e8f0; }
+.conn-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: #dc2626; color: #fff; text-align: center; padding: 10px 16px; font-size: 14px; font-weight: 700; display: none; }
+.conn-banner.show { display: block; }
 
 /* Game List */
 .game-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
@@ -414,6 +416,7 @@ input::placeholder { color: #475569; }
 </div>
 
 <div class="chat-toast" id="chat-toast"></div>
+<div class="conn-banner" id="conn-banner">Connection lost — reconnecting...</div>
 
 <script>
 const isLocal = location.port === '8080' || location.hostname === 'localhost';
@@ -515,8 +518,19 @@ function joinWithCode() {
   connectWS();
 }
 
+let intentionalDisconnect = false;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 15;
+
 function connectWS(action, pokerConfig) {
+  intentionalDisconnect = false;
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   if (ws) ws.close();
+  // Persist session for reconnect on refresh
+  sessionStorage.setItem('coup_room', roomCode);
+  sessionStorage.setItem('coup_variant', variant);
+  sessionStorage.setItem('coup_gameType', currentGameType);
   const params = new URLSearchParams({ room: roomCode, playerId, variant, gameType: currentGameType });
   if (action) params.set('action', action);
   ws = new WebSocket(WS + SERVER + '/ws?' + params);
@@ -533,6 +547,7 @@ function connectWS(action, pokerConfig) {
       document.getElementById('lobby').style.display = '';
       document.getElementById('lobby-code').textContent = roomCode;
       joinedName = getFullName(savedName);
+      sessionStorage.setItem('coup_joinedName', joinedName);
       send('join', { playerName: joinedName });
     } else {
       document.getElementById('name-entry').style.display = '';
@@ -543,7 +558,17 @@ function connectWS(action, pokerConfig) {
     document.getElementById('name-error').textContent = '';
   };
 
-  ws.onmessage = (e) => {
+  ws.onmessage = handleWSMessage;
+  ws.onclose = () => {
+    if (!intentionalDisconnect && roomCode && joinedName) {
+      console.log('[WS] Connection lost, reconnecting in 1s...');
+      document.getElementById('conn-banner').classList.add('show');
+      reconnectTimer = setTimeout(() => tryReconnect(), 1000);
+    }
+  };
+}
+
+function handleWSMessage(e) {
     const msg = JSON.parse(e.data);
     switch(msg.type) {
       case 'waiting':
@@ -591,7 +616,7 @@ function connectWS(action, pokerConfig) {
         renderGame();
         break;
       case 'spectate-state':
-        if (!isSpectating) break; // Ignore if not actively spectating
+        if (!isSpectating) break;
         gameState = msg.payload;
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('name-entry').style.display = 'none';
@@ -608,14 +633,71 @@ function connectWS(action, pokerConfig) {
         break;
       case 'error':
         const errMsg = msg.payload?.message || 'Error';
-        if (gameState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
+        if (errMsg.includes('Incorrect Game Code') || errMsg.includes('No Session Found')) {
+          document.getElementById('conn-banner').textContent = 'Game session ended.';
+          document.getElementById('conn-banner').classList.add('show');
+          setTimeout(() => { disconnect(); showScreen('menu'); backToGameList(); }, 1500);
+        } else if (gameState || pokerState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
         break;
     }
-  };
-  ws.onclose = () => {};
 }
 
+function tryReconnect() {
+  if (!roomCode || !joinedName || intentionalDisconnect) return;
+  reconnectAttempts++;
+  if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+    document.getElementById('conn-banner').textContent = 'Disconnected from game.';
+    setTimeout(() => {
+      document.getElementById('conn-banner').classList.remove('show');
+      disconnect();
+      showScreen('menu');
+      backToGameList();
+    }, 1500);
+    return;
+  }
+  console.log('[WS] Attempting reconnect to room ' + roomCode + ' (attempt ' + reconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS + ')');
+  document.getElementById('conn-banner').textContent = 'Connection lost — reconnecting (' + reconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS + ')...';
+  const params = new URLSearchParams({ room: roomCode, playerId, variant, gameType: currentGameType });
+  ws = new WebSocket(WS + SERVER + '/ws?' + params);
+  ws.onopen = () => {
+    console.log('[WS] Reconnected');
+    reconnectAttempts = 0;
+    document.getElementById('conn-banner').classList.remove('show');
+    showScreen('game');
+    send('join', { playerName: joinedName });
+  };
+  ws.onmessage = handleWSMessage;
+  ws.onclose = () => {
+    if (!intentionalDisconnect && roomCode && joinedName) {
+      const delay = Math.min(2000 * reconnectAttempts, 10000);
+      console.log('[WS] Reconnect failed, retrying in ' + delay + 'ms...');
+      reconnectTimer = setTimeout(() => tryReconnect(), delay);
+    }
+  };
+}
+
+// Reconnect when phone wakes up or app is foregrounded
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && roomCode && joinedName && !intentionalDisconnect) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      console.log('[WS] Page visible, reconnecting...');
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      reconnectAttempts = 0;
+      tryReconnect();
+    }
+  }
+});
+
 function disconnect() {
+  intentionalDisconnect = true;
+  reconnectAttempts = 0;
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  document.getElementById('conn-banner').classList.remove('show');
+  // Clear session state
+  sessionStorage.removeItem('coup_room');
+  sessionStorage.removeItem('coup_joinedName');
+  sessionStorage.removeItem('coup_variant');
+  sessionStorage.removeItem('coup_gameType');
   if (ws) { ws.close(); ws = null; }
   gameState = null;
   pokerState = null;
@@ -662,6 +744,7 @@ function submitName() {
   const fullName = getFullName(name);
   joinedName = fullName;
   localStorage.setItem('coup_name', name);
+  sessionStorage.setItem('coup_joinedName', fullName);
   updateProfileBar();
   send('join', { playerName: fullName });
   document.getElementById('name-entry').style.display = 'none';
@@ -1397,6 +1480,17 @@ function saveNamePopup() {
     updateProfileBar();
   } else {
     setTimeout(() => showNamePopup(), 300);
+  }
+  // Auto-rejoin if we have a saved session (e.g. page refresh)
+  const savedRoom = sessionStorage.getItem('coup_room');
+  const savedJoinedName = sessionStorage.getItem('coup_joinedName');
+  if (savedRoom && savedJoinedName) {
+    roomCode = savedRoom;
+    joinedName = savedJoinedName;
+    variant = sessionStorage.getItem('coup_variant') || 'standard';
+    currentGameType = sessionStorage.getItem('coup_gameType') || 'coup';
+    console.log('[INIT] Rejoining room ' + roomCode + ' as ' + joinedName);
+    tryReconnect();
   }
 })();
 </script>
