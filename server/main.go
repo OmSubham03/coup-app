@@ -148,6 +148,18 @@ func (r *Room) broadcastState() {
 	}
 }
 
+func logPokerHands(r *Room) {
+	if r.pokerState == nil {
+		return
+	}
+	log.Printf("[CARDS] room=%s Poker hand #%d dealt", r.code, r.pokerState.HandNumber)
+	for _, p := range r.pokerState.Players {
+		if p.IsActive && len(p.HoleCards) == 2 {
+			log.Printf("[CARDS] room=%s %s: %s %s", r.code, p.Name, p.HoleCards[0], p.HoleCards[1])
+		}
+	}
+}
+
 func (r *Room) broadcastPokerState() {
 	if r.pokerState == nil {
 		return
@@ -428,10 +440,15 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				return
 			}
 			room.pokerState = game.InitializePokerGame(playerList, room.pokerConfig.BuyIn, room.pokerConfig.SmallBlind)
+			logPokerHands(room)
 			room.broadcast(OutMessage{Type: "poker-started", Payload: nil})
 			room.broadcastPokerState()
 		} else {
 			room.gameState = game.InitializeGame(playerList, room.variant)
+			log.Printf("[CARDS] room=%s Coup game started", room.code)
+			for _, p := range room.gameState.Players {
+				log.Printf("[CARDS] room=%s %s: %s, %s", room.code, p.Name, p.Cards[0].Character, p.Cards[1].Character)
+			}
 			room.broadcast(OutMessage{Type: "game-started", Payload: map[string]interface{}{"gameState": room.gameState}})
 		}
 
@@ -723,6 +740,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			return
 		}
 		game.StartNextHand(room.pokerState)
+		logPokerHands(room)
 		room.broadcastPokerState()
 
 	case "chat":
