@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
             }
             webChromeClient = WebChromeClient()
 
-            loadUrl("https://coup-server.reddesert-edd3e928.eastus.azurecontainerapps.io/")
+            loadUrl("https://coup-server.greenstone-0a8cff3d.eastus.azurecontainerapps.io/")
         }
 
         setContentView(webView)

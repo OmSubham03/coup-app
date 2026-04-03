@@ -1,4 +1,4 @@
-$registry = "cae427b78968acr"
+$registry = "coupgamesacr"
 $app = "coup-server"
 $rg = "coup-rg"
 $tag = "coup-server:" + (Get-Date -Format "yyyyMMddHHmmss")
