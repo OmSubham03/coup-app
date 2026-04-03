@@ -24,14 +24,22 @@ var upgrader = websocket.Upgrader{
 type Room struct {
 	mu           sync.Mutex
 	code         string
+	gameType     string // "coup" or "poker"
 	variant      game.VariantKey
 	gameState    *game.GameState
+	pokerState   *game.PokerState
+	pokerConfig  *PokerConfig
 	players      map[string]*PlayerConn // playerID -> PlayerConn
 	hostID       string
 	created      bool
 	connections  map[string]*websocket.Conn // connID -> ws conn
 	connPlayer   map[string]string          // connID -> playerID
 	lastActivity time.Time
+}
+
+type PokerConfig struct {
+	BuyIn      int `json:"buyIn"`
+	SmallBlind int `json:"smallBlind"`
 }
 
 type PlayerConn struct {
@@ -56,7 +64,7 @@ var (
 	roomsMu sync.RWMutex
 )
 
-func getOrCreateRoom(code string, variant game.VariantKey) *Room {
+func getOrCreateRoom(code string, gameType string, variant game.VariantKey) *Room {
 	roomsMu.Lock()
 	defer roomsMu.Unlock()
 
@@ -66,6 +74,7 @@ func getOrCreateRoom(code string, variant game.VariantKey) *Room {
 
 	room := &Room{
 		code:         code,
+		gameType:     gameType,
 		variant:      variant,
 		players:      make(map[string]*PlayerConn),
 		connections:  make(map[string]*websocket.Conn),
@@ -115,6 +124,10 @@ func (r *Room) playerList() []PlayerConn {
 }
 
 func (r *Room) broadcastState() {
+	if r.gameType == "poker" {
+		r.broadcastPokerState()
+		return
+	}
 	if r.gameState == nil {
 		return
 	}
@@ -135,15 +148,69 @@ func (r *Room) broadcastState() {
 	}
 }
 
+func (r *Room) broadcastPokerState() {
+	if r.pokerState == nil {
+		return
+	}
+	// Send personalized state to each player (hide other players' hole cards)
+	for connID, conn := range r.connections {
+		pID := r.connPlayer[connID]
+		personalized := r.createPersonalizedPokerState(pID)
+		data, _ := json.Marshal(OutMessage{Type: "poker-state", Payload: personalized})
+		conn.WriteMessage(websocket.TextMessage, data)
+	}
+}
+
+func (r *Room) createPersonalizedPokerState(viewerID string) *game.PokerState {
+	ps := r.pokerState
+	// Deep copy players with hidden hole cards
+	players := make([]game.PokerPlayer, len(ps.Players))
+	for i, p := range ps.Players {
+		players[i] = p
+		if p.ID != viewerID && ps.Phase != game.PokerPhaseShowdown && ps.Phase != game.PokerPhaseGameOver {
+			players[i].HoleCards = nil // Hide other players' cards
+		}
+		// At showdown, show cards of active non-folded players
+		if (ps.Phase == game.PokerPhaseShowdown || ps.Phase == game.PokerPhaseGameOver) && !p.Folded {
+			players[i].HoleCards = p.HoleCards
+		}
+	}
+
+	return &game.PokerState{
+		ID:               ps.ID,
+		Players:          players,
+		CommunityCards:   ps.CommunityCards,
+		Phase:            ps.Phase,
+		Pots:             ps.Pots,
+		CurrentBet:       ps.CurrentBet,
+		MinRaise:         ps.MinRaise,
+		DealerIndex:      ps.DealerIndex,
+		CurrentPlayerIdx: ps.CurrentPlayerIdx,
+		SmallBlind:       ps.SmallBlind,
+		BigBlind:         ps.BigBlind,
+		BuyIn:            ps.BuyIn,
+		HandNumber:       ps.HandNumber,
+		Log:              ps.Log,
+		LastAction:       ps.LastAction,
+		Scoreboard:       ps.Scoreboard,
+		Winner:           ps.Winner,
+	}
+}
+
 func handleWS(w http.ResponseWriter, req *http.Request) {
 	roomCode := req.URL.Query().Get("room")
 	action := req.URL.Query().Get("action")
 	playerID := req.URL.Query().Get("playerId")
 	variantStr := req.URL.Query().Get("variant")
+	gameType := req.URL.Query().Get("gameType")
 
 	if roomCode == "" {
 		http.Error(w, "room required", http.StatusBadRequest)
 		return
+	}
+
+	if gameType == "" {
+		gameType = "coup" // Default for backward compatible
 	}
 
 	variant := game.NormalizeVariant(variantStr)
@@ -155,9 +222,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	}
 
 	connID := uuid.New().String()
-	log.Printf("[WS] New connection: connID=%s playerID=%s room=%s action=%s variant=%s", connID[:8], playerID[:8], roomCode, action, variant)
+	log.Printf("[WS] New connection: connID=%s playerID=%s room=%s action=%s variant=%s gameType=%s", connID[:8], playerID[:8], roomCode, action, variant, gameType)
 
-	room := getOrCreateRoom(roomCode, variant)
+	room := getOrCreateRoom(roomCode, gameType, variant)
 	room.mu.Lock()
 
 	if action == "create" {
@@ -179,12 +246,22 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	log.Printf("[ROOM] %s: stored conn %s -> player %s (total conns: %d, players: %d)", roomCode, connID[:8], playerID[:8], len(room.connections), len(room.players))
 
 	// If game already started, check reconnection
-	if room.gameState != nil {
+	gameInProgress := room.gameState != nil || room.pokerState != nil
+	if gameInProgress {
 		isReconnecting := false
-		for _, p := range room.gameState.Players {
-			if p.ID == playerID {
-				isReconnecting = true
-				break
+		if room.gameType == "poker" && room.pokerState != nil {
+			for _, p := range room.pokerState.Players {
+				if p.ID == playerID {
+					isReconnecting = true
+					break
+				}
+			}
+		} else if room.gameState != nil {
+			for _, p := range room.gameState.Players {
+				if p.ID == playerID {
+					isReconnecting = true
+					break
+				}
 			}
 		}
 
@@ -198,13 +275,19 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
+		if room.gameType == "poker" {
+			personalized := room.createPersonalizedPokerState(playerID)
+			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
+		} else {
+			room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
+		}
 		room.mu.Unlock()
 	} else {
 		room.sendTo(connID, OutMessage{Type: "waiting", Payload: map[string]interface{}{
 			"players":    room.playerList(),
 			"hostId":     room.hostID,
 			"gameActive": false,
+			"gameType":   room.gameType,
 		}})
 		room.mu.Unlock()
 	}
@@ -217,17 +300,38 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 		delete(room.connPlayer, connID)
 
 		// Handle disconnect
-		if room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver && pID != "" {
-			for _, p := range room.gameState.Players {
-				if p.ID == pID && p.IsAlive {
-					game.EliminatePlayer(room.gameState, pID)
-					room.broadcastState()
-					break
+		if room.gameType == "poker" {
+			if room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseWaiting && room.pokerState.Phase != game.PokerPhaseGameOver && pID != "" {
+				game.PokerVoluntaryExit(room.pokerState, pID)
+				room.broadcastState()
+			}
+		} else {
+			if room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver && pID != "" {
+				for _, p := range room.gameState.Players {
+					if p.ID == pID && p.IsAlive {
+						game.EliminatePlayer(room.gameState, pID)
+						room.broadcastState()
+						break
+					}
 				}
 			}
 		}
 
-		if (room.gameState == nil || room.gameState.Phase == game.PhaseWaiting) && pID != "" {
+		gameActive := false
+		if room.gameType == "poker" {
+			gameActive = room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver
+		} else {
+			gameActive = room.gameState != nil && room.gameState.Phase != game.PhaseGameOver
+		}
+
+		isInLobby := !gameActive
+		if room.gameType == "poker" {
+			isInLobby = room.pokerState == nil || room.pokerState.Phase == game.PokerPhaseGameOver
+		} else {
+			isInLobby = room.gameState == nil || room.gameState.Phase == game.PhaseWaiting
+		}
+
+		if isInLobby && pID != "" {
 			delete(room.players, pID)
 			if pID == room.hostID {
 				room.hostID = ""
@@ -239,7 +343,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
 				"players":    room.playerList(),
 				"hostId":     room.hostID,
-				"gameActive": room.gameState != nil && room.gameState.Phase != game.PhaseGameOver,
+				"gameActive": gameActive,
 			}})
 		}
 		room.mu.Unlock()
@@ -274,7 +378,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		json.Unmarshal(msg.Payload, &payload)
 
-		if room.gameState != nil {
+		gameInProgress := room.gameState != nil || room.pokerState != nil
+		if gameInProgress {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "The Game Already Started"}})
 			return
 		}
@@ -298,7 +403,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
 			"players":    room.playerList(),
 			"hostId":     room.hostID,
-			"gameActive": room.gameState != nil && room.gameState.Phase != game.PhaseGameOver,
+			"gameActive": false,
+			"gameType":   room.gameType,
 		}})
 
 	case "start-game":
@@ -316,30 +422,71 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			playerList = append(playerList, struct{ ID, Name string }{p.ID, p.Name})
 		}
 
-		room.gameState = game.InitializeGame(playerList, room.variant)
-		room.broadcast(OutMessage{Type: "game-started", Payload: map[string]interface{}{"gameState": room.gameState}})
+		if room.gameType == "poker" {
+			if room.pokerConfig == nil {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Poker config not set"}})
+				return
+			}
+			room.pokerState = game.InitializePokerGame(playerList, room.pokerConfig.BuyIn, room.pokerConfig.SmallBlind)
+			room.broadcast(OutMessage{Type: "poker-started", Payload: nil})
+			room.broadcastPokerState()
+		} else {
+			room.gameState = game.InitializeGame(playerList, room.variant)
+			room.broadcast(OutMessage{Type: "game-started", Payload: map[string]interface{}{"gameState": room.gameState}})
+		}
+
+	case "set-poker-config":
+		var config PokerConfig
+		json.Unmarshal(msg.Payload, &config)
+		if config.BuyIn < 100 {
+			config.BuyIn = 100
+		}
+		if config.SmallBlind < 1 {
+			config.SmallBlind = 1
+		}
+		room.pokerConfig = &config
+		room.broadcast(OutMessage{Type: "poker-config", Payload: config})
 
 	case "return-to-lobby":
-		hostShort := "(none)"
-		if len(room.hostID) >= 8 { hostShort = room.hostID[:8] }
-		log.Printf("[RTL] player=%s host=%s gameState=%v phase=%v", playerID[:8], hostShort, room.gameState != nil, func() string { if room.gameState != nil { return string(room.gameState.Phase) }; return "nil" }())
-		if room.gameState == nil {
-			log.Printf("[RTL] gameState is nil, sending lobby state to player")
-			room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
-			room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
-				"players":    room.playerList(),
-				"hostId":     room.hostID,
-				"gameActive": room.gameState != nil && room.gameState.Phase != game.PhaseGameOver,
-			}})
-			return
+		if room.gameType == "poker" {
+			if room.pokerState == nil {
+				room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+				room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+					"players":    room.playerList(),
+					"hostId":     room.hostID,
+					"gameActive": false,
+					"gameType":   room.gameType,
+				}})
+				return
+			}
+			if playerID != room.hostID && room.pokerState.Phase != game.PokerPhaseGameOver {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can return to lobby"}})
+				return
+			}
+			room.pokerState = nil
+		} else {
+			hostShort := "(none)"
+			if len(room.hostID) >= 8 { hostShort = room.hostID[:8] }
+			log.Printf("[RTL] player=%s host=%s gameState=%v phase=%v", playerID[:8], hostShort, room.gameState != nil, func() string { if room.gameState != nil { return string(room.gameState.Phase) }; return "nil" }())
+			if room.gameState == nil {
+				log.Printf("[RTL] gameState is nil, sending lobby state to player")
+				room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+				room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+					"players":    room.playerList(),
+					"hostId":     room.hostID,
+					"gameActive": false,
+					"gameType":   room.gameType,
+				}})
+				return
+			}
+			if playerID != room.hostID && room.gameState.Phase != game.PhaseGameOver {
+				log.Printf("[RTL] blocked: not host and not game_over")
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can return to lobby"}})
+				return
+			}
+			log.Printf("[RTL] returning to lobby, clearing game state")
+			room.gameState = nil
 		}
-		if playerID != room.hostID && room.gameState.Phase != game.PhaseGameOver {
-			log.Printf("[RTL] blocked: not host and not game_over")
-			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can return to lobby"}})
-			return
-		}
-		log.Printf("[RTL] returning to lobby, clearing game state")
-		room.gameState = nil
 
 		// Only keep connected players
 		activeIDs := make(map[string]bool)
@@ -366,26 +513,43 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			"players":    room.playerList(),
 			"hostId":     room.hostID,
 			"gameActive": false,
+			"gameType":   room.gameType,
 		}})
 
 	case "exit-game":
-		if room.gameState == nil || room.gameState.Phase == game.PhaseGameOver {
-			return
+		if room.gameType == "poker" {
+			if room.pokerState == nil || room.pokerState.Phase == game.PokerPhaseGameOver {
+				return
+			}
+			game.PokerVoluntaryExit(room.pokerState, playerID)
+			room.broadcastState()
+			room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+			room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+				"players":    room.playerList(),
+				"hostId":     room.hostID,
+				"gameActive": room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver,
+				"gameType":   room.gameType,
+			}})
+		} else {
+			if room.gameState == nil || room.gameState.Phase == game.PhaseGameOver {
+				return
+			}
+			game.VoluntaryExit(room.gameState, playerID)
+			room.broadcastState()
+			room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+			room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+				"players":    room.playerList(),
+				"hostId":     room.hostID,
+				"gameActive": room.gameState != nil && room.gameState.Phase != game.PhaseGameOver,
+				"gameType":   room.gameType,
+			}})
 		}
-		// Eliminate this player (reveal all cards)
-		game.VoluntaryExit(room.gameState, playerID)
-		room.broadcastState()
-
-		// Send this player back to lobby
-		room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
-		room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
-			"players":    room.playerList(),
-			"hostId":     room.hostID,
-			"gameActive": room.gameState != nil && room.gameState.Phase != game.PhaseGameOver,
-		}})
 
 	case "spectate":
-		if room.gameState != nil {
+		if room.gameType == "poker" && room.pokerState != nil {
+			personalized := room.createPersonalizedPokerState("")
+			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
+		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
 		}
 
@@ -393,7 +557,13 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		if playerID != room.hostID {
 			return
 		}
-		if room.gameState != nil && room.gameState.Phase != game.PhaseWaiting {
+		gameInProgress := false
+		if room.gameType == "poker" {
+			gameInProgress = room.pokerState != nil
+		} else {
+			gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting
+		}
+		if gameInProgress {
 			return
 		}
 
@@ -407,7 +577,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
 			"players":    room.playerList(),
 			"hostId":     room.hostID,
-			"gameActive": room.gameState != nil && room.gameState.Phase != game.PhaseGameOver,
+			"gameActive": false,
+			"gameType":   room.gameType,
 		}})
 
 		room.sendToPlayer(payload.PlayerID, OutMessage{Type: "kicked", Payload: map[string]string{"message": "You have been kicked from the game"}})
@@ -523,9 +694,36 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		room.broadcastState()
 
 	case "get-state":
-		if room.gameState != nil {
+		if room.gameType == "poker" && room.pokerState != nil {
+			personalized := room.createPersonalizedPokerState(playerID)
+			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
+		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
 		}
+
+	// Poker actions
+	case "poker-action":
+		if room.pokerState == nil {
+			return
+		}
+		var payload struct {
+			Action string `json:"action"`
+			Amount int    `json:"amount"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+
+		if err := game.PokerAction(room.pokerState, playerID, payload.Action, payload.Amount); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastPokerState()
+
+	case "poker-next-hand":
+		if room.pokerState == nil || room.pokerState.Phase != game.PokerPhaseShowdown {
+			return
+		}
+		game.StartNextHand(room.pokerState)
+		room.broadcastPokerState()
 
 	case "ping":
 		room.sendTo(connID, OutMessage{Type: "pong"})
@@ -612,6 +810,6 @@ func main() {
 	})
 
 	port := "8080"
-	log.Printf("Coup server starting on :%s", port)
+	log.Printf("Game server starting on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
