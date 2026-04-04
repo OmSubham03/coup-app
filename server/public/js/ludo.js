@@ -318,11 +318,17 @@ function renderLudoGame() {
   document.getElementById('ludo-active').style.display = '';
 
   const phase = ludoState.phase === 'finished' ? 'Game Over' : (ludoState.phase === 'rolling' ? 'Roll the Dice' : 'Move a Token');
-  document.getElementById('ludo-phase-display').textContent = phase;
+  document.getElementById('ludo-phase-display').textContent = isSpectating ? 'Spectating' : phase;
   document.getElementById('ludo-turn-display').textContent = 'Turn ' + ludoState.turnNumber;
 
   const exitBtn = document.getElementById('ludo-exit-btn');
-  exitBtn.style.display = ludoState.phase === 'finished' ? 'none' : '';
+  if (isSpectating) {
+    exitBtn.style.display = '';
+    exitBtn.textContent = 'Stop Spectating';
+  } else {
+    exitBtn.style.display = ludoState.phase === 'finished' ? 'none' : '';
+    exitBtn.textContent = 'Exit Game';
+  }
 
   renderLudoBoard();
   renderLudoActions();
@@ -450,6 +456,12 @@ function renderLudoActions() {
   const cp = ls.players[ls.currentPlayerIndex];
   const isMyTurn = cp.id === playerId;
   const me = ls.players.find(p => p.id === playerId);
+
+  // Spectator
+  if (isSpectating) {
+    area.innerHTML = '<div class="waiting" style="text-align:center"><div style="font-size:24px;margin-bottom:8px">👁️</div>Spectating — ' + esc(cp.name) + '\'s turn</div>';
+    return;
+  }
 
   // Game over
   if (ls.phase === 'finished') {

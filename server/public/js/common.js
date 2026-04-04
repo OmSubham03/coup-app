@@ -227,11 +227,24 @@ function handleWSMessage(e) {
       case 'poker-state':
         pokerState = msg.payload;
         currentGameType = 'poker';
+        isSpectating = false;
+        renderPokerGame();
+        break;
+      case 'poker-spectate':
+        pokerState = msg.payload;
+        currentGameType = 'poker';
+        isSpectating = true;
         renderPokerGame();
         break;
       case 'ludo-started':
         break;
       case 'ludo-state':
+        isSpectating = false;
+        handleLudoStateUpdate(msg.payload);
+        currentGameType = 'ludo';
+        break;
+      case 'ludo-spectate':
+        isSpectating = true;
         handleLudoStateUpdate(msg.payload);
         currentGameType = 'ludo';
         break;

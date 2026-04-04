@@ -173,12 +173,22 @@ func (r *Room) broadcastPokerState() {
 	if r.pokerState == nil {
 		return
 	}
-	// Send personalized state to each player (hide other players' hole cards)
+	// Find which playerIDs are in the active game
+	gamePlayers := make(map[string]bool)
+	for _, p := range r.pokerState.Players {
+		gamePlayers[p.ID] = true
+	}
+	// Send personalized state to each connection
+	spectatorState, _ := json.Marshal(OutMessage{Type: "poker-spectate", Payload: r.createPersonalizedPokerState("")})
 	for connID, conn := range r.connections {
 		pID := r.connPlayer[connID]
-		personalized := r.createPersonalizedPokerState(pID)
-		data, _ := json.Marshal(OutMessage{Type: "poker-state", Payload: personalized})
-		conn.WriteMessage(websocket.TextMessage, data)
+		if gamePlayers[pID] {
+			personalized := r.createPersonalizedPokerState(pID)
+			data, _ := json.Marshal(OutMessage{Type: "poker-state", Payload: personalized})
+			conn.WriteMessage(websocket.TextMessage, data)
+		} else {
+			conn.WriteMessage(websocket.TextMessage, spectatorState)
+		}
 	}
 }
 
@@ -222,9 +232,20 @@ func (r *Room) broadcastLudoState() {
 	if r.ludoState == nil {
 		return
 	}
-	data, _ := json.Marshal(OutMessage{Type: "ludo-state", Payload: r.ludoState})
-	for _, conn := range r.connections {
-		conn.WriteMessage(websocket.TextMessage, data)
+	// Find which playerIDs are in the active game
+	gamePlayers := make(map[string]bool)
+	for _, p := range r.ludoState.Players {
+		gamePlayers[p.ID] = true
+	}
+	stateData, _ := json.Marshal(OutMessage{Type: "ludo-state", Payload: r.ludoState})
+	spectateData, _ := json.Marshal(OutMessage{Type: "ludo-spectate", Payload: r.ludoState})
+	for connID, conn := range r.connections {
+		pID := r.connPlayer[connID]
+		if gamePlayers[pID] {
+			conn.WriteMessage(websocket.TextMessage, stateData)
+		} else {
+			conn.WriteMessage(websocket.TextMessage, spectateData)
+		}
 	}
 }
 
@@ -311,24 +332,27 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if !isReconnecting {
-			data, _ := json.Marshal(OutMessage{Type: "error", Payload: map[string]string{"message": "The Game Already Started"}})
-			conn.WriteMessage(websocket.TextMessage, data)
-			conn.Close()
-			delete(room.connections, connID)
-			delete(room.connPlayer, connID)
+			// Allow spectating — send current game state as spectator
+			if room.gameType == "poker" {
+				personalized := room.createPersonalizedPokerState("")
+				room.sendTo(connID, OutMessage{Type: "poker-spectate", Payload: personalized})
+			} else if room.gameType == "ludo" {
+				room.sendTo(connID, OutMessage{Type: "ludo-spectate", Payload: room.ludoState})
+			} else {
+				room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
+			}
 			room.mu.Unlock()
-			return
-		}
-
-		if room.gameType == "poker" {
-			personalized := room.createPersonalizedPokerState(playerID)
-			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
-		} else if room.gameType == "ludo" {
-			room.sendTo(connID, OutMessage{Type: "ludo-state", Payload: room.ludoState})
 		} else {
-			room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
+			if room.gameType == "poker" {
+				personalized := room.createPersonalizedPokerState(playerID)
+				room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
+			} else if room.gameType == "ludo" {
+				room.sendTo(connID, OutMessage{Type: "ludo-state", Payload: room.ludoState})
+			} else {
+				room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
+			}
+			room.mu.Unlock()
 		}
-		room.mu.Unlock()
 	} else {
 		room.sendTo(connID, OutMessage{Type: "waiting", Payload: map[string]interface{}{
 			"players":    room.playerList(),
@@ -729,9 +753,9 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 	case "spectate":
 		if room.gameType == "poker" && room.pokerState != nil {
 			personalized := room.createPersonalizedPokerState("")
-			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
+			room.sendTo(connID, OutMessage{Type: "poker-spectate", Payload: personalized})
 		} else if room.gameType == "ludo" && room.ludoState != nil {
-			room.sendTo(connID, OutMessage{Type: "ludo-state", Payload: room.ludoState})
+			room.sendTo(connID, OutMessage{Type: "ludo-spectate", Payload: room.ludoState})
 		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
 		}

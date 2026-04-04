@@ -23,11 +23,17 @@ function renderPokerGame() {
   document.getElementById('poker-active').style.display = '';
 
   const phase = pokerState.phase.replace(/_/g, ' ');
-  document.getElementById('poker-phase-display').textContent = phase;
+  document.getElementById('poker-phase-display').textContent = isSpectating ? 'Spectating' : phase;
   document.getElementById('poker-hand-display').textContent = 'Hand #' + pokerState.handNumber;
 
   const exitBtn = document.getElementById('poker-exit-btn');
-  exitBtn.style.display = (pokerState.phase === 'game_over' || pokerState.phase === 'showdown') ? 'none' : '';
+  if (isSpectating) {
+    exitBtn.style.display = '';
+    exitBtn.textContent = 'Stop Spectating';
+  } else {
+    exitBtn.style.display = (pokerState.phase === 'game_over' || pokerState.phase === 'showdown') ? 'none' : '';
+    exitBtn.textContent = 'Exit Game';
+  }
 
   renderPokerTable();
   renderPokerActions();
@@ -138,6 +144,14 @@ function renderPokerActions() {
   const ps = pokerState;
   const me = ps.players.find(p => p.id === playerId);
   const isCurrent = ps.players[ps.currentPlayerIndex]?.id === playerId;
+
+  // Spectator
+  if (isSpectating) {
+    const cp = ps.players[ps.currentPlayerIndex];
+    area.innerHTML = '<div class="waiting" style="text-align:center"><div style="font-size:24px;margin-bottom:8px">👁️</div>Spectating' +
+      (cp && ps.phase !== 'showdown' && ps.phase !== 'game_over' ? ' — ' + esc(cp.name) + '\'s turn' : '') + '</div>';
+    return;
+  }
 
   // Game over — show scoreboard
   if (ps.phase === 'game_over') {
