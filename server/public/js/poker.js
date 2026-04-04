@@ -3,6 +3,7 @@
 const SUIT_SYMBOLS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
 const SUIT_COLORS = { hearts: 'red', diamonds: 'red', clubs: 'black', spades: 'black' };
 const RANK_DISPLAY = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
+let prevCommunityCardCount = 0;
 
 function switchPokerTab(tab) {
   document.getElementById('ptab-game').className = 'tab' + (tab === 'game' ? ' active' : '');
@@ -56,10 +57,20 @@ function renderPokerTable() {
 
   // Community cards
   const cc = ps.communityCards || [];
+  const newCardCount = cc.length;
+  const revealFrom = newCardCount > prevCommunityCardCount ? prevCommunityCardCount : newCardCount;
+  prevCommunityCardCount = newCardCount;
   html += '<div class="poker-community">';
   for (let i = 0; i < 5; i++) {
     if (i < cc.length) {
-      html += renderPokerCard(cc[i]);
+      if (i >= revealFrom) {
+        html += '<div class="poker-card-flip-wrapper card-revealing">';
+        html += '<div class="poker-card-back"></div>';
+        html += renderPokerCard(cc[i]);
+        html += '</div>';
+      } else {
+        html += renderPokerCard(cc[i]);
+      }
     } else {
       html += '<div class="poker-card-placeholder"></div>';
     }

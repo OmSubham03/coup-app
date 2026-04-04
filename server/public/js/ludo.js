@@ -73,6 +73,35 @@ function renderDice(val) {
 }
 
 let ludoState = null;
+let diceRolling = false;
+let diceRollTimer = null;
+
+// Dice roll animation: cycle random faces for 2 seconds then send
+function ludoRollDice() {
+  if (diceRolling) return;
+  diceRolling = true;
+  const diceEl = document.querySelector('.turn-dice');
+  if (!diceEl) { diceRolling = false; send('ludo-roll'); return; }
+
+  // Add rolling class for wobble
+  diceEl.classList.add('dice-rolling');
+
+  let elapsed = 0;
+  const interval = 10; // ms between face changes
+  const duration = 600;
+  diceRollTimer = setInterval(function() {
+    elapsed += interval;
+    const rndVal = Math.floor(Math.random() * 6) + 1;
+    diceEl.innerHTML = renderDice(rndVal);
+    if (elapsed >= duration) {
+      clearInterval(diceRollTimer);
+      diceRollTimer = null;
+      diceEl.classList.remove('dice-rolling');
+      diceRolling = false;
+      send('ludo-roll');
+    }
+  }, interval);
+}
 
 // Cancel any ongoing animation
 function cancelAnimation() {
@@ -427,7 +456,7 @@ function renderLudoActions() {
 
   // Rolling phase
   if (ls.phase === 'rolling') {
-    area.innerHTML = '<button class="ludo-move-btn ludo-roll-btn" onclick="send(\'ludo-roll\')">🎲 Roll Dice</button>';
+    area.innerHTML = '<button class="ludo-move-btn ludo-roll-btn" onclick="ludoRollDice()">🎲 Roll Dice</button>';
     return;
   }
 
