@@ -75,32 +75,52 @@ function renderDice(val) {
 let ludoState = null;
 let diceRolling = false;
 let diceRollTimer = null;
+let pendingDiceResult = null; // server result arrives here during animation
 
-// Dice roll animation: cycle random faces for 2 seconds then send
+// Dice roll animation: send immediately, animate until server responds
 function ludoRollDice() {
   if (diceRolling) return;
   diceRolling = true;
+  pendingDiceResult = null;
   const diceEl = document.querySelector('.turn-dice');
   if (!diceEl) { diceRolling = false; send('ludo-roll'); return; }
+
+  // Send roll to server immediately (runs in parallel with animation)
+  send('ludo-roll');
 
   // Add rolling class for wobble
   diceEl.classList.add('dice-rolling');
 
+  const minDuration = 400; // minimum animation time
   let elapsed = 0;
-  const interval = 10; // ms between face changes
-  const duration = 600;
+  const interval = 60;
   diceRollTimer = setInterval(function() {
     elapsed += interval;
-    const rndVal = Math.floor(Math.random() * 6) + 1;
-    diceEl.innerHTML = renderDice(rndVal);
-    if (elapsed >= duration) {
+    // If server result arrived and we've played long enough, land on final value
+    if (pendingDiceResult !== null && elapsed >= minDuration) {
       clearInterval(diceRollTimer);
       diceRollTimer = null;
+      diceEl.innerHTML = renderDice(pendingDiceResult);
       diceEl.classList.remove('dice-rolling');
       diceRolling = false;
-      send('ludo-roll');
+      // Now apply the pending state
+      finishDiceRoll();
+      return;
     }
+    const rndVal = Math.floor(Math.random() * 6) + 1;
+    diceEl.innerHTML = renderDice(rndVal);
   }, interval);
+}
+
+// Called when server responds while dice is rolling
+let pendingDiceState = null;
+function finishDiceRoll() {
+  if (pendingDiceState) {
+    const st = pendingDiceState;
+    pendingDiceState = null;
+    pendingDiceResult = null;
+    handleLudoStateUpdate(st);
+  }
 }
 
 // Cancel any ongoing animation
@@ -240,6 +260,13 @@ function animateMove(path, color, label, callback) {
 
 // Handle incoming ludo state: detect move and animate
 function handleLudoStateUpdate(newState) {
+  // If dice is still rolling, queue the state for when animation finishes
+  if (diceRolling) {
+    pendingDiceResult = newState.diceValue;
+    pendingDiceState = newState;
+    return;
+  }
+
   cancelAnimation();
   const oldState = ludoState;
   ludoState = newState;

@@ -267,14 +267,7 @@ func stepsToHomeEntry(colorIndex int, currentPos int) int {
 }
 
 func isBlockedByOwn(state *LudoState, player *LudoPlayer, pos int, excludeToken int) bool {
-	for i := 0; i < TokensPerPlayer; i++ {
-		if i == excludeToken {
-			continue
-		}
-		if player.Tokens[i].State == "track" && player.Tokens[i].Position == pos {
-			return true
-		}
-	}
+	// In standard Ludo, multiple own tokens can occupy the same square
 	return false
 }
 
