@@ -148,8 +148,16 @@ function renderPokerActions() {
   // Spectator
   if (isSpectating) {
     const cp = ps.players[ps.currentPlayerIndex];
-    area.innerHTML = '<div class="waiting" style="text-align:center"><div style="font-size:24px;margin-bottom:8px">👁️</div>Spectating' +
+    const alreadyPending = ps.pendingJoins && ps.pendingJoins.some(p => p.id === playerId);
+    const alreadyPlayer = ps.players.some(p => p.id === playerId);
+    let html = '<div class="waiting" style="text-align:center"><div style="font-size:24px;margin-bottom:8px">👁️</div>Spectating' +
       (cp && ps.phase !== 'showdown' && ps.phase !== 'game_over' ? ' — ' + esc(cp.name) + '\'s turn' : '') + '</div>';
+    if (!alreadyPending && !alreadyPlayer && ps.phase !== 'game_over') {
+      html += '<button class="btn btn-green" style="margin-top:12px;width:100%" onclick="send(\'poker-join-game\')">Join Next Round</button>';
+    } else if (alreadyPending) {
+      html += '<p style="color:#22c55e;margin-top:12px;text-align:center">✓ Joining next round...</p>';
+    }
+    area.innerHTML = html;
     return;
   }
 
@@ -175,10 +183,37 @@ function renderPokerActions() {
   // Showdown
   if (ps.phase === 'showdown') {
     let html = '<div style="text-align:center;padding:20px">';
+
+    // Check if this player needs to decide on rebuy
+    if (me && me.needsRebuy) {
+      html += '<div style="font-size:32px;margin-bottom:8px">💸</div>';
+      html += '<h2 style="color:#d4a017;margin-bottom:12px">Out of Chips!</h2>';
+      html += '<p style="color:#e2e8f0;margin-bottom:16px">Buy back in for ' + ps.buyIn + ' chips?</p>';
+      html += '<button class="btn btn-green" style="margin-bottom:8px" onclick="send(\'poker-rebuy\')">Buy In (' + ps.buyIn + ' chips)</button>';
+      html += '<button class="btn btn-red" onclick="send(\'poker-skip-rebuy\')">Sit Out</button>';
+      html += '</div>';
+      area.innerHTML = html;
+      return;
+    }
+
+    // Check if waiting for other players' rebuy decisions
+    if (ps.pendingRebuys) {
+      const waitingFor = ps.players.filter(p => p.needsRebuy).map(p => p.name);
+      html += '<div style="font-size:32px;margin-bottom:8px">⏳</div>';
+      html += '<h2 style="color:#d4a017;margin-bottom:12px">Waiting for Rebuy</h2>';
+      html += '<p style="color:#94a3b8;margin-bottom:16px">' + waitingFor.map(n => esc(n)).join(', ') + ' deciding...</p>';
+      html += '</div>';
+      area.innerHTML = html;
+      return;
+    }
+
     html += '<div style="font-size:32px;margin-bottom:8px">🃏</div>';
     html += '<h2 style="color:#d4a017;margin-bottom:16px">Showdown!</h2>';
     if (ps.lastAction) html += '<p style="color:#e2e8f0;margin-bottom:16px">' + esc(ps.lastAction) + '</p>';
+    html += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">';
     html += '<button class="btn btn-green" onclick="send(\'poker-next-hand\')">Deal Next Hand</button>';
+    html += '<button class="btn btn-red" onclick="if(confirm(\'End game and show final scores?\'))send(\'poker-end-game\')">End Game</button>';
+    html += '</div>';
     html += '</div>';
     area.innerHTML = html;
     return;

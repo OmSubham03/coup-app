@@ -216,13 +216,14 @@ function renderActions() {
 
   // Exchange
   if (gameState.phase === 'exchange' && gameState.pendingAction?.actorId === playerId && gameState.pendingExchangeCards) {
+    exchangeSelected = new Set();
     const unrevealed = me.cards.filter(c => !c.revealed);
     const allCards = [...unrevealed, ...gameState.pendingExchangeCards];
     const keepCount = unrevealed.length;
     area.innerHTML = '<div class="panel panel-exchange"><h2>🔄 Exchange Cards</h2><p>Select ' + keepCount + ' card(s) to keep:</p>' +
       '<div id="exchange-cards" style="margin:12px 0">' +
       allCards.map(c => '<span class="card-box card-select" style="background-image:url(' + CHAR_IMG[c.character] + ')" data-id="' + c.id + '" onclick="toggleExchange(this)"><span class="card-label">' + c.character + '</span></span>').join('') +
-      '</div><button class="btn btn-green" id="exchange-confirm" disabled onclick="confirmExchange(' + keepCount + ')">Confirm (0/' + keepCount + ')</button></div>';
+      '</div><button class="btn btn-green" id="exchange-confirm" data-keep="' + keepCount + '" disabled onclick="confirmExchange(' + keepCount + ')">Confirm (0/' + keepCount + ')</button></div>';
     return;
   }
 
@@ -285,7 +286,7 @@ function toggleExchange(el) {
   if (exchangeSelected.has(id)) { exchangeSelected.delete(id); el.classList.remove('selected'); }
   else { exchangeSelected.add(id); el.classList.add('selected'); }
   const btn = document.getElementById('exchange-confirm');
-  const keepCount = parseInt(btn.textContent.match(/\d+$/)?.[0] || '1');
+  const keepCount = parseInt(btn.dataset.keep || '1');
   btn.textContent = 'Confirm (' + exchangeSelected.size + '/' + keepCount + ')';
   btn.disabled = exchangeSelected.size !== keepCount;
 }

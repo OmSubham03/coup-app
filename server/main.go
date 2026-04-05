@@ -933,8 +933,60 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		if room.pokerState == nil || room.pokerState.Phase != game.PokerPhaseShowdown {
 			return
 		}
+		if room.pokerState.PendingRebuys {
+			return // Can't start next hand while waiting for rebuy decisions
+		}
 		game.StartNextHand(room.pokerState)
 		logPokerHands(room)
+		room.broadcastPokerState()
+
+	case "poker-rebuy":
+		if room.pokerState == nil {
+			return
+		}
+		if err := game.PokerRebuy(room.pokerState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		logPokerHands(room)
+		room.broadcastPokerState()
+
+	case "poker-skip-rebuy":
+		if room.pokerState == nil {
+			return
+		}
+		if err := game.PokerSkipRebuy(room.pokerState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		logPokerHands(room)
+		room.broadcastPokerState()
+
+	case "poker-end-game":
+		if room.pokerState == nil || (room.pokerState.Phase != game.PokerPhaseShowdown) {
+			return
+		}
+		game.EndGameEarly(room.pokerState)
+		room.broadcastPokerState()
+
+	case "poker-join-game":
+		if room.pokerState == nil || room.pokerState.Phase == game.PokerPhaseGameOver {
+			return
+		}
+		// Only spectators (not already a player) can join
+		for _, p := range room.pokerState.Players {
+			if p.ID == playerID {
+				return // Already a player
+			}
+		}
+		name := ""
+		if pc, ok := room.players[playerID]; ok {
+			name = pc.Name
+		}
+		if name == "" {
+			return
+		}
+		game.AddPendingPokerPlayer(room.pokerState, playerID, name)
 		room.broadcastPokerState()
 
 	// Ludo actions

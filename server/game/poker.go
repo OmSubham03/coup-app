@@ -151,6 +151,8 @@ type PokerPlayer struct {
 	IsActive bool        `json:"isActive"`   // Still in the game (has chips or is all-in in current hand)
 	Hand     *EvaluatedHand `json:"hand,omitempty"` // Filled at showdown
 	RoundActed bool      `json:"-"`          // Has acted in current betting round
+	TotalBuyIn int       `json:"totalBuyIn"` // Total chips bought in (for scoreboard)
+	NeedsRebuy bool      `json:"needsRebuy"` // Waiting for rebuy decision
 }
 
 // Pot for side-pot calculation
@@ -195,6 +197,8 @@ type PokerState struct {
 	LastAction       string         `json:"lastAction"`
 	Scoreboard       []PokerScoreEntry `json:"scoreboard,omitempty"`
 	Winner           string         `json:"winner,omitempty"` // Overall game winner
+	PendingRebuys    bool           `json:"pendingRebuys"`   // True if waiting for rebuy decisions
+	PendingJoins     []PokerPlayer  `json:"pendingJoins,omitempty"` // Spectators waiting to join next round
 }
 
 // InitializePokerGame creates a new poker game
@@ -204,10 +208,11 @@ func InitializePokerGame(players []struct{ ID, Name string }, buyIn, smallBlind 
 	pokerPlayers := make([]PokerPlayer, len(players))
 	for i, p := range players {
 		pokerPlayers[i] = PokerPlayer{
-			ID:       p.ID,
-			Name:     p.Name,
-			Chips:    buyIn,
-			IsActive: true,
+			ID:         p.ID,
+			Name:       p.Name,
+			Chips:      buyIn,
+			IsActive:   true,
+			TotalBuyIn: buyIn,
 		}
 	}
 
@@ -254,6 +259,43 @@ func createPokerDeck() []PokerCard {
 
 func startNewHand(state *PokerState) {
 	state.HandNumber++
+	state.Deck = createPokerDeck()
+	state.CommunityCards = []PokerCard{}
+	state.CurrentBet = 0
+	state.MinRaise = state.BigBlind
+	state.Pots = []Pot{{Amount: 0, Eligible: nil}}
+	state.LastAction = ""
+
+	// Add pending joins as players needing rebuy
+	for _, pj := range state.PendingJoins {
+		pj.NeedsRebuy = true
+		pj.IsActive = true
+		pj.Chips = 0
+		state.Players = append(state.Players, pj)
+	}
+	state.PendingJoins = nil
+
+	// Check if any players need rebuy
+	hasRebuyPending := false
+	for i := range state.Players {
+		if state.Players[i].IsActive && state.Players[i].Chips <= 0 {
+			state.Players[i].NeedsRebuy = true
+			hasRebuyPending = true
+		}
+	}
+
+	if hasRebuyPending {
+		state.PendingRebuys = true
+		state.Phase = PokerPhaseShowdown // Stay in showdown-like state while waiting
+		state.LastAction = "Waiting for rebuy decisions..."
+		return
+	}
+
+	startNewHandAfterRebuys(state)
+}
+
+func startNewHandAfterRebuys(state *PokerState) {
+	state.PendingRebuys = false
 	state.Deck = createPokerDeck()
 	state.CommunityCards = []PokerCard{}
 	state.CurrentBet = 0
@@ -812,7 +854,7 @@ func finalizeScoreboard(state *PokerState) {
 		state.Scoreboard = append(state.Scoreboard, PokerScoreEntry{
 			PlayerID:   p.ID,
 			Name:       p.Name,
-			NetGain:    p.Chips - state.BuyIn,
+			NetGain:    p.Chips - p.TotalBuyIn,
 			FinalChips: p.Chips,
 		})
 	}
@@ -833,6 +875,81 @@ func addPokerLog(state *PokerState, message string) {
 		Message:   message,
 		Hand:      state.HandNumber,
 	})
+}
+
+// PokerRebuy handles a player buying back in
+func PokerRebuy(state *PokerState, playerID string) error {
+	for i := range state.Players {
+		if state.Players[i].ID == playerID && state.Players[i].NeedsRebuy {
+			state.Players[i].Chips = state.BuyIn
+			state.Players[i].TotalBuyIn += state.BuyIn
+			state.Players[i].NeedsRebuy = false
+			state.Players[i].IsActive = true
+			addPokerLog(state, fmt.Sprintf("%s buys back in for %d chips", state.Players[i].Name, state.BuyIn))
+
+			// Check if all rebuy decisions are resolved
+			checkRebuysComplete(state)
+			return nil
+		}
+	}
+	return fmt.Errorf("no pending rebuy for this player")
+}
+
+// PokerSkipRebuy handles a player declining to rebuy
+func PokerSkipRebuy(state *PokerState, playerID string) error {
+	for i := range state.Players {
+		if state.Players[i].ID == playerID && state.Players[i].NeedsRebuy {
+			state.Players[i].NeedsRebuy = false
+			state.Players[i].IsActive = false
+			addPokerLog(state, fmt.Sprintf("%s sits out", state.Players[i].Name))
+
+			// Check if all rebuy decisions are resolved
+			checkRebuysComplete(state)
+			return nil
+		}
+	}
+	return fmt.Errorf("no pending rebuy for this player")
+}
+
+func checkRebuysComplete(state *PokerState) {
+	for _, p := range state.Players {
+		if p.NeedsRebuy {
+			return // Still waiting
+		}
+	}
+	// All decisions made — proceed with new hand
+	state.PendingRebuys = false
+	startNewHandAfterRebuys(state)
+}
+
+// EndGameEarly finalizes the game with current chip counts
+func EndGameEarly(state *PokerState) {
+	state.Phase = PokerPhaseGameOver
+	finalizeScoreboard(state)
+	addPokerLog(state, "Game ended early by player vote")
+}
+
+// AddPendingPokerPlayer queues a spectator to join at the start of the next round
+func AddPendingPokerPlayer(state *PokerState, playerID, name string) {
+	// Check not already a player
+	for _, p := range state.Players {
+		if p.ID == playerID {
+			return
+		}
+	}
+	// Check not already pending
+	for _, p := range state.PendingJoins {
+		if p.ID == playerID {
+			return
+		}
+	}
+	state.PendingJoins = append(state.PendingJoins, PokerPlayer{
+		ID:       playerID,
+		Name:     name,
+		IsActive: false,
+		Chips:    0,
+	})
+	addPokerLog(state, fmt.Sprintf("%s will join next round", name))
 }
 
 // ========== HAND EVALUATION ==========
