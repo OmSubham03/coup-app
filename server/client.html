@@ -182,6 +182,10 @@
     <div id="lobby-spectate" style="display:none;margin-top:12px">
       <button class="btn btn-cyan" onclick="requestSpectate()">👁 Spectate Game</button>
     </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">
+      <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎤</button>
+      <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+    </div>
     <button class="btn btn-outline" style="margin-top:12px" onclick="disconnect();showScreen('menu')">Leave Lobby</button>
   </div>
 
@@ -192,8 +196,10 @@
         <span style="color:#f59e0b;font-weight:900;font-size:24px">COUP</span>
         <div class="phase-text" id="phase-display"></div>
       </div>
-      <div style="text-align:right">
+      <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="turn-display"></span>
+        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
+        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
       </div>
     </div>
 
@@ -232,8 +238,10 @@
         <span style="color:#22c55e;font-weight:900;font-size:24px">POKER</span>
         <div class="phase-text" id="poker-phase-display"></div>
       </div>
-      <div style="text-align:right">
+      <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="poker-hand-display"></span>
+        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
+        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
       </div>
     </div>
 
@@ -272,8 +280,10 @@
         <span style="color:#ef4444;font-weight:900;font-size:24px">LUDO</span>
         <div class="phase-text" id="ludo-phase-display"></div>
       </div>
-      <div style="text-align:right">
+      <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="ludo-turn-display"></span>
+        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
+        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
       </div>
     </div>
 
@@ -434,6 +444,7 @@
 
 </body>
 <script src="/js/common.js"></script>
+<script src="/js/voice.js"></script>
 <script src="/js/coup.js"></script>
 <script src="/js/poker.js"></script>
 <script src="/js/ludo.js"></script>

@@ -302,6 +302,11 @@ function handleWSMessage(e) {
       case 'chat':
         appendChatMessage(msg.payload);
         break;
+      case 'voice-join':
+      case 'voice-leave':
+      case 'voice-data':
+        if (typeof handleVoiceMessage === 'function') handleVoiceMessage(msg);
+        break;
       case 'error':
         const errMsg = msg.payload?.message || 'Error';
         if (errMsg.includes('Incorrect Game Code') || errMsg.includes('No Session Found')) {
@@ -367,6 +372,7 @@ function disconnect() {
   sessionStorage.removeItem('coup_joinedName');
   sessionStorage.removeItem('coup_variant');
   sessionStorage.removeItem('coup_gameType');
+  if (typeof voiceCleanup === 'function') voiceCleanup();
   if (ws) { ws.close(); ws = null; }
   gameState = null;
   pokerState = null;
@@ -427,6 +433,12 @@ function submitName() {
   document.getElementById('name-entry').style.display = 'none';
   document.getElementById('lobby').style.display = '';
   document.getElementById('lobby-code').textContent = roomCode;
+  // Request mic permission early so it's ready for voice chat
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+    }).catch(function() {});
+  }
 }
 
 function send(type, payload) {

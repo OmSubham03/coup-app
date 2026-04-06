@@ -1059,6 +1059,42 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 
 	case "ping":
 		room.sendTo(connID, OutMessage{Type: "pong"})
+
+	// ---- Voice chat (WebSocket relay) ----
+	case "voice-join":
+		for cID, pID := range room.connPlayer {
+			if pID != playerID {
+				room.sendTo(cID, OutMessage{Type: "voice-join", Payload: map[string]interface{}{
+					"peerId": playerID,
+				}})
+			}
+		}
+
+	case "voice-leave":
+		for cID, pID := range room.connPlayer {
+			if pID != playerID {
+				room.sendTo(cID, OutMessage{Type: "voice-leave", Payload: map[string]interface{}{
+					"peerId": playerID,
+				}})
+			}
+		}
+
+	case "voice-data":
+		// Relay audio data to all other players
+		var vPayload struct {
+			Audio string `json:"audio"`
+			Sr    int    `json:"sr"`
+		}
+		json.Unmarshal(msg.Payload, &vPayload)
+		for cID, pID := range room.connPlayer {
+			if pID != playerID {
+				room.sendTo(cID, OutMessage{Type: "voice-data", Payload: map[string]interface{}{
+					"peerId": playerID,
+					"audio":  vPayload.Audio,
+					"sr":     vPayload.Sr,
+				}})
+			}
+		}
 	}
 }
 
