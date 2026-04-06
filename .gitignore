@@ -1,11 +1,16 @@
 # Build outputs
 server/coup-server
 server/coup-server.exe
-webview-app/app/build/
-webview-app/build/
-webview-app/.gradle/
-webview-app/app/.cxx/
-webview-app/local.properties
+server/server.exe
+*.apk
+
+# Mobile (Capacitor)
+mobile/node_modules/
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/capacitor-cordova-android-plugins/build/
+mobile/android/capacitor-android/build/
 
 # IDE
 .idea/
