@@ -38,6 +38,10 @@ async function toggleMic() {
 
 async function startMic() {
   try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('Your browser does not support microphone access. Try using Chrome.');
+      return;
+    }
     localStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       video: false
@@ -80,8 +84,16 @@ async function startMic() {
     captureProcessor.connect(captureCtx.destination);
     send('voice-join', {});
   } catch (err) {
-    console.error('[VOICE] Mic access denied:', err);
-    alert('Microphone access denied. Please allow mic in browser settings.');
+    console.error('[VOICE] Mic error:', err);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      alert('Microphone permission blocked. Go to browser Settings → Site Settings → Microphone and allow this site.');
+    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      alert('No microphone found on this device.');
+    } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+      alert('Microphone is in use by another app. Close other apps using the mic and try again.');
+    } else {
+      alert('Microphone error: ' + err.name + ' - ' + err.message);
+    }
   }
 }
 

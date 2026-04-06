@@ -1149,8 +1149,15 @@ func main() {
 	// Serve static files (textures, icons, css, js, etc)
 	http.Handle("/textures/", http.StripPrefix("/textures/", http.FileServer(http.Dir("public/textures"))))
 	http.Handle("/icons/", http.StripPrefix("/icons/", http.FileServer(http.Dir("public/icons"))))
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("public/js"))))
+	noCacheFS := func(dir, prefix string) http.Handler {
+		fs := http.StripPrefix(prefix, http.FileServer(http.Dir(dir)))
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+			fs.ServeHTTP(w, r)
+		})
+	}
+	http.Handle("/css/", noCacheFS("public/css", "/css/"))
+	http.Handle("/js/", noCacheFS("public/js", "/js/"))
 	http.HandleFunc("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/manifest+json")
 		http.ServeFile(w, r, "public/manifest.json")

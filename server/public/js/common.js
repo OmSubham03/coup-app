@@ -433,12 +433,6 @@ function submitName() {
   document.getElementById('name-entry').style.display = 'none';
   document.getElementById('lobby').style.display = '';
   document.getElementById('lobby-code').textContent = roomCode;
-  // Request mic permission early so it's ready for voice chat
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
-      stream.getTracks().forEach(function(t) { t.stop(); });
-    }).catch(function() {});
-  }
 }
 
 function send(type, payload) {
