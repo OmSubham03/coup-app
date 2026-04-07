@@ -136,6 +136,9 @@ function setCoupJoinVariant(v) {
 function joinCoupWithCode() {
   const code = document.getElementById('coup-join-code').value.trim().toUpperCase();
   if (!code) return;
+  const btn = document.getElementById('coup-join-btn');
+  btn.disabled = true;
+  btn.textContent = 'Joining...';
   currentGameType = 'coup';
   roomCode = code;
   variant = coupJoinVariant;
@@ -145,6 +148,9 @@ function joinCoupWithCode() {
 function joinPokerWithCode() {
   const code = document.getElementById('poker-join-code').value.trim().toUpperCase();
   if (!code) return;
+  const btn = document.getElementById('poker-join-btn');
+  btn.disabled = true;
+  btn.textContent = 'Joining...';
   currentGameType = 'poker';
   roomCode = code;
   connectWS();
@@ -153,6 +159,9 @@ function joinPokerWithCode() {
 function joinLudoWithCode() {
   const code = document.getElementById('ludo-join-code').value.trim().toUpperCase();
   if (!code) return;
+  const btn = document.getElementById('ludo-join-btn');
+  btn.disabled = true;
+  btn.textContent = 'Joining...';
   currentGameType = 'ludo';
   roomCode = code;
   connectWS();
@@ -162,9 +171,12 @@ let intentionalDisconnect = false;
 let reconnectTimer = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 15;
+let wsConnecting = false;
 
 function connectWS(action, pokerConfig) {
   intentionalDisconnect = false;
+  wsConnecting = true;
+  showConnectingState();
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   if (ws) ws.close();
   sessionStorage.setItem('coup_room', roomCode);
@@ -175,6 +187,10 @@ function connectWS(action, pokerConfig) {
   ws = new WebSocket(WS + SERVER + '/ws?' + params);
 
   ws.onopen = () => {
+    wsConnecting = false;
+    hideConnectingState();
+    // Reset join button states
+    resetJoinButtons();
     showScreen('game');
     if (action === 'create' && currentGameType === 'poker' && pokerConfig) {
       setTimeout(() => send('set-poker-config', pokerConfig), 100);
@@ -200,12 +216,49 @@ function connectWS(action, pokerConfig) {
 
   ws.onmessage = handleWSMessage;
   ws.onclose = () => {
+    wsConnecting = false;
+    hideConnectingState();
+    resetJoinButtons();
     if (!intentionalDisconnect && roomCode && joinedName) {
       console.log('[WS] Connection lost, reconnecting in 1s...');
       document.getElementById('conn-banner').classList.add('show');
       reconnectTimer = setTimeout(() => tryReconnect(), 1000);
     }
   };
+  ws.onerror = () => {
+    wsConnecting = false;
+    hideConnectingState();
+    resetJoinButtons();
+  };
+}
+
+function showConnectingState() {
+  const banner = document.getElementById('conn-banner');
+  banner.textContent = 'Connecting...';
+  banner.style.background = '#2563eb';
+  banner.classList.add('show');
+}
+
+function hideConnectingState() {
+  const banner = document.getElementById('conn-banner');
+  banner.style.background = '#dc2626';
+  banner.classList.remove('show');
+}
+
+function resetJoinButtons() {
+  const buttons = [
+    { id: 'coup-join-btn', text: 'Join Game' },
+    { id: 'poker-join-btn', text: 'Join Game' },
+    { id: 'ludo-join-btn', text: 'Join Game' }
+  ];
+  buttons.forEach(({ id, text }) => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.textContent = text;
+      const input = document.getElementById(id.replace('-btn', '-code'));
+      if (input) btn.disabled = !input.value.trim();
+    }
+  });
 }
 
 function handleWSMessage(e) {

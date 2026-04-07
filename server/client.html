@@ -12,15 +12,18 @@
 <meta name="apple-mobile-web-app-title" content="Coup">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
 <title>Card Games</title>
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/coup.css">
 <link rel="stylesheet" href="/css/poker.css">
 <link rel="stylesheet" href="/css/ludo.css">
 <style>
-#app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999}
-#app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-#app-loader .loader-spinner{width:36px;height:36px;border:3px solid #1e293b;border-top-color:#f59e0b;border-radius:50%;animation:spin .8s linear infinite}
+#app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
+#app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#app-loader .loader-spinner{width:36px;height:36px;border:3px solid #1e293b;border-top-color:#f59e0b;border-radius:50%;animation:spin .8s linear infinite;will-change:transform}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -450,16 +453,35 @@
 </div>
 
 </body>
-<script src="/js/common.js"></script>
-<script src="/js/voice.js"></script>
-<script src="/js/coup.js"></script>
-<script src="/js/poker.js"></script>
-<script src="/js/ludo.js"></script>
+<script>
+// Show loader for minimum duration for better UX
+let loaderStartTime = Date.now();
+let scriptsLoaded = 0;
+let totalScripts = 5;
+let minLoaderTime = 800; // Minimum 800ms loader visibility
+
+function checkScriptsLoaded() {
+  scriptsLoaded++;
+  if (scriptsLoaded === totalScripts) {
+    let elapsed = Date.now() - loaderStartTime;
+    let remaining = Math.max(0, minLoaderTime - elapsed);
+    setTimeout(() => {
+      document.querySelector('.container').style.display = '';
+      document.getElementById('app-loader').style.opacity = '0';
+      document.getElementById('app-loader').style.transition = 'opacity 0.3s';
+      setTimeout(() => document.getElementById('app-loader').remove(), 300);
+    }, remaining);
+  }
+}
+</script>
+<script src="/js/common.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/voice.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/coup.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/poker.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/ludo.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
-document.querySelector('.container').style.display = '';
-document.getElementById('app-loader').remove();
 </script>
 </html>
