@@ -3,6 +3,8 @@ $app = "coup-server"
 $rg = "coup-rg"
 $tag = "coup-server:" + (Get-Date -Format "yyyyMMddHHmmss")
 
+Write-Host "Attempting Az Login"
+az account set --subscription "Visual Studio Enterprise Subscription"
 Write-Host "Building and pushing image ($tag)..." -ForegroundColor Cyan
 az acr build --registry $registry --image $tag --file server/Dockerfile server/
 if ($LASTEXITCODE -ne 0) { Write-Host "Build failed!" -ForegroundColor Red; exit 1 }
