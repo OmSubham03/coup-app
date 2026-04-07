@@ -96,6 +96,28 @@ func getRoom(code string) *Room {
 	return rooms[code]
 }
 
+func findPlayerActiveRoom(playerID string) *Room {
+	roomsMu.RLock()
+	defer roomsMu.RUnlock()
+	for _, room := range rooms {
+		room.mu.Lock()
+		// Check if player is in this room
+		if _, exists := room.players[playerID]; exists {
+			// Check if game is active
+			gameActive := (room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver) ||
+				(room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver) ||
+				(room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished)
+			room.mu.Unlock()
+			if gameActive {
+				return room
+			}
+		} else {
+			room.mu.Unlock()
+		}
+	}
+	return nil
+}
+
 func (r *Room) broadcast(msg OutMessage) {
 	data, _ := json.Marshal(msg)
 	for connID, conn := range r.connections {
@@ -278,6 +300,19 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	connID := uuid.New().String()
 	log.Printf("[WS] New connection: connID=%s playerID=%s room=%s action=%s variant=%s gameType=%s", connID[:8], playerID[:8], roomCode, action, variant, gameType)
 
+	// Check if player is already in an active game in a different room
+	if existingRoom := findPlayerActiveRoom(playerID); existingRoom != nil && existingRoom.code != roomCode {
+		log.Printf("[REDIRECT] Player %s already in active game %s, redirecting from attempted join to %s", playerID[:8], existingRoom.code, roomCode)
+		data, _ := json.Marshal(OutMessage{Type: "redirect", Payload: map[string]string{
+			"message":  "You are already in an active game. Redirecting...",
+			"roomCode": existingRoom.code,
+			"gameType": existingRoom.gameType,
+		}})
+		conn.WriteMessage(websocket.TextMessage, data)
+		conn.Close()
+		return
+	}
+
 	room := getOrCreateRoom(roomCode, gameType, variant)
 	room.mu.Lock()
 
@@ -392,9 +427,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			}
 
 			if gameInProgress {
-				// Give 30 seconds to reconnect before eliminating
-				log.Printf("[DISCONNECT] room=%s player=%s — starting 120s reconnect grace period", room.code, pID[:8])
-				timer := time.AfterFunc(120*time.Second, func() {
+				// Give 5 minutes to reconnect before eliminating
+				log.Printf("[DISCONNECT] room=%s player=%s — starting 300s reconnect grace period", room.code, pID[:8])
+				timer := time.AfterFunc(300*time.Second, func() {
 					room.mu.Lock()
 					defer room.mu.Unlock()
 					// Check again if they reconnected

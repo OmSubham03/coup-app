@@ -264,6 +264,24 @@ function resetJoinButtons() {
 function handleWSMessage(e) {
     const msg = JSON.parse(e.data);
     switch(msg.type) {
+      case 'redirect':
+        // Player is already in another active game
+        if (msg.payload?.roomCode) {
+          const banner = document.getElementById('conn-banner');
+          banner.textContent = msg.payload.message || 'You are already in an active game. Redirecting...';
+          banner.style.background = '#f59e0b';
+          banner.classList.add('show');
+          roomCode = msg.payload.roomCode;
+          if (msg.payload.gameType) currentGameType = msg.payload.gameType;
+          sessionStorage.setItem('coup_room', roomCode);
+          sessionStorage.setItem('coup_gameType', currentGameType);
+          setTimeout(() => {
+            banner.classList.remove('show');
+            banner.style.background = '#dc2626';
+            connectWS();
+          }, 2000);
+        }
+        break;
       case 'waiting':
       case 'players-updated':
         hostId = msg.payload?.hostId;
