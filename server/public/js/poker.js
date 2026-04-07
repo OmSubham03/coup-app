@@ -242,8 +242,7 @@ function renderPokerActions() {
   const minRaise = ps.currentBet + ps.minRaise;
   const maxRaise = me.chips + (me.currentBet || 0);
 
-  if (!raiseAmount || raiseAmount < minRaise) raiseAmount = minRaise;
-  if (raiseAmount > maxRaise) raiseAmount = maxRaise;
+  if (!raiseAmount || raiseAmount < minRaise || raiseAmount > maxRaise) raiseAmount = minRaise;
 
   let html = '<div class="poker-action-area">';
 

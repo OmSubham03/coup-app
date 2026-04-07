@@ -17,9 +17,16 @@
 <link rel="stylesheet" href="/css/coup.css">
 <link rel="stylesheet" href="/css/poker.css">
 <link rel="stylesheet" href="/css/ludo.css">
+<style>
+#app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999}
+#app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#app-loader .loader-spinner{width:36px;height:36px;border:3px solid #1e293b;border-top-color:#f59e0b;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-<div class="container">
+<div id="app-loader"><div class="loader-title">COUP GAMES</div><div class="loader-spinner"></div></div>
+<div class="container" style="display:none">
 
 <!-- MENU SCREEN -->
 <div id="screen-menu" class="screen active">
@@ -452,5 +459,7 @@
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+document.querySelector('.container').style.display = '';
+document.getElementById('app-loader').remove();
 </script>
 </html>

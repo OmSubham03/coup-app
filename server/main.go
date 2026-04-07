@@ -225,6 +225,8 @@ func (r *Room) createPersonalizedPokerState(viewerID string) *game.PokerState {
 		LastAction:       ps.LastAction,
 		Scoreboard:       ps.Scoreboard,
 		Winner:           ps.Winner,
+		PendingRebuys:    ps.PendingRebuys,
+		PendingJoins:     ps.PendingJoins,
 	}
 }
 

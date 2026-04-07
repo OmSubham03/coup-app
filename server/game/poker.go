@@ -275,10 +275,10 @@ func startNewHand(state *PokerState) {
 	}
 	state.PendingJoins = nil
 
-	// Check if any players need rebuy
+	// Check if any players need rebuy (include inactive/sat-out players so they get the option every round)
 	hasRebuyPending := false
 	for i := range state.Players {
-		if state.Players[i].IsActive && state.Players[i].Chips <= 0 {
+		if state.Players[i].Chips <= 0 {
 			state.Players[i].NeedsRebuy = true
 			hasRebuyPending = true
 		}
@@ -885,6 +885,7 @@ func PokerRebuy(state *PokerState, playerID string) error {
 			state.Players[i].TotalBuyIn += state.BuyIn
 			state.Players[i].NeedsRebuy = false
 			state.Players[i].IsActive = true
+			state.Players[i].AllIn = false
 			addPokerLog(state, fmt.Sprintf("%s buys back in for %d chips", state.Players[i].Name, state.BuyIn))
 
 			// Check if all rebuy decisions are resolved
