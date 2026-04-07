@@ -5,8 +5,9 @@ const SERVER = isLocal ? location.hostname + ':8080' : location.host;
 const HTTP = location.protocol === 'https:' ? 'https://' : 'http://';
 const WS = location.protocol === 'https:' ? 'wss://' : 'ws://';
 let ws = null;
-let playerId = sessionStorage.getItem('coup_pid') || crypto.randomUUID();
-sessionStorage.setItem('coup_pid', playerId);
+// Use localStorage for playerId so it persists across app crashes
+let playerId = localStorage.getItem('coup_pid') || crypto.randomUUID();
+localStorage.setItem('coup_pid', playerId);
 let roomCode = '';
 let variant = 'standard';
 let gameState = null;
@@ -179,9 +180,10 @@ function connectWS(action, pokerConfig) {
   showConnectingState();
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   if (ws) ws.close();
-  sessionStorage.setItem('coup_room', roomCode);
-  sessionStorage.setItem('coup_variant', variant);
-  sessionStorage.setItem('coup_gameType', currentGameType);
+  // Store in localStorage for crash recovery
+  localStorage.setItem('coup_room', roomCode);
+  localStorage.setItem('coup_variant', variant);
+  localStorage.setItem('coup_gameType', currentGameType);
   const params = new URLSearchParams({ room: roomCode, playerId, variant, gameType: currentGameType });
   if (action) params.set('action', action);
   ws = new WebSocket(WS + SERVER + '/ws?' + params);
@@ -200,7 +202,7 @@ function connectWS(action, pokerConfig) {
       document.getElementById('name-entry').style.display = 'none';
       document.getElementById('lobby').style.display = '';
       document.getElementById('lobby-code').textContent = roomCode;
-      joinedName = getFullName(savedName);
+      localame = getFullName(savedName);
       sessionStorage.setItem('coup_joinedName', joinedName);
       send('join', { playerName: joinedName });
     } else {
@@ -273,8 +275,8 @@ function handleWSMessage(e) {
           banner.classList.add('show');
           roomCode = msg.payload.roomCode;
           if (msg.payload.gameType) currentGameType = msg.payload.gameType;
-          sessionStorage.setItem('coup_room', roomCode);
-          sessionStorage.setItem('coup_gameType', currentGameType);
+          localStorage.setItem('coup_room', roomCode);
+          localStorage.setItem('coup_gameType', currentGameType);
           setTimeout(() => {
             banner.classList.remove('show');
             banner.style.background = '#dc2626';
@@ -438,10 +440,10 @@ function disconnect() {
   intentionalDisconnect = true;
   reconnectAttempts = 0;
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-  document.getElementById('conn-banner').classList.remove('show');
-  sessionStorage.removeItem('coup_room');
-  sessionStorage.removeItem('coup_joinedName');
-  sessionStorage.removeItem('coup_variant');
+  localStorage.removeItem('coup_room');
+  localStorage.removeItem('coup_joinedName');
+  localStorage.removeItem('coup_variant');
+  localStorage.removeItem('coup_variant');
   sessionStorage.removeItem('coup_gameType');
   if (typeof voiceCleanup === 'function') voiceCleanup();
   if (ws) { ws.close(); ws = null; }
@@ -497,7 +499,7 @@ function submitName() {
   if (!name) return;
   const fullName = getFullName(name);
   joinedName = fullName;
-  localStorage.setItem('coup_name', name);
+  localorage.setItem('coup_name', name);
   sessionStorage.setItem('coup_joinedName', fullName);
   updateProfileBar();
   send('join', { playerName: fullName });
@@ -644,13 +646,13 @@ function saveNamePopup() {
     updateProfileBar();
   } else {
     setTimeout(() => showNamePopup(), 300);
-  }
-  const savedRoom = sessionStorage.getItem('coup_room');
-  const savedJoinedName = sessionStorage.getItem('coup_joinedName');
+  }localStorage.getItem('coup_room');
+  const savedJoinedName = localStorage.getItem('coup_joinedName');
   if (savedRoom && savedJoinedName) {
     roomCode = savedRoom;
     joinedName = savedJoinedName;
-    variant = sessionStorage.getItem('coup_variant') || 'standard';
+    variant = localStorage.getItem('coup_variant') || 'standard';
+    currentGameType = localgetItem('coup_variant') || 'standard';
     currentGameType = sessionStorage.getItem('coup_gameType') || 'coup';
     console.log('[INIT] Rejoining room ' + roomCode + ' as ' + joinedName);
     tryReconnect();
