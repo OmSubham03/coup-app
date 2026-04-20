@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coup-v1';
+const CACHE_NAME = 'coup-v2';
 const PRECACHE = [
   '/textures/duke.jpg',
   '/textures/assassin.jpg',
@@ -29,8 +29,9 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Never cache the main page, WebSocket, or API calls
-  if (url.pathname === '/' || url.pathname.startsWith('/ws') || url.pathname.startsWith('/api/')) {
+  // Only cache static assets (textures, icons) — never JS, CSS, or HTML
+  if (url.pathname === '/' || url.pathname.startsWith('/ws') || url.pathname.startsWith('/api/') ||
+      url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/')) {
     return;
   }
   // Cache-first for static assets (textures, icons)

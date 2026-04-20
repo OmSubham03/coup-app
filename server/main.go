@@ -24,13 +24,15 @@ var upgrader = websocket.Upgrader{
 type Room struct {
 	mu               sync.Mutex
 	code             string
-	gameType         string // "coup", "poker", or "ludo"
+	gameType         string // "coup", "poker", "ludo", or "nquestions"
 	variant          game.VariantKey
 	gameState        *game.GameState
 	pokerState       *game.PokerState
 	pokerConfig      *PokerConfig
 	ludoState        *game.LudoState
 	ludoColors       map[string]string // playerID -> color choice
+	nqState          *game.NQState
+	nqConfig         *NQConfig
 	players          map[string]*PlayerConn // playerID -> PlayerConn
 	hostID           string
 	created          bool
@@ -43,6 +45,10 @@ type Room struct {
 type PokerConfig struct {
 	BuyIn      int `json:"buyIn"`
 	SmallBlind int `json:"smallBlind"`
+}
+
+type NQConfig struct {
+	MaxQuestions int `json:"maxQuestions"`
 }
 
 type PlayerConn struct {
@@ -106,7 +112,8 @@ func findPlayerActiveRoom(playerID string) *Room {
 			// Check if game is active
 			gameActive := (room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver) ||
 				(room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver) ||
-				(room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished)
+				(room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished) ||
+				(room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished)
 			room.mu.Unlock()
 			if gameActive {
 				return room
@@ -157,6 +164,10 @@ func (r *Room) broadcastState() {
 	}
 	if r.gameType == "ludo" {
 		r.broadcastLudoState()
+		return
+	}
+	if r.gameType == "nquestions" {
+		r.broadcastNQState()
 		return
 	}
 	if r.gameState == nil {
@@ -273,6 +284,41 @@ func (r *Room) broadcastLudoState() {
 	}
 }
 
+func (r *Room) broadcastNQState() {
+	if r.nqState == nil {
+		return
+	}
+	gamePlayers := make(map[string]bool)
+	for _, p := range r.nqState.Players {
+		gamePlayers[p.ID] = true
+	}
+	// Send giver the full state, guessers get sanitized (no secret word)
+	sanitized := game.SanitizeNQStateForGuessers(r.nqState)
+	sanitizedData, _ := json.Marshal(OutMessage{Type: "nq-state", Payload: sanitized})
+	spectateData, _ := json.Marshal(OutMessage{Type: "nq-spectate", Payload: sanitized})
+	for connID, conn := range r.connections {
+		pID := r.connPlayer[connID]
+		if gamePlayers[pID] {
+			// Check if this player is the giver
+			isGiver := false
+			for _, p := range r.nqState.Players {
+				if p.ID == pID && p.IsGiver {
+					isGiver = true
+					break
+				}
+			}
+			if isGiver {
+				giverData, _ := json.Marshal(OutMessage{Type: "nq-state", Payload: r.nqState})
+				conn.WriteMessage(websocket.TextMessage, giverData)
+			} else {
+				conn.WriteMessage(websocket.TextMessage, sanitizedData)
+			}
+		} else {
+			conn.WriteMessage(websocket.TextMessage, spectateData)
+		}
+	}
+}
+
 func handleWS(w http.ResponseWriter, req *http.Request) {
 	roomCode := req.URL.Query().Get("room")
 	action := req.URL.Query().Get("action")
@@ -342,7 +388,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// If game already started, check reconnection
-	gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil
+	gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil
 	if gameInProgress {
 		isReconnecting := false
 		if room.gameType == "poker" && room.pokerState != nil {
@@ -354,6 +400,13 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			}
 		} else if room.gameType == "ludo" && room.ludoState != nil {
 			for _, p := range room.ludoState.Players {
+				if p.ID == playerID {
+					isReconnecting = true
+					break
+				}
+			}
+		} else if room.gameType == "nquestions" && room.nqState != nil {
+			for _, p := range room.nqState.Players {
 				if p.ID == playerID {
 					isReconnecting = true
 					break
@@ -375,6 +428,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 				room.sendTo(connID, OutMessage{Type: "poker-spectate", Payload: personalized})
 			} else if room.gameType == "ludo" {
 				room.sendTo(connID, OutMessage{Type: "ludo-spectate", Payload: room.ludoState})
+			} else if room.gameType == "nquestions" {
+				sanitized := game.SanitizeNQStateForGuessers(room.nqState)
+				room.sendTo(connID, OutMessage{Type: "nq-spectate", Payload: sanitized})
 			} else {
 				room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
 			}
@@ -385,6 +441,21 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 				room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
 			} else if room.gameType == "ludo" {
 				room.sendTo(connID, OutMessage{Type: "ludo-state", Payload: room.ludoState})
+			} else if room.gameType == "nquestions" {
+				// Giver gets full state, guessers get sanitized
+				isGiver := false
+				for _, p := range room.nqState.Players {
+					if p.ID == playerID && p.IsGiver {
+						isGiver = true
+						break
+					}
+				}
+				if isGiver {
+					room.sendTo(connID, OutMessage{Type: "nq-state", Payload: room.nqState})
+				} else {
+					sanitized := game.SanitizeNQStateForGuessers(room.nqState)
+					room.sendTo(connID, OutMessage{Type: "nq-state", Payload: sanitized})
+				}
 			} else {
 				room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
 			}
@@ -422,6 +493,8 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 				gameInProgress = room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseWaiting && room.pokerState.Phase != game.PokerPhaseGameOver
 			} else if room.gameType == "ludo" {
 				gameInProgress = room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseWaiting && room.ludoState.Phase != game.LudoPhaseFinished
+			} else if room.gameType == "nquestions" {
+				gameInProgress = room.nqState != nil && room.nqState.Phase != game.NQPhaseWaiting && room.nqState.Phase != game.NQPhaseFinished
 			} else {
 				gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver
 			}
@@ -448,6 +521,11 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 					} else if room.gameType == "ludo" {
 						if room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished {
 							game.LudoVoluntaryExit(room.ludoState, pID)
+							room.broadcastState()
+						}
+					} else if room.gameType == "nquestions" {
+						if room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished {
+							game.NQVoluntaryExit(room.nqState, pID)
 							room.broadcastState()
 						}
 					} else {
@@ -526,7 +604,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		json.Unmarshal(msg.Payload, &payload)
 
-		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil
+		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil
 		if gameInProgress {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "The Game Already Started"}})
 			return
@@ -638,6 +716,24 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			log.Printf("[LUDO] room=%s Ludo game started with %d players", room.code, len(ludoPlayers))
 			room.broadcast(OutMessage{Type: "ludo-started", Payload: nil})
 			room.broadcastLudoState()
+		} else if room.gameType == "nquestions" {
+			maxQ := 20
+			if room.nqConfig != nil && room.nqConfig.MaxQuestions > 0 {
+				maxQ = room.nqConfig.MaxQuestions
+			}
+			// Ensure host is first in list (becomes giver)
+			orderedList := make([]struct{ ID, Name string }, 0, len(playerList))
+			for _, p := range playerList {
+				if p.ID == room.hostID {
+					orderedList = append([]struct{ ID, Name string }{p}, orderedList...)
+				} else {
+					orderedList = append(orderedList, p)
+				}
+			}
+			room.nqState = game.InitializeNQGame(orderedList, maxQ)
+			log.Printf("[NQ] room=%s N Questions game started with %d players, maxQ=%d", room.code, len(orderedList), maxQ)
+			room.broadcast(OutMessage{Type: "nq-started", Payload: nil})
+			room.broadcastNQState()
 		} else {
 			room.gameState = game.InitializeGame(playerList, room.variant)
 			log.Printf("[CARDS] room=%s Coup game started", room.code)
@@ -658,6 +754,17 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		room.pokerConfig = &config
 		room.broadcast(OutMessage{Type: "poker-config", Payload: config})
+
+	case "set-nq-config":
+		var config NQConfig
+		json.Unmarshal(msg.Payload, &config)
+		if config.MaxQuestions < 5 {
+			config.MaxQuestions = 5
+		}
+		if config.MaxQuestions > 50 {
+			config.MaxQuestions = 50
+		}
+		room.nqConfig = &config
 
 	case "return-to-lobby":
 		if room.gameType == "poker" {
@@ -693,6 +800,23 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			}
 			room.ludoState = nil
 			room.ludoColors = make(map[string]string)
+		} else if room.gameType == "nquestions" {
+			if room.nqState == nil {
+				room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+				room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+					"players":    room.playerList(),
+					"hostId":     room.hostID,
+					"gameActive": false,
+					"gameType":   room.gameType,
+				}})
+				return
+			}
+			if playerID != room.hostID && room.nqState.Phase != game.NQPhaseFinished {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can return to lobby"}})
+				return
+			}
+			room.nqState = nil
+			room.nqConfig = nil
 		} else {
 			hostShort := "(none)"
 			if len(room.hostID) >= 8 { hostShort = room.hostID[:8] }
@@ -772,6 +896,19 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				"gameActive": room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished,
 				"gameType":   room.gameType,
 			}})
+		} else if room.gameType == "nquestions" {
+			if room.nqState == nil || room.nqState.Phase == game.NQPhaseFinished {
+				return
+			}
+			game.NQVoluntaryExit(room.nqState, playerID)
+			room.broadcastState()
+			room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+			room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+				"players":    room.playerList(),
+				"hostId":     room.hostID,
+				"gameActive": room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished,
+				"gameType":   room.gameType,
+			}})
 		} else {
 			if room.gameState == nil || room.gameState.Phase == game.PhaseGameOver {
 				return
@@ -793,6 +930,9 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			room.sendTo(connID, OutMessage{Type: "poker-spectate", Payload: personalized})
 		} else if room.gameType == "ludo" && room.ludoState != nil {
 			room.sendTo(connID, OutMessage{Type: "ludo-spectate", Payload: room.ludoState})
+		} else if room.gameType == "nquestions" && room.nqState != nil {
+			sanitized := game.SanitizeNQStateForGuessers(room.nqState)
+			room.sendTo(connID, OutMessage{Type: "nq-spectate", Payload: sanitized})
 		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
 		}
@@ -806,6 +946,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			gameInProgress = room.pokerState != nil
 		} else if room.gameType == "ludo" {
 			gameInProgress = room.ludoState != nil
+		} else if room.gameType == "nquestions" {
+			gameInProgress = room.nqState != nil
 		} else {
 			gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting
 		}
@@ -945,6 +1087,20 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
 		} else if room.gameType == "ludo" && room.ludoState != nil {
 			room.sendTo(connID, OutMessage{Type: "ludo-state", Payload: room.ludoState})
+		} else if room.gameType == "nquestions" && room.nqState != nil {
+			isGiver := false
+			for _, p := range room.nqState.Players {
+				if p.ID == playerID && p.IsGiver {
+					isGiver = true
+					break
+				}
+			}
+			if isGiver {
+				room.sendTo(connID, OutMessage{Type: "nq-state", Payload: room.nqState})
+			} else {
+				sanitized := game.SanitizeNQStateForGuessers(room.nqState)
+				room.sendTo(connID, OutMessage{Type: "nq-state", Payload: sanitized})
+			}
 		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
 		}
@@ -1070,6 +1226,77 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			return
 		}
 		room.broadcastLudoState()
+
+	// N Questions actions
+	case "nq-set-word":
+		if room.nqState == nil {
+			return
+		}
+		var payload struct {
+			Category string `json:"category"`
+			Word     string `json:"word"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.NQSetWord(room.nqState, playerID, payload.Category, payload.Word); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastNQState()
+
+	case "nq-ask":
+		if room.nqState == nil {
+			return
+		}
+		var payload struct {
+			Question  string `json:"question"`
+			IsGuess   bool   `json:"isGuess"`
+			GuessWord string `json:"guessWord"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.NQAskQuestion(room.nqState, playerID, payload.Question, payload.IsGuess, payload.GuessWord); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastNQState()
+
+	case "nq-answer":
+		if room.nqState == nil {
+			return
+		}
+		var payload struct {
+			Answer string `json:"answer"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.NQAnswerQuestion(room.nqState, playerID, payload.Answer); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastNQState()
+
+	case "nq-final-guess":
+		if room.nqState == nil {
+			return
+		}
+		var payload struct {
+			Guess string `json:"guess"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.NQFinalGuess(room.nqState, playerID, payload.Guess); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastNQState()
+
+	case "nq-next-round":
+		if room.nqState == nil || room.nqState.Phase != game.NQPhaseFinished {
+			return
+		}
+		if len(room.nqState.Players) < 2 {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Need at least 2 players"}})
+			return
+		}
+		game.NQNextRound(room.nqState)
+		room.broadcastNQState()
 
 	case "chat":
 		var payload struct {

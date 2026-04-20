@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/css/coup.css">
 <link rel="stylesheet" href="/css/poker.css">
 <link rel="stylesheet" href="/css/ludo.css">
+<link rel="stylesheet" href="/css/nquestions.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -70,6 +71,14 @@
         </div>
         <div class="game-card-arrow">›</div>
       </div>
+      <div class="game-card game-card-nq" onclick="openGameMenu('nquestions')" style="border-color:#7c3aed">
+        <div class="game-card-icon">❓</div>
+        <div class="game-card-info">
+          <div class="game-card-title">N QUESTIONS</div>
+          <div class="game-card-desc">Guess the word in N turns. · 2-10 players</div>
+        </div>
+        <div class="game-card-arrow">›</div>
+      </div>
     </div>
   </div>
 
@@ -113,6 +122,28 @@
       <p class="section-title">Join Game</p>
       <input id="poker-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('poker-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinPokerWithCode()">
       <button class="btn btn-blue" id="poker-join-btn" disabled onclick="joinPokerWithCode()">Join Game</button>
+    </div>
+  </div>
+
+  <!-- N Questions Menu -->
+  <div id="menu-nquestions" style="display:none">
+    <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
+    <h1 class="nq-title">N QUESTIONS</h1>
+    <p class="subtitle">Guess the word in N turns.</p>
+    <div style="margin-bottom:24px">
+      <p class="section-title">Number of Questions</p>
+      <div class="nq-n-picker">
+        <button onclick="nqAdjustN(-1)">−</button>
+        <div class="nq-n-display" id="nq-n-display">20</div>
+        <button onclick="nqAdjustN(1)">+</button>
+      </div>
+      <p class="section-title">Create Game</p>
+      <button class="btn" style="background:#7c3aed" onclick="createNQGame()">Create Game</button>
+    </div>
+    <div>
+      <p class="section-title">Join Game</p>
+      <input id="nq-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#a78bfa" oninput="document.getElementById('nq-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinNQWithCode()">
+      <button class="btn" style="background:#6d28d9" id="nq-join-btn" disabled onclick="joinNQWithCode()">Join Game</button>
     </div>
   </div>
 
@@ -278,6 +309,47 @@
         <div class="chat-input-row">
           <input id="poker-chat-input" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()">
           <button class="btn btn-amber btn-sm" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- N Questions Active Game -->
+  <div id="nq-active" style="display:none">
+    <div class="header-bar">
+      <div>
+        <span style="color:#a78bfa;font-weight:900;font-size:24px">N QUESTIONS</span>
+        <div class="phase-text" id="nq-phase-display"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:#94a3b8;font-size:12px" id="nq-turn-display"></span>
+        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
+        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab active" id="nqtab-game" onclick="switchNQTab('game')">Game</button>
+      <button class="tab" id="nqtab-log" onclick="switchNQTab('log')">📜 Log</button>
+      <button class="tab" id="nqtab-chat" onclick="switchNQTab('chat')">💬 Chat</button>
+      <button class="tab-exit" id="nq-exit-btn" onclick="exitGame()">Exit</button>
+    </div>
+
+    <div id="nq-game-tab">
+      <div id="nq-table-area"></div>
+      <div id="nq-action-area"></div>
+    </div>
+
+    <div id="nq-log-tab" style="display:none">
+      <div id="nq-log-panel" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+
+    <div id="nq-chat-tab" style="display:none">
+      <div class="chat-panel">
+        <div class="chat-messages" id="nq-chat-messages"></div>
+        <div class="chat-input-row">
+          <input id="nq-chat-input" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-sm" style="background:#7c3aed" onclick="sendChat()">Send</button>
         </div>
       </div>
     </div>
@@ -457,7 +529,7 @@
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 5;
+let totalScripts = 6;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
@@ -479,6 +551,7 @@ function checkScriptsLoaded() {
 <script src="/js/coup.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/poker.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/ludo.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/nquestions.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
