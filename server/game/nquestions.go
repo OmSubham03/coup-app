@@ -55,9 +55,13 @@ type NQState struct {
 	CurrentQuestion  int          `json:"currentQuestion"`  // 1-indexed, which question we're on
 	CurrentAskerIdx  int          `json:"currentAskerIdx"`  // Index into non-giver players
 	Questions        []NQQuestion `json:"questions"`
-	WaitingForAnswer bool         `json:"waitingForAnswer"` // Giver needs to respond
+	WaitingForAnswer bool         `json:"waitingForAnswer"` // Giver needs to respond to question
 	PendingQuestion  string       `json:"pendingQuestion"`  // The question waiting for answer
 	PendingAskerID   string       `json:"pendingAskerId"`
+	WaitingForGuessVerdict bool   `json:"waitingForGuessVerdict"` // Giver needs to verify a guess
+	PendingGuessWord       string `json:"pendingGuessWord"`
+	PendingGuessPlayerID   string `json:"pendingGuessPlayerId"`
+	PendingGuessPlayerName string `json:"pendingGuessPlayerName"`
 	Winner           string       `json:"winner"`           // "guessers" or "giver" or ""
 	CorrectGuesser   string       `json:"correctGuesser"`   // Player name who guessed correctly
 	Finished         bool         `json:"finished"`
@@ -153,13 +157,16 @@ func getNonGiverPlayers(state *NQState) []int {
 	return indices
 }
 
-// NQAskQuestion: a guesser asks a question or makes a guess
-func NQAskQuestion(state *NQState, playerID string, question string, isGuess bool, guessWord string) error {
+// NQAskQuestion: a guesser asks a yes/no question (turn-based)
+func NQAskQuestion(state *NQState, playerID string, question string) error {
 	if state.Phase != NQPhaseAsking {
 		return fmt.Errorf("not in asking phase")
 	}
 	if state.WaitingForAnswer {
 		return fmt.Errorf("waiting for giver's answer")
+	}
+	if state.WaitingForGuessVerdict {
+		return fmt.Errorf("waiting for giver to verify a guess")
 	}
 
 	// Check it's this player's turn
@@ -180,47 +187,162 @@ func NQAskQuestion(state *NQState, playerID string, question string, isGuess boo
 		return fmt.Errorf("question is too long")
 	}
 
-	if isGuess {
-		guessWord = strings.TrimSpace(guessWord)
-		if guessWord == "" {
-			return fmt.Errorf("guess cannot be empty")
-		}
-		// Check if guess is correct
-		correct := strings.EqualFold(guessWord, state.SecretWord)
-		q := NQQuestion{
-			AskerID:   playerID,
-			AskerName: state.Players[currentPlayerIdx].Name,
-			Question:  question,
-			IsGuess:   true,
-			GuessWord: guessWord,
-			Correct:   correct,
-			Turn:      state.CurrentQuestion,
-			Timestamp: time.Now().UnixMilli(),
-		}
-		if correct {
-			q.Answer = "✅ CORRECT!"
-			state.Questions = append(state.Questions, q)
-			state.Winner = "guessers"
-			state.CorrectGuesser = state.Players[currentPlayerIdx].Name
-			state.Phase = NQPhaseFinished
-			state.Finished = true
-			addNQLog(state, fmt.Sprintf("🎉 %s guessed correctly: \"%s\"! Guessers win!", state.Players[currentPlayerIdx].Name, guessWord))
-			return nil
-		}
-		// Wrong guess — counts as a question, giver doesn't need to answer
-		q.Answer = "❌ Wrong!"
-		state.Questions = append(state.Questions, q)
-		addNQLog(state, fmt.Sprintf("%s guessed \"%s\" — Wrong!", state.Players[currentPlayerIdx].Name, guessWord))
-		advanceNQTurn(state)
-		return nil
-	}
-
 	// It's a regular question — wait for giver's answer
 	state.WaitingForAnswer = true
 	state.PendingQuestion = question
 	state.PendingAskerID = playerID
 
 	addNQLog(state, fmt.Sprintf("Q%d — %s: \"%s\"", state.CurrentQuestion, state.Players[currentPlayerIdx].Name, question))
+	return nil
+}
+
+// NQMakeGuess: any non-giver can guess at any time (no turn required)
+func NQMakeGuess(state *NQState, playerID string, guess string) error {
+	if state.Phase != NQPhaseAsking && state.Phase != NQPhaseFinalGuess {
+		return fmt.Errorf("not in a guessing phase")
+	}
+	if state.WaitingForAnswer {
+		return fmt.Errorf("waiting for giver's answer to a question")
+	}
+	if state.WaitingForGuessVerdict {
+		return fmt.Errorf("waiting for giver to verify a guess")
+	}
+
+	// Find the player
+	var player *NQPlayer
+	for i, p := range state.Players {
+		if p.ID == playerID {
+			player = &state.Players[i]
+			break
+		}
+	}
+	if player == nil {
+		return fmt.Errorf("player not found")
+	}
+	if player.IsGiver {
+		return fmt.Errorf("the word-giver cannot guess")
+	}
+
+	// In final guess phase, check turn
+	if state.Phase == NQPhaseFinalGuess {
+		nonGivers := getNonGiverPlayers(state)
+		if state.FinalGuessIdx >= len(nonGivers) {
+			return fmt.Errorf("all guesses have been made")
+		}
+		currentIdx := nonGivers[state.FinalGuessIdx]
+		if state.Players[currentIdx].ID != playerID {
+			return fmt.Errorf("it's not your turn to guess")
+		}
+	}
+
+	guess = strings.TrimSpace(guess)
+	if guess == "" {
+		return fmt.Errorf("guess cannot be empty")
+	}
+	if len(guess) > 50 {
+		return fmt.Errorf("guess is too long")
+	}
+
+	state.WaitingForGuessVerdict = true
+	state.PendingGuessWord = guess
+	state.PendingGuessPlayerID = playerID
+	state.PendingGuessPlayerName = player.Name
+
+	addNQLog(state, fmt.Sprintf("🎯 %s made a guess! Waiting for the giver to verify...", player.Name))
+	return nil
+}
+
+// NQVerifyGuess: giver validates whether a guess is correct or wrong
+func NQVerifyGuess(state *NQState, playerID string, correct bool) error {
+	if !state.WaitingForGuessVerdict {
+		return fmt.Errorf("no pending guess to verify")
+	}
+
+	// Only giver can verify
+	isGiver := false
+	for _, p := range state.Players {
+		if p.ID == playerID && p.IsGiver {
+			isGiver = true
+			break
+		}
+	}
+	if !isGiver {
+		return fmt.Errorf("only the word-giver can verify guesses")
+	}
+
+	guessWord := state.PendingGuessWord
+	guesserName := state.PendingGuessPlayerName
+	guesserID := state.PendingGuessPlayerID
+
+	state.WaitingForGuessVerdict = false
+	state.PendingGuessWord = ""
+	state.PendingGuessPlayerID = ""
+	state.PendingGuessPlayerName = ""
+
+	turn := state.CurrentQuestion
+	if state.Phase == NQPhaseFinalGuess {
+		turn = state.MaxQuestions + 1
+	}
+
+	q := NQQuestion{
+		AskerID:   guesserID,
+		AskerName: guesserName,
+		Question:  fmt.Sprintf("I think it's \"%s\"", guessWord),
+		IsGuess:   true,
+		GuessWord: guessWord,
+		Correct:   correct,
+		Turn:      turn,
+		Timestamp: time.Now().UnixMilli(),
+	}
+
+	if correct {
+		q.Answer = "✅ CORRECT!"
+		state.Questions = append(state.Questions, q)
+		state.Winner = "guessers"
+		state.CorrectGuesser = guesserName
+		state.Phase = NQPhaseFinished
+		state.Finished = true
+		addNQLog(state, fmt.Sprintf("🎉 %s guessed correctly: \"%s\"! Guessers win!", guesserName, guessWord))
+		return nil
+	}
+
+	// Wrong guess
+	q.Answer = "❌ Wrong!"
+	state.Questions = append(state.Questions, q)
+	addNQLog(state, fmt.Sprintf("%s guessed \"%s\" — Wrong!", guesserName, guessWord))
+
+	if state.Phase == NQPhaseAsking {
+		// Each guess costs a question
+		state.CurrentQuestion++
+		if state.CurrentQuestion > state.MaxQuestions {
+			state.Phase = NQPhaseFinalGuess
+			state.FinalGuessIdx = 0
+			addNQLog(state, fmt.Sprintf("All %d questions used! Each guesser gets one final guess.", state.MaxQuestions))
+		}
+	} else if state.Phase == NQPhaseFinalGuess {
+		for i, p := range state.Players {
+			if p.ID == guesserID {
+				state.Players[i].HasGuessed = true
+				break
+			}
+		}
+		state.FinalGuessIdx++
+		nonGivers := getNonGiverPlayers(state)
+		if state.FinalGuessIdx >= len(nonGivers) {
+			state.Winner = "giver"
+			state.Phase = NQPhaseFinished
+			state.Finished = true
+			giverName := ""
+			for _, p := range state.Players {
+				if p.IsGiver {
+					giverName = p.Name
+					break
+				}
+			}
+			addNQLog(state, fmt.Sprintf("Nobody guessed it! The word was \"%s\". %s wins!", state.SecretWord, giverName))
+		}
+	}
+
 	return nil
 }
 
@@ -297,71 +419,7 @@ func advanceNQTurn(state *NQState) {
 	}
 }
 
-// NQFinalGuess: each guesser gets one final attempt
-func NQFinalGuess(state *NQState, playerID string, guess string) error {
-	if state.Phase != NQPhaseFinalGuess {
-		return fmt.Errorf("not in final guess phase")
-	}
-
-	nonGivers := getNonGiverPlayers(state)
-	if state.FinalGuessIdx >= len(nonGivers) {
-		return fmt.Errorf("all guesses have been made")
-	}
-
-	currentIdx := nonGivers[state.FinalGuessIdx]
-	if state.Players[currentIdx].ID != playerID {
-		return fmt.Errorf("it's not your turn to guess")
-	}
-
-	guess = strings.TrimSpace(guess)
-	if guess == "" {
-		return fmt.Errorf("guess cannot be empty")
-	}
-
-	correct := strings.EqualFold(guess, state.SecretWord)
-	state.Players[currentIdx].HasGuessed = true
-
-	q := NQQuestion{
-		AskerID:   playerID,
-		AskerName: state.Players[currentIdx].Name,
-		Question:  fmt.Sprintf("Final guess: \"%s\"", guess),
-		IsGuess:   true,
-		GuessWord: guess,
-		Correct:   correct,
-		Answer:    func() string { if correct { return "✅ CORRECT!" }; return "❌ Wrong!" }(),
-		Turn:      state.MaxQuestions + 1,
-		Timestamp: time.Now().UnixMilli(),
-	}
-	state.Questions = append(state.Questions, q)
-
-	if correct {
-		state.Winner = "guessers"
-		state.CorrectGuesser = state.Players[currentIdx].Name
-		state.Phase = NQPhaseFinished
-		state.Finished = true
-		addNQLog(state, fmt.Sprintf("🎉 %s guessed correctly: \"%s\"! Guessers win!", state.Players[currentIdx].Name, guess))
-		return nil
-	}
-
-	addNQLog(state, fmt.Sprintf("%s guessed \"%s\" — Wrong!", state.Players[currentIdx].Name, guess))
-	state.FinalGuessIdx++
-
-	if state.FinalGuessIdx >= len(nonGivers) {
-		// All guessers failed
-		state.Winner = "giver"
-		state.Phase = NQPhaseFinished
-		state.Finished = true
-		giverName := ""
-		for _, p := range state.Players {
-			if p.IsGiver {
-				giverName = p.Name
-				break
-			}
-		}
-		addNQLog(state, fmt.Sprintf("Nobody guessed it! The word was \"%s\". %s wins!", state.SecretWord, giverName))
-	}
-	return nil
-}
+// NQFinalGuess is now handled by NQMakeGuess + NQVerifyGuess
 
 // NQNextRound starts a new round with the next player as giver
 func NQNextRound(state *NQState) {
@@ -394,6 +452,10 @@ func NQNextRound(state *NQState) {
 	state.WaitingForAnswer = false
 	state.PendingQuestion = ""
 	state.PendingAskerID = ""
+	state.WaitingForGuessVerdict = false
+	state.PendingGuessWord = ""
+	state.PendingGuessPlayerID = ""
+	state.PendingGuessPlayerName = ""
 	state.Winner = ""
 	state.CorrectGuesser = ""
 	state.Finished = false

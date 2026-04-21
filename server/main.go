@@ -1343,11 +1343,37 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		var payload struct {
 			Question  string `json:"question"`
-			IsGuess   bool   `json:"isGuess"`
-			GuessWord string `json:"guessWord"`
 		}
 		json.Unmarshal(msg.Payload, &payload)
-		if err := game.NQAskQuestion(room.nqState, playerID, payload.Question, payload.IsGuess, payload.GuessWord); err != nil {
+		if err := game.NQAskQuestion(room.nqState, playerID, payload.Question); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastNQState()
+
+	case "nq-guess":
+		if room.nqState == nil {
+			return
+		}
+		var payload struct {
+			Guess string `json:"guess"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.NQMakeGuess(room.nqState, playerID, payload.Guess); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastNQState()
+
+	case "nq-verify-guess":
+		if room.nqState == nil {
+			return
+		}
+		var payload struct {
+			Correct bool `json:"correct"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.NQVerifyGuess(room.nqState, playerID, payload.Correct); err != nil {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
 			return
 		}
@@ -1375,7 +1401,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			Guess string `json:"guess"`
 		}
 		json.Unmarshal(msg.Payload, &payload)
-		if err := game.NQFinalGuess(room.nqState, playerID, payload.Guess); err != nil {
+		if err := game.NQMakeGuess(room.nqState, playerID, payload.Guess); err != nil {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
 			return
 		}

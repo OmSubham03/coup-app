@@ -135,7 +135,22 @@
 .nq-ask-buttons { display: flex; gap: 10px; }
 .nq-btn-ask { background: #7c3aed !important; color: #fff; flex: 1; font-weight: 700; }
 .nq-btn-guess-toggle { background: #f59e0b !important; color: #000; flex: 1; font-weight: 700; }
-.nq-btn-guess { background: #f59e0b !important; color: #000; font-weight: 800; width: 100%; }
+.nq-btn-guess { background: #f59e0b !important; color: #000; font-weight: 800; }
+
+/* Guess section (always visible for non-givers) */
+.nq-guess-section { margin-top: 12px; }
+.nq-guess-divider { text-align: center; color: #64748b; font-size: 12px; margin-bottom: 8px; font-weight: 600; }
+.nq-guess-row { display: flex; gap: 8px; align-items: center; }
+.nq-guess-row .nq-input { flex: 1; }
+.nq-guess-row .nq-btn-guess { width: auto; white-space: nowrap; }
+
+/* Guess verification form */
+.nq-verify-form { text-align: center; padding: 16px; }
+.nq-verify-form .nq-prompt { font-size: 15px; margin-bottom: 8px; color: #e2e8f0; }
+.nq-guess-reveal { font-size: 24px; font-weight: 900; color: #f59e0b; padding: 12px; margin: 8px 0 16px; background: #1a1a0a; border-radius: 10px; border: 2px solid #f59e0b; }
+.nq-verify-buttons { display: flex; gap: 12px; justify-content: center; }
+.nq-btn-correct { background: #10b981 !important; color: #fff; font-weight: 800; font-size: 16px; padding: 10px 24px; }
+.nq-btn-wrong { background: #ef4444 !important; color: #fff; font-weight: 800; font-size: 16px; padding: 10px 24px; }
 
 /* Wait message */
 .nq-wait-msg {
