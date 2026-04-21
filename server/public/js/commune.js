@@ -347,10 +347,7 @@ function renderCommuneFinished(tableArea, actionArea) {
     </div>
     ${cardsHtml}${standingsHtml}`;
 
-  const isHost = hostId === playerId;
-  actionArea.innerHTML = isHost
-    ? `<button class="btn cm-btn-lobby" onclick="send('return-to-lobby')">Return to Lobby</button>`
-    : `<div class="cm-wait">Waiting for host...</div>`;
+  actionArea.innerHTML = `<button class="btn cm-btn-lobby" onclick="send('return-to-lobby')">Return to Lobby</button>`;
 }
 
 function switchCommuneTab(tab) {

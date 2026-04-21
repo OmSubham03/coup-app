@@ -27,9 +27,9 @@ function openGameMenu(type) {
   document.getElementById('menu-nquestions').style.display = type === 'nquestions' ? '' : 'none';
   document.getElementById('menu-commune').style.display = type === 'commune' ? '' : 'none';
   document.getElementById('join-variant-row').style.display = type === 'coup' ? '' : 'none';
-  const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: 'N QUESTIONS', commune: 'COMMUNE' };
+  const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: '20 QUESTIONS', commune: 'COMMUNE' };
   const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title', commune: '' };
-  const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Guess the word in N turns.', commune: 'Bluff poker hands. Call the liar.' };
+  const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Correct Guess in 20 turns', commune: 'Bluff poker hands. Call the liar.' };
   ['join-game-title', 'entry-game-title', 'lobby-game-title'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.textContent = gameNames[type] || type.toUpperCase(); el.className = (gameClasses[type] || '') + ' '; el.style.fontSize = '36px'; }
@@ -557,7 +557,7 @@ function exitGame() {
     }
   } else if (currentGameType === 'nquestions') {
     if (nqState && nqState.phase !== 'finished') {
-      if (!confirm('Exit N Questions?')) return;
+      if (!confirm('Exit 20 QUESTIONS?')) return;
       send('exit-game');
     }
   } else if (currentGameType === 'commune') {

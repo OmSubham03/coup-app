@@ -779,7 +779,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				}
 			}
 			room.nqState = game.InitializeNQGame(orderedList, maxQ)
-			log.Printf("[NQ] room=%s N Questions game started with %d players, maxQ=%d", room.code, len(orderedList), maxQ)
+			log.Printf("[NQ] room=%s 20 QUESTIONS game started with %d players, maxQ=%d", room.code, len(orderedList), maxQ)
 			room.broadcast(OutMessage{Type: "nq-started", Payload: nil})
 			room.broadcastNQState()
 		} else if room.gameType == "commune" {
@@ -885,8 +885,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				}})
 				return
 			}
-			if playerID != room.hostID && room.communeState.Phase != game.CommunePhaseFinished {
-				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can return to lobby"}})
+			if room.communeState.Phase != game.CommunePhaseFinished {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Game is still in progress"}})
 				return
 			}
 			room.communeState = nil
@@ -1321,7 +1321,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		room.broadcastLudoState()
 
-	// N Questions actions
+	// 20 QUESTIONS actions
 	case "nq-set-word":
 		if room.nqState == nil {
 			return

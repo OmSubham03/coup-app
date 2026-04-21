@@ -75,8 +75,8 @@
       <div class="game-card game-card-nq" onclick="openGameMenu('nquestions')">
         <div class="game-card-icon">❓</div>
         <div class="game-card-info">
-          <div class="game-card-title">N QUESTIONS</div>
-          <div class="game-card-desc">Guess the word in N turns. · 2-10 players</div>
+          <div class="game-card-title">20 QUESTIONS</div>
+          <div class="game-card-desc">Correct Guess in 20 turns · 2-10 players</div>
         </div>
         <div class="game-card-arrow">›</div>
       </div>
@@ -134,11 +134,11 @@
     </div>
   </div>
 
-  <!-- N Questions Menu -->
+  <!-- 20 QUESTIONS Menu -->
   <div id="menu-nquestions" style="display:none">
     <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
-    <h1 class="nq-title">N QUESTIONS</h1>
-    <p class="subtitle">Guess the word in N turns.</p>
+    <h1 class="nq-title">20 QUESTIONS</h1>
+    <p class="subtitle">Correct Guess in 20 turns</p>
     <div style="margin-bottom:24px">
       <p class="section-title">Number of Questions</p>
       <div class="nq-n-picker">
@@ -151,8 +151,8 @@
     </div>
     <div>
       <p class="section-title">Join Game</p>
-      <input id="nq-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#a78bfa" oninput="document.getElementById('nq-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinNQWithCode()">
-      <button class="btn" style="background:#6d28d9" id="nq-join-btn" disabled onclick="joinNQWithCode()">Join Game</button>
+      <input id="nq-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('nq-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinNQWithCode()">
+      <button class="btn btn-blue" id="nq-join-btn" disabled onclick="joinNQWithCode()">Join Game</button>
     </div>
   </div>
 
@@ -179,12 +179,12 @@
     <p class="subtitle">Bluff poker hands. Call the liar.</p>
     <div style="margin-bottom:24px">
       <p class="section-title">Create Game</p>
-      <button class="btn" style="background:#06b6d4;color:#0f172a" onclick="createCommuneGame()">Create Commune Game</button>
+      <button class="btn" style="background:#3b82f6;color:#fff" onclick="createCommuneGame()">Create Commune Game</button>
     </div>
     <div>
       <p class="section-title">Join Game</p>
-      <input id="commune-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#06b6d4" oninput="document.getElementById('commune-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinCommuneWithCode()">
-      <button class="btn" style="background:#0891b2" id="commune-join-btn" disabled onclick="joinCommuneWithCode()">Join Game</button>
+      <input id="commune-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('commune-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinCommuneWithCode()">
+      <button class="btn btn-amber" id="commune-join-btn" disabled onclick="joinCommuneWithCode()">Join Game</button>
     </div>
   </div>
 </div>
@@ -339,11 +339,11 @@
     </div>
   </div>
 
-  <!-- N Questions Active Game -->
+  <!-- 20 QUESTIONS Active Game -->
   <div id="nq-active" style="display:none">
     <div class="header-bar">
       <div>
-        <span style="color:#a78bfa;font-weight:900;font-size:24px">N QUESTIONS</span>
+        <span style="color:#a78bfa;font-weight:900;font-size:24px">20 QUESTIONS</span>
         <div class="phase-text" id="nq-phase-display"></div>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
@@ -357,6 +357,7 @@
       <button class="tab active" id="nqtab-game" onclick="switchNQTab('game')">Game</button>
       <button class="tab" id="nqtab-log" onclick="switchNQTab('log')">📜 Log</button>
       <button class="tab" id="nqtab-chat" onclick="switchNQTab('chat')">💬 Chat</button>
+      <button class="tab-rules" style="background:#7c3aed" onclick="toggleNQRules()">Rules</button>
       <button class="tab-exit" id="nq-exit-btn" onclick="exitGame()">Exit</button>
     </div>
 
@@ -426,7 +427,7 @@
   <div id="commune-active" style="display:none">
     <div class="header-bar">
       <div>
-        <span style="color:#06b6d4;font-weight:900;font-size:24px">COMMUNE</span>
+        <span style="color:#3b82f6;font-weight:900;font-size:24px">COMMUNE</span>
         <div class="phase-text" id="commune-phase-display"></div>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
@@ -593,8 +594,8 @@
 
 <!-- Commune Rules Overlay -->
 <div class="rules-overlay" id="commune-rules-overlay">
-  <div class="rules-content" style="border-color:#06b6d4">
-    <div class="rules-close"><button onclick="toggleCommuneRules()" style="background:#06b6d4;color:#0f172a">✕ Close</button></div>
+  <div class="rules-content" style="border-color:#3b82f6">
+    <div class="rules-close"><button onclick="toggleCommuneRules()" style="background:#3b82f6;color:#fff">✕ Close</button></div>
     <h2>🫱 Commune Rules</h2>
     <h3>Overview</h3>
     <p>A bluffing card game using a standard 52-card deck where <b>2s are wild</b>. Two <b>community cards</b> are dealt face-up for all to see. Players declare poker-style hands based on the community cards plus <b>their own hand</b>. Each declaration must be higher than the last — or you can call the bluff!</p>
@@ -632,6 +633,41 @@
     <p>When you call, all cards are revealed. The declared hand is checked against <b>ALL dealt cards</b> — community cards and every player's hand (using wilds). If the hand <b>IS present</b>, the <b>caller loses a token</b>. If it's <b>NOT present</b>, the <b>declarer loses a token</b>.</p>
     <h3>Elimination</h3>
     <p>Lose all 5 tokens and you're out. As you lose tokens, you receive fewer cards. Last player standing wins!</p>
+  </div>
+</div>
+
+<!-- N Questions Rules Overlay -->
+<div class="rules-overlay" id="nq-rules-overlay">
+  <div class="rules-content" style="border-color:#7c3aed">
+    <div class="rules-close"><button onclick="toggleNQRules()" style="background:#7c3aed;color:#fff">✕ Close</button></div>
+    <h2>❓ 20 Questions Rules</h2>
+    <h3>Overview</h3>
+    <p>One player (the <b>Word-Giver</b>) picks a secret word. Everyone else has <b>20 yes/no questions</b> to figure out what it is!</p>
+    <h3>Setup</h3>
+    <ul>
+      <li>The <b>Word-Giver</b> chooses a <b>category</b> (Name, Place, Animal, or Thing) and enters a secret word.</li>
+      <li>The category is revealed to all players, but the word stays hidden.</li>
+    </ul>
+    <h3>Asking Questions</h3>
+    <ul>
+      <li>Players take <b>turns</b> asking one question at a time.</li>
+      <li>Questions should be <b>yes/no</b> style (e.g., "Is it alive?").</li>
+      <li>The Word-Giver answers <b>Yes</b>, <b>No</b>, or can type a short comment.</li>
+      <li>You can also <b>make a guess</b> on your turn instead of asking a question — but it still counts as one of the 20 questions!</li>
+    </ul>
+    <h3>Final Guess Round</h3>
+    <ul>
+      <li>After all 20 questions are used up, each guesser gets <b>one final guess</b>.</li>
+      <li>Players guess one at a time in turn order.</li>
+      <li>If anyone guesses correctly, the <b>guessers win</b>!</li>
+    </ul>
+    <h3>Winning</h3>
+    <ul>
+      <li><b>Guessers win</b> if anyone guesses the word correctly (during questions or final guess).</li>
+      <li><b>Word-Giver wins</b> if nobody guesses the word.</li>
+    </ul>
+    <h3>Next Round</h3>
+    <p>After the game ends, the <b>Word-Giver role rotates</b> to the next player, and a new round begins!</p>
   </div>
 </div>
 

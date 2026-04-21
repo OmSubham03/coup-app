@@ -1,4 +1,4 @@
-// ========== N QUESTIONS GAME ==========
+// ========== 20 QUESTIONS GAME ==========
 
 let nqState = null;
 
@@ -317,4 +317,9 @@ function switchNQTab(tab) {
     const chatTab = document.getElementById('nqtab-chat');
     if (chatTab) chatTab.classList.remove('chat-unread');
   }
+}
+
+function toggleNQRules() {
+  const el = document.getElementById('nq-rules-overlay');
+  el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
 }
