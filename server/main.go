@@ -24,7 +24,7 @@ var upgrader = websocket.Upgrader{
 type Room struct {
 	mu               sync.Mutex
 	code             string
-	gameType         string // "coup", "poker", "ludo", or "nquestions"
+	gameType         string // "coup", "poker", "ludo", "nquestions", or "commune"
 	variant          game.VariantKey
 	gameState        *game.GameState
 	pokerState       *game.PokerState
@@ -33,6 +33,7 @@ type Room struct {
 	ludoColors       map[string]string // playerID -> color choice
 	nqState          *game.NQState
 	nqConfig         *NQConfig
+	communeState     *game.CommuneState
 	players          map[string]*PlayerConn // playerID -> PlayerConn
 	hostID           string
 	created          bool
@@ -113,7 +114,8 @@ func findPlayerActiveRoom(playerID string) *Room {
 			gameActive := (room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver) ||
 				(room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver) ||
 				(room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished) ||
-				(room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished)
+				(room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished) ||
+				(room.communeState != nil && room.communeState.Phase != game.CommunePhaseFinished)
 			room.mu.Unlock()
 			if gameActive {
 				return room
@@ -168,6 +170,10 @@ func (r *Room) broadcastState() {
 	}
 	if r.gameType == "nquestions" {
 		r.broadcastNQState()
+		return
+	}
+	if r.gameType == "commune" {
+		r.broadcastCommuneState()
 		return
 	}
 	if r.gameState == nil {
@@ -319,6 +325,28 @@ func (r *Room) broadcastNQState() {
 	}
 }
 
+func (r *Room) broadcastCommuneState() {
+	if r.communeState == nil {
+		return
+	}
+	gamePlayers := make(map[string]bool)
+	for _, p := range r.communeState.Players {
+		gamePlayers[p.ID] = true
+	}
+	spectatorState := game.SanitizeCommuneStateForPlayer(r.communeState, "")
+	spectateData, _ := json.Marshal(OutMessage{Type: "commune-spectate", Payload: spectatorState})
+	for connID, conn := range r.connections {
+		pID := r.connPlayer[connID]
+		if gamePlayers[pID] {
+			personalized := game.SanitizeCommuneStateForPlayer(r.communeState, pID)
+			data, _ := json.Marshal(OutMessage{Type: "commune-state", Payload: personalized})
+			conn.WriteMessage(websocket.TextMessage, data)
+		} else {
+			conn.WriteMessage(websocket.TextMessage, spectateData)
+		}
+	}
+}
+
 func handleWS(w http.ResponseWriter, req *http.Request) {
 	roomCode := req.URL.Query().Get("room")
 	action := req.URL.Query().Get("action")
@@ -388,7 +416,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// If game already started, check reconnection
-	gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil
+	gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil
 	if gameInProgress {
 		isReconnecting := false
 		if room.gameType == "poker" && room.pokerState != nil {
@@ -407,6 +435,13 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			}
 		} else if room.gameType == "nquestions" && room.nqState != nil {
 			for _, p := range room.nqState.Players {
+				if p.ID == playerID {
+					isReconnecting = true
+					break
+				}
+			}
+		} else if room.gameType == "commune" && room.communeState != nil {
+			for _, p := range room.communeState.Players {
 				if p.ID == playerID {
 					isReconnecting = true
 					break
@@ -431,6 +466,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			} else if room.gameType == "nquestions" {
 				sanitized := game.SanitizeNQStateForGuessers(room.nqState)
 				room.sendTo(connID, OutMessage{Type: "nq-spectate", Payload: sanitized})
+			} else if room.gameType == "commune" {
+				spectatorState := game.SanitizeCommuneStateForPlayer(room.communeState, "")
+				room.sendTo(connID, OutMessage{Type: "commune-spectate", Payload: spectatorState})
 			} else {
 				room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
 			}
@@ -456,6 +494,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 					sanitized := game.SanitizeNQStateForGuessers(room.nqState)
 					room.sendTo(connID, OutMessage{Type: "nq-state", Payload: sanitized})
 				}
+			} else if room.gameType == "commune" {
+				personalized := game.SanitizeCommuneStateForPlayer(room.communeState, playerID)
+				room.sendTo(connID, OutMessage{Type: "commune-state", Payload: personalized})
 			} else {
 				room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
 			}
@@ -495,6 +536,8 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 				gameInProgress = room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseWaiting && room.ludoState.Phase != game.LudoPhaseFinished
 			} else if room.gameType == "nquestions" {
 				gameInProgress = room.nqState != nil && room.nqState.Phase != game.NQPhaseWaiting && room.nqState.Phase != game.NQPhaseFinished
+			} else if room.gameType == "commune" {
+				gameInProgress = room.communeState != nil && room.communeState.Phase != game.CommunePhaseWaiting && room.communeState.Phase != game.CommunePhaseFinished
 			} else {
 				gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver
 			}
@@ -526,6 +569,11 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 					} else if room.gameType == "nquestions" {
 						if room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished {
 							game.NQVoluntaryExit(room.nqState, pID)
+							room.broadcastState()
+						}
+					} else if room.gameType == "commune" {
+						if room.communeState != nil && room.communeState.Phase != game.CommunePhaseFinished {
+							game.CommuneVoluntaryExit(room.communeState, pID)
 							room.broadcastState()
 						}
 					} else {
@@ -604,7 +652,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		json.Unmarshal(msg.Payload, &payload)
 
-		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil
+		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil
 		if gameInProgress {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "The Game Already Started"}})
 			return
@@ -734,6 +782,15 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			log.Printf("[NQ] room=%s N Questions game started with %d players, maxQ=%d", room.code, len(orderedList), maxQ)
 			room.broadcast(OutMessage{Type: "nq-started", Payload: nil})
 			room.broadcastNQState()
+		} else if room.gameType == "commune" {
+			if len(room.players) > 10 {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Commune supports max 10 players"}})
+				return
+			}
+			room.communeState = game.InitializeCommuneGame(playerList)
+			log.Printf("[COMMUNE] room=%s Commune game started with %d players", room.code, len(playerList))
+			room.broadcast(OutMessage{Type: "commune-started", Payload: nil})
+			room.broadcastCommuneState()
 		} else {
 			room.gameState = game.InitializeGame(playerList, room.variant)
 			log.Printf("[CARDS] room=%s Coup game started", room.code)
@@ -817,6 +874,22 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			}
 			room.nqState = nil
 			room.nqConfig = nil
+		} else if room.gameType == "commune" {
+			if room.communeState == nil {
+				room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+				room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+					"players":    room.playerList(),
+					"hostId":     room.hostID,
+					"gameActive": false,
+					"gameType":   room.gameType,
+				}})
+				return
+			}
+			if playerID != room.hostID && room.communeState.Phase != game.CommunePhaseFinished {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can return to lobby"}})
+				return
+			}
+			room.communeState = nil
 		} else {
 			hostShort := "(none)"
 			if len(room.hostID) >= 8 { hostShort = room.hostID[:8] }
@@ -909,6 +982,19 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				"gameActive": room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished,
 				"gameType":   room.gameType,
 			}})
+		} else if room.gameType == "commune" {
+			if room.communeState == nil || room.communeState.Phase == game.CommunePhaseFinished {
+				return
+			}
+			game.CommuneVoluntaryExit(room.communeState, playerID)
+			room.broadcastState()
+			room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+			room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+				"players":    room.playerList(),
+				"hostId":     room.hostID,
+				"gameActive": room.communeState != nil && room.communeState.Phase != game.CommunePhaseFinished,
+				"gameType":   room.gameType,
+			}})
 		} else {
 			if room.gameState == nil || room.gameState.Phase == game.PhaseGameOver {
 				return
@@ -933,6 +1019,9 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		} else if room.gameType == "nquestions" && room.nqState != nil {
 			sanitized := game.SanitizeNQStateForGuessers(room.nqState)
 			room.sendTo(connID, OutMessage{Type: "nq-spectate", Payload: sanitized})
+		} else if room.gameType == "commune" && room.communeState != nil {
+			spectatorState := game.SanitizeCommuneStateForPlayer(room.communeState, "")
+			room.sendTo(connID, OutMessage{Type: "commune-spectate", Payload: spectatorState})
 		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
 		}
@@ -948,6 +1037,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			gameInProgress = room.ludoState != nil
 		} else if room.gameType == "nquestions" {
 			gameInProgress = room.nqState != nil
+		} else if room.gameType == "commune" {
+			gameInProgress = room.communeState != nil
 		} else {
 			gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting
 		}
@@ -1101,6 +1192,9 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				sanitized := game.SanitizeNQStateForGuessers(room.nqState)
 				room.sendTo(connID, OutMessage{Type: "nq-state", Payload: sanitized})
 			}
+		} else if room.gameType == "commune" && room.communeState != nil {
+			personalized := game.SanitizeCommuneStateForPlayer(room.communeState, playerID)
+			room.sendTo(connID, OutMessage{Type: "commune-state", Payload: personalized})
 		} else if room.gameState != nil {
 			room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
 		}
@@ -1297,6 +1391,36 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		game.NQNextRound(room.nqState)
 		room.broadcastNQState()
+
+	// Commune actions
+	case "commune-declare":
+		if room.communeState == nil {
+			return
+		}
+		var decl game.CommuneDeclaration
+		json.Unmarshal(msg.Payload, &decl)
+		if err := game.CommuneDeclare(room.communeState, playerID, decl); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastCommuneState()
+
+	case "commune-call":
+		if room.communeState == nil {
+			return
+		}
+		if err := game.CommuneCall(room.communeState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastCommuneState()
+
+	case "commune-next-hand":
+		if room.communeState == nil || room.communeState.Phase != game.CommunePhaseCalled {
+			return
+		}
+		game.CommuneNextHand(room.communeState)
+		room.broadcastCommuneState()
 
 	case "chat":
 		var payload struct {

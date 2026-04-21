@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="/css/poker.css">
 <link rel="stylesheet" href="/css/ludo.css">
 <link rel="stylesheet" href="/css/nquestions.css">
+<link rel="stylesheet" href="/css/commune.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -76,6 +77,14 @@
         <div class="game-card-info">
           <div class="game-card-title">N QUESTIONS</div>
           <div class="game-card-desc">Guess the word in N turns. · 2-10 players</div>
+        </div>
+        <div class="game-card-arrow">›</div>
+      </div>
+      <div class="game-card" onclick="openGameMenu('commune')" style="border-color:#06b6d4">
+        <div class="game-card-icon">🫱</div>
+        <div class="game-card-info">
+          <div class="game-card-title">COMMUNE</div>
+          <div class="game-card-desc">Bluff poker hands. Call the liar. · 2-10 players</div>
         </div>
         <div class="game-card-arrow">›</div>
       </div>
@@ -160,6 +169,22 @@
       <p class="section-title">Join Game</p>
       <input id="ludo-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('ludo-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinLudoWithCode()">
       <button class="btn btn-blue" id="ludo-join-btn" disabled onclick="joinLudoWithCode()">Join Game</button>
+    </div>
+  </div>
+
+  <!-- Commune Menu -->
+  <div id="menu-commune" style="display:none">
+    <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
+    <h1 style="color:#06b6d4;font-weight:900;letter-spacing:4px">COMMUNE</h1>
+    <p class="subtitle">Bluff poker hands. Call the liar.</p>
+    <div style="margin-bottom:24px">
+      <p class="section-title">Create Game</p>
+      <button class="btn" style="background:#06b6d4;color:#0f172a" onclick="createCommuneGame()">Create Commune Game</button>
+    </div>
+    <div>
+      <p class="section-title">Join Game</p>
+      <input id="commune-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#06b6d4" oninput="document.getElementById('commune-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinCommuneWithCode()">
+      <button class="btn" style="background:#0891b2" id="commune-join-btn" disabled onclick="joinCommuneWithCode()">Join Game</button>
     </div>
   </div>
 </div>
@@ -396,6 +421,48 @@
       </div>
     </div>
   </div>
+
+  <!-- Commune Active Game -->
+  <div id="commune-active" style="display:none">
+    <div class="header-bar">
+      <div>
+        <span style="color:#06b6d4;font-weight:900;font-size:24px">COMMUNE</span>
+        <div class="phase-text" id="commune-phase-display"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:#94a3b8;font-size:12px" id="commune-turn-display"></span>
+        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
+        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab active" id="cmtab-game" onclick="switchCommuneTab('game')">Game</button>
+      <button class="tab" id="cmtab-log" onclick="switchCommuneTab('log')">📜 Log</button>
+      <button class="tab" id="cmtab-chat" onclick="switchCommuneTab('chat')">💬 Chat</button>
+      <button class="tab-rules" style="background:#06b6d4;color:#0f172a" onclick="toggleCommuneRules()">Rules</button>
+      <button class="tab-exit" id="commune-exit-btn" onclick="exitGame()">Exit</button>
+    </div>
+
+    <div id="commune-game-tab">
+      <div id="commune-table-area"></div>
+      <div id="commune-action-area"></div>
+    </div>
+
+    <div id="commune-log-tab" style="display:none">
+      <div id="commune-log-panel" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+
+    <div id="commune-chat-tab" style="display:none">
+      <div class="chat-panel">
+        <div class="chat-messages" id="commune-chat-messages"></div>
+        <div class="chat-input-row">
+          <input id="commune-chat-input" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-sm" style="background:#06b6d4;color:#0f172a" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 </div>
@@ -524,12 +591,56 @@
   </div>
 </div>
 
+<!-- Commune Rules Overlay -->
+<div class="rules-overlay" id="commune-rules-overlay">
+  <div class="rules-content" style="border-color:#06b6d4">
+    <div class="rules-close"><button onclick="toggleCommuneRules()" style="background:#06b6d4;color:#0f172a">✕ Close</button></div>
+    <h2>🫱 Commune Rules</h2>
+    <h3>Overview</h3>
+    <p>A bluffing card game using a standard 52-card deck where <b>2s are wild</b>. Two <b>community cards</b> are dealt face-up for all to see. Players declare poker-style hands based on the community cards plus <b>their own hand</b>. Each declaration must be higher than the last — or you can call the bluff!</p>
+    <h3>Setup</h3>
+    <ul>
+      <li>Each player starts with <b>5 tokens</b> (lives).</li>
+      <li><b>2 community cards</b> are dealt face-up each round.</li>
+      <li>Each player's hand = <b>6 minus tokens lost</b> cards (minimum 1).</li>
+      <li>A fresh shuffled deck is dealt each round.</li>
+    </ul>
+    <h3>Wild Cards</h3>
+    <ul>
+      <li><b>2s</b> are wild — they can count as any rank or suit.</li>
+    </ul>
+    <h3>On Your Turn</h3>
+    <ul>
+      <li><b>Declare</b> — Claim a poker hand exists in the community cards + your own hand. Must be higher than the previous declaration.</li>
+      <li><b>Call</b> — Challenge the previous player's declaration (only if someone already declared).</li>
+    </ul>
+    <h3>Hand Rankings (lowest to highest)</h3>
+    <ul>
+      <li><b>High Card</b> — Any single rank</li>
+      <li><b>Pair</b> — Two of the same rank</li>
+      <li><b>Two Pair</b> — Two different pairs</li>
+      <li><b>Three of a Kind</b> — Three of the same rank</li>
+      <li><b>Straight</b> — Five consecutive ranks</li>
+      <li><b>Full House</b> — Three of a kind + a pair</li>
+      <li><b>Four of a Kind</b> — Four of the same rank</li>
+      <li><b>Two Trips</b> — Two sets of three of a kind</li>
+      <li><b>Ulta Straight</b> — All ranks from 3 to Ace (12 cards)</li>
+      <li><b>Four + Three</b> — Four of a kind + three of a kind</li>
+      <li><b>Five of a Kind</b> — Five of the same rank (using wilds)</li>
+    </ul>
+    <h3>Calling</h3>
+    <p>When you call, all cards are revealed. The declared hand is checked against <b>ALL dealt cards</b> — community cards and every player's hand (using wilds). If the hand <b>IS present</b>, the <b>caller loses a token</b>. If it's <b>NOT present</b>, the <b>declarer loses a token</b>.</p>
+    <h3>Elimination</h3>
+    <p>Lose all 5 tokens and you're out. As you lose tokens, you receive fewer cards. Last player standing wins!</p>
+  </div>
+</div>
+
 </body>
 <script>
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 6;
+let totalScripts = 7;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
@@ -552,6 +663,7 @@ function checkScriptsLoaded() {
 <script src="/js/poker.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/ludo.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/nquestions.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/commune.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

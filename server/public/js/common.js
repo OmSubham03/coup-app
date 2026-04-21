@@ -25,10 +25,11 @@ function openGameMenu(type) {
   document.getElementById('menu-poker').style.display = type === 'poker' ? '' : 'none';
   document.getElementById('menu-ludo').style.display = type === 'ludo' ? '' : 'none';
   document.getElementById('menu-nquestions').style.display = type === 'nquestions' ? '' : 'none';
+  document.getElementById('menu-commune').style.display = type === 'commune' ? '' : 'none';
   document.getElementById('join-variant-row').style.display = type === 'coup' ? '' : 'none';
-  const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: 'N QUESTIONS' };
-  const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title' };
-  const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Guess the word in N turns.' };
+  const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: 'N QUESTIONS', commune: 'COMMUNE' };
+  const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title', commune: '' };
+  const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Guess the word in N turns.', commune: 'Bluff poker hands. Call the liar.' };
   ['join-game-title', 'entry-game-title', 'lobby-game-title'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.textContent = gameNames[type] || type.toUpperCase(); el.className = (gameClasses[type] || '') + ' '; el.style.fontSize = '36px'; }
@@ -45,6 +46,7 @@ function backToGameList() {
   document.getElementById('menu-poker').style.display = 'none';
   document.getElementById('menu-ludo').style.display = 'none';
   document.getElementById('menu-nquestions').style.display = 'none';
+  document.getElementById('menu-commune').style.display = 'none';
 }
 
 function showScreen(name) {
@@ -196,6 +198,27 @@ function joinNQWithCode() {
   connectWS();
 }
 
+async function createCommuneGame() {
+  currentGameType = 'commune';
+  try {
+    const res = await fetch(HTTP + SERVER + '/api/generate-code');
+    const data = await res.json();
+    roomCode = data.code;
+    connectWS('create');
+  } catch(e) { alert('Cannot connect to server: ' + e.message); }
+}
+
+function joinCommuneWithCode() {
+  const code = document.getElementById('commune-join-code').value.trim().toUpperCase();
+  if (!code) return;
+  const btn = document.getElementById('commune-join-btn');
+  btn.disabled = true;
+  btn.textContent = 'Joining...';
+  currentGameType = 'commune';
+  roomCode = code;
+  connectWS();
+}
+
 let intentionalDisconnect = false;
 let reconnectTimer = null;
 let reconnectAttempts = 0;
@@ -242,6 +265,7 @@ function connectWS(action, pokerConfig, nqConfig) {
     document.getElementById('game-active').style.display = 'none';
     document.getElementById('poker-active').style.display = 'none';
     document.getElementById('ludo-active').style.display = 'none';
+    document.getElementById('commune-active').style.display = 'none';
     document.getElementById('room-code-display').textContent = roomCode;
     document.getElementById('name-error').textContent = '';
   };
@@ -282,7 +306,8 @@ function resetJoinButtons() {
     { id: 'coup-join-btn', text: 'Join Game' },
     { id: 'poker-join-btn', text: 'Join Game' },
     { id: 'ludo-join-btn', text: 'Join Game' },
-    { id: 'nq-join-btn', text: 'Join Game' }
+    { id: 'nq-join-btn', text: 'Join Game' },
+    { id: 'commune-join-btn', text: 'Join Game' }
   ];
   buttons.forEach(({ id, text }) => {
     const btn = document.getElementById(id);
@@ -364,6 +389,18 @@ function handleWSMessage(e) {
         currentGameType = 'nquestions';
         handleNQStateUpdate(msg.payload);
         break;
+      case 'commune-started':
+        break;
+      case 'commune-state':
+        isSpectating = false;
+        currentGameType = 'commune';
+        handleCommuneStateUpdate(msg.payload);
+        break;
+      case 'commune-spectate':
+        isSpectating = true;
+        currentGameType = 'commune';
+        handleCommuneStateUpdate(msg.payload);
+        break;
       case 'ludo-colors':
         // Update color picker in lobby to show taken colors
         if (msg.payload) {
@@ -389,11 +426,13 @@ function handleWSMessage(e) {
           pokerState = null;
           ludoState = null;
           nqState = null;
+          communeState = null;
           isSpectating = false;
           document.getElementById('game-active').style.display = 'none';
           document.getElementById('poker-active').style.display = 'none';
           document.getElementById('ludo-active').style.display = 'none';
           document.getElementById('nq-active').style.display = 'none';
+          document.getElementById('commune-active').style.display = 'none';
           document.getElementById('name-entry').style.display = 'none';
           document.getElementById('lobby').style.display = '';
           document.getElementById('lobby-code').textContent = roomCode;
@@ -496,6 +535,7 @@ function disconnect() {
   pokerState = null;
   ludoState = null;
   nqState = null;
+  communeState = null;
   isSpectating = false;
   chatMessages = [];
 }
@@ -520,6 +560,11 @@ function exitGame() {
       if (!confirm('Exit N Questions?')) return;
       send('exit-game');
     }
+  } else if (currentGameType === 'commune') {
+    if (communeState && communeState.phase !== 'finished') {
+      if (!confirm('Exit Commune? You will be eliminated.')) return;
+      send('exit-game');
+    }
   } else {
     if (gameState && gameState.phase !== 'game_over') {
       if (!confirm('Exit game? Both your cards will be discarded and you will return to the lobby.')) return;
@@ -539,10 +584,12 @@ function stopSpectating() {
   pokerState = null;
   ludoState = null;
   nqState = null;
+  communeState = null;
   document.getElementById('game-active').style.display = 'none';
   document.getElementById('poker-active').style.display = 'none';
   document.getElementById('ludo-active').style.display = 'none';
   document.getElementById('nq-active').style.display = 'none';
+  document.getElementById('commune-active').style.display = 'none';
   document.getElementById('lobby').style.display = '';
   document.getElementById('lobby-code').textContent = roomCode;
 }
@@ -596,7 +643,8 @@ function sendChat() {
   const isPoker = currentGameType === 'poker' && pokerState;
   const isLudo = currentGameType === 'ludo' && ludoState;
   const isNQ = currentGameType === 'nquestions' && nqState;
-  const input = document.getElementById(isNQ ? 'nq-chat-input' : (isLudo ? 'ludo-chat-input' : (isPoker ? 'poker-chat-input' : 'chat-input')));
+  const isCommune = currentGameType === 'commune' && communeState;
+  const input = document.getElementById(isCommune ? 'commune-chat-input' : (isNQ ? 'nq-chat-input' : (isLudo ? 'ludo-chat-input' : (isPoker ? 'poker-chat-input' : 'chat-input'))));
   const text = input.value.trim();
   if (!text) return;
   send('chat', { message: text });
@@ -612,8 +660,9 @@ function appendChatMessage(data) {
   const isPoker = currentGameType === 'poker' && pokerState;
   const isLudo = currentGameType === 'ludo' && ludoState;
   const isNQ = currentGameType === 'nquestions' && nqState;
-  const chatPanel = document.getElementById(isNQ ? 'nq-chat-tab' : (isLudo ? 'ludo-chat-tab' : (isPoker ? 'poker-chat-tab' : 'chat-tab')));
-  const chatTab = document.getElementById(isNQ ? 'nqtab-chat' : (isLudo ? 'ltab-chat' : (isPoker ? 'ptab-chat' : 'tab-chat')));
+  const isCommune = currentGameType === 'commune' && communeState;
+  const chatPanel = document.getElementById(isCommune ? 'commune-chat-tab' : (isNQ ? 'nq-chat-tab' : (isLudo ? 'ludo-chat-tab' : (isPoker ? 'poker-chat-tab' : 'chat-tab'))));
+  const chatTab = document.getElementById(isCommune ? 'cmtab-chat' : (isNQ ? 'nqtab-chat' : (isLudo ? 'ltab-chat' : (isPoker ? 'ptab-chat' : 'tab-chat'))));
   const notOnChat = !chatPanel || chatPanel.style.display === 'none';
   if (notOnChat && chatTab) {
     chatTab.classList.add('chat-unread');
@@ -625,7 +674,7 @@ function appendChatMessage(data) {
 }
 
 function renderChatMessages() {
-  const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages'];
+  const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages', 'commune-chat-messages'];
   for (const id of panels) {
     const el = document.getElementById(id);
     if (!el) continue;
