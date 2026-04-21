@@ -72,7 +72,7 @@
         </div>
         <div class="game-card-arrow">›</div>
       </div>
-      <div class="game-card game-card-nq" onclick="openGameMenu('nquestions')" style="border-color:#7c3aed">
+      <div class="game-card game-card-nq" onclick="openGameMenu('nquestions')">
         <div class="game-card-icon">❓</div>
         <div class="game-card-info">
           <div class="game-card-title">N QUESTIONS</div>
@@ -80,7 +80,7 @@
         </div>
         <div class="game-card-arrow">›</div>
       </div>
-      <div class="game-card" onclick="openGameMenu('commune')" style="border-color:#06b6d4">
+      <div class="game-card game-card-commune" onclick="openGameMenu('commune')">
         <div class="game-card-icon">🫱</div>
         <div class="game-card-info">
           <div class="game-card-title">COMMUNE</div>
@@ -175,7 +175,7 @@
   <!-- Commune Menu -->
   <div id="menu-commune" style="display:none">
     <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
-    <h1 style="color:#06b6d4;font-weight:900;letter-spacing:4px">COMMUNE</h1>
+    <h1 style="color:#3b82f6;font-weight:900;letter-spacing:4px">COMMUNE</h1>
     <p class="subtitle">Bluff poker hands. Call the liar.</p>
     <div style="margin-bottom:24px">
       <p class="section-title">Create Game</p>
@@ -440,7 +440,7 @@
       <button class="tab active" id="cmtab-game" onclick="switchCommuneTab('game')">Game</button>
       <button class="tab" id="cmtab-log" onclick="switchCommuneTab('log')">📜 Log</button>
       <button class="tab" id="cmtab-chat" onclick="switchCommuneTab('chat')">💬 Chat</button>
-      <button class="tab-rules" style="background:#06b6d4;color:#0f172a" onclick="toggleCommuneRules()">Rules</button>
+      <button class="tab-rules" style="background:#3b82f6;color:#fff" onclick="toggleCommuneRules()">Rules</button>
       <button class="tab-exit" id="commune-exit-btn" onclick="exitGame()">Exit</button>
     </div>
 
@@ -458,7 +458,7 @@
         <div class="chat-messages" id="commune-chat-messages"></div>
         <div class="chat-input-row">
           <input id="commune-chat-input" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()">
-          <button class="btn btn-sm" style="background:#06b6d4;color:#0f172a" onclick="sendChat()">Send</button>
+          <button class="btn btn-sm" style="background:#3b82f6;color:#fff" onclick="sendChat()">Send</button>
         </div>
       </div>
     </div>

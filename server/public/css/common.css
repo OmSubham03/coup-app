@@ -141,3 +141,12 @@ input::placeholder { color: #475569; }
 .game-card-poker { border-color: #b4590033; }
 .game-card-poker:hover { border-color: #f59e0b; background: #1e1400; }
 .game-card-poker .game-card-title { color: #f59e0b; }
+.game-card-ludo { border-color: #16a34a33; }
+.game-card-ludo:hover { border-color: #22c55e; background: #071a0e; }
+.game-card-ludo .game-card-title { color: #22c55e; }
+.game-card-nq { border-color: #7c3aed33; }
+.game-card-nq:hover { border-color: #a78bfa; background: #150a2e; }
+.game-card-nq .game-card-title { color: #a78bfa; }
+.game-card-commune { border-color: #3b82f633; }
+.game-card-commune:hover { border-color: #3b82f6; background: #0a1a3d; }
+.game-card-commune .game-card-title { color: #3b82f6; }
