@@ -201,9 +201,19 @@ type PokerState struct {
 	PendingJoins     []PokerPlayer  `json:"pendingJoins,omitempty"` // Spectators waiting to join next round
 }
 
+func (s *PokerState) effectiveBlind() int {
+	if s.BigBlind > 0 {
+		return s.BigBlind
+	}
+	return s.SmallBlind
+}
+
 // InitializePokerGame creates a new poker game
-func InitializePokerGame(players []struct{ ID, Name string }, buyIn, smallBlind int) *PokerState {
-	bigBlind := smallBlind * 2
+func InitializePokerGame(players []struct{ ID, Name string }, buyIn, smallBlind int, bigBlindEnabled bool) *PokerState {
+	bigBlind := 0
+	if bigBlindEnabled {
+		bigBlind = smallBlind * 2
+	}
 
 	pokerPlayers := make([]PokerPlayer, len(players))
 	for i, p := range players {
@@ -262,7 +272,7 @@ func startNewHand(state *PokerState) {
 	state.Deck = createPokerDeck()
 	state.CommunityCards = []PokerCard{}
 	state.CurrentBet = 0
-	state.MinRaise = state.BigBlind
+	state.MinRaise = state.effectiveBlind()
 	state.Pots = []Pot{{Amount: 0, Eligible: nil}}
 	state.LastAction = ""
 
@@ -299,7 +309,7 @@ func startNewHandAfterRebuys(state *PokerState) {
 	state.Deck = createPokerDeck()
 	state.CommunityCards = []PokerCard{}
 	state.CurrentBet = 0
-	state.MinRaise = state.BigBlind
+	state.MinRaise = state.effectiveBlind()
 	state.Pots = []Pot{{Amount: 0, Eligible: nil}}
 	state.LastAction = ""
 
@@ -337,35 +347,55 @@ func startNewHandAfterRebuys(state *PokerState) {
 
 	// Post blinds
 	sbIdx := nextActivePlayer(state, state.DealerIndex)
-	bbIdx := nextActivePlayer(state, sbIdx)
 
 	// Handle heads-up (2 players): dealer posts small blind
 	if activePlayers == 2 {
 		sbIdx = state.DealerIndex
-		bbIdx = nextActivePlayer(state, sbIdx)
 	}
 
 	postBlind(state, sbIdx, state.SmallBlind)
-	postBlind(state, bbIdx, state.BigBlind)
 
-	state.CurrentBet = state.BigBlind
-	state.MinRaise = state.BigBlind
+	var firstToAct int
+	if state.BigBlind > 0 {
+		bbIdx := nextActivePlayer(state, sbIdx)
+		postBlind(state, bbIdx, state.BigBlind)
+		state.CurrentBet = state.BigBlind
+		state.MinRaise = state.BigBlind
+		firstToAct = nextActivePlayer(state, bbIdx)
+		state.LastRaiserIdx = bbIdx
 
-	// Deal hole cards
-	for i := range state.Players {
-		if state.Players[i].IsActive && state.Players[i].Chips >= 0 {
-			state.Players[i].HoleCards = []PokerCard{drawCard(state), drawCard(state)}
+		// Deal hole cards
+		for i := range state.Players {
+			if state.Players[i].IsActive && state.Players[i].Chips >= 0 {
+				state.Players[i].HoleCards = []PokerCard{drawCard(state), drawCard(state)}
+			}
 		}
+
+		state.CurrentPlayerIdx = firstToAct
+		state.Phase = PokerPhasePreflop
+
+		addPokerLog(state, fmt.Sprintf("Hand #%d starts. Dealer: %s", state.HandNumber, state.Players[state.DealerIndex].Name))
+		addPokerLog(state, fmt.Sprintf("%s posts small blind (%d)", state.Players[sbIdx].Name, min(state.SmallBlind, state.Players[sbIdx].Chips+state.Players[sbIdx].CurrentBet)))
+		addPokerLog(state, fmt.Sprintf("%s posts big blind (%d)", state.Players[bbIdx].Name, min(state.BigBlind, state.Players[bbIdx].Chips+state.Players[bbIdx].CurrentBet)))
+	} else {
+		state.CurrentBet = state.SmallBlind
+		state.MinRaise = state.SmallBlind
+		firstToAct = nextActivePlayer(state, sbIdx)
+		state.LastRaiserIdx = sbIdx
+
+		// Deal hole cards
+		for i := range state.Players {
+			if state.Players[i].IsActive && state.Players[i].Chips >= 0 {
+				state.Players[i].HoleCards = []PokerCard{drawCard(state), drawCard(state)}
+			}
+		}
+
+		state.CurrentPlayerIdx = firstToAct
+		state.Phase = PokerPhasePreflop
+
+		addPokerLog(state, fmt.Sprintf("Hand #%d starts. Dealer: %s", state.HandNumber, state.Players[state.DealerIndex].Name))
+		addPokerLog(state, fmt.Sprintf("%s posts small blind (%d)", state.Players[sbIdx].Name, min(state.SmallBlind, state.Players[sbIdx].Chips+state.Players[sbIdx].CurrentBet)))
 	}
-
-	// First to act is after big blind
-	state.CurrentPlayerIdx = nextActivePlayer(state, bbIdx)
-	state.LastRaiserIdx = bbIdx // Big blind is initial "raiser"
-	state.Phase = PokerPhasePreflop
-
-	addPokerLog(state, fmt.Sprintf("Hand #%d starts. Dealer: %s", state.HandNumber, state.Players[state.DealerIndex].Name))
-	addPokerLog(state, fmt.Sprintf("%s posts small blind (%d)", state.Players[sbIdx].Name, min(state.SmallBlind, state.Players[sbIdx].Chips+state.Players[sbIdx].CurrentBet)))
-	addPokerLog(state, fmt.Sprintf("%s posts big blind (%d)", state.Players[bbIdx].Name, min(state.BigBlind, state.Players[bbIdx].Chips+state.Players[bbIdx].CurrentBet)))
 
 	// Check if we need to skip to showdown (all but one all-in after blinds)
 	checkAutoAdvance(state)

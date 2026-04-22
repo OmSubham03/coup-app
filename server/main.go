@@ -44,8 +44,9 @@ type Room struct {
 }
 
 type PokerConfig struct {
-	BuyIn      int `json:"buyIn"`
-	SmallBlind int `json:"smallBlind"`
+	BuyIn           int  `json:"buyIn"`
+	SmallBlind      int  `json:"smallBlind"`
+	BigBlindEnabled bool `json:"bigBlindEnabled"`
 }
 
 type NQConfig struct {
@@ -701,7 +702,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Poker config not set"}})
 				return
 			}
-			room.pokerState = game.InitializePokerGame(playerList, room.pokerConfig.BuyIn, room.pokerConfig.SmallBlind)
+			room.pokerState = game.InitializePokerGame(playerList, room.pokerConfig.BuyIn, room.pokerConfig.SmallBlind, room.pokerConfig.BigBlindEnabled)
 			logPokerHands(room)
 			room.broadcast(OutMessage{Type: "poker-started", Payload: nil})
 			room.broadcastPokerState()

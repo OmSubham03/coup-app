@@ -84,15 +84,16 @@ async function createGame(v) {
 async function createPokerGame() {
   const buyIn = parseInt(document.getElementById('poker-buyin').value) || 1000;
   const sb = parseInt(document.getElementById('poker-sb').value) || 10;
+  const bbEnabled = document.getElementById('poker-bb-toggle').classList.contains('active');
   if (buyIn < 100) { alert('Buy-in must be at least 100'); return; }
   if (sb < 1) { alert('Small blind must be at least 1'); return; }
-  if (sb * 2 > buyIn) { alert('Big blind (2x small blind) cannot exceed buy-in'); return; }
+  if (bbEnabled && sb * 2 > buyIn) { alert('Big blind (2x small blind) cannot exceed buy-in'); return; }
   currentGameType = 'poker';
   try {
     const res = await fetch(HTTP + SERVER + '/api/generate-code');
     const data = await res.json();
     roomCode = data.code;
-    connectWS('create', { buyIn, smallBlind: sb });
+    connectWS('create', { buyIn, smallBlind: sb, bigBlindEnabled: bbEnabled });
   } catch(e) { alert('Cannot connect to server: ' + e.message); }
 }
 

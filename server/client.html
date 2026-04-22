@@ -93,7 +93,10 @@
 
   <!-- Coup Menu -->
   <div id="menu-coup" style="display:none">
-    <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
+      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="toggleRules()">Rules</button>
+    </div>
     <h1 class="coup-title">COUP</h1>
     <p class="subtitle">Bluff. Deceive. Survive.</p>
     <div style="margin-bottom:24px">
@@ -114,7 +117,10 @@
 
   <!-- Poker Menu -->
   <div id="menu-poker" style="display:none">
-    <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
+      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="togglePokerRules()">Rules</button>
+    </div>
     <h1 class="poker-title">POKER</h1>
     <p class="subtitle">Texas Hold'em. All In.</p>
     <div style="margin-bottom:24px">
@@ -123,7 +129,13 @@
         <label>Buy-in (chips)</label>
         <input id="poker-buyin" type="number" value="1000" min="100" step="100" placeholder="1000" style="margin-bottom:8px">
         <label>Small Blind</label>
-        <input id="poker-sb" type="number" value="10" min="1" step="5" placeholder="10">
+        <input id="poker-sb" type="number" value="10" min="1" step="5" placeholder="10" style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+          <label style="margin:0;flex:1">Big Blind (2x SB)</label>
+          <div class="toggle-switch" id="poker-bb-toggle" onclick="this.classList.toggle('active')">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
       </div>
       <button class="btn btn-amber" onclick="createPokerGame()">Create Poker Table</button>
     </div>
@@ -136,7 +148,10 @@
 
   <!-- 20 QUESTIONS Menu -->
   <div id="menu-nquestions" style="display:none">
-    <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
+      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="toggleNQRules()">Rules</button>
+    </div>
     <h1 class="nq-title">20 QUESTIONS</h1>
     <p class="subtitle">Correct Guess in 20 turns</p>
     <div style="margin-bottom:24px">
@@ -158,7 +173,10 @@
 
   <!-- Ludo Menu -->
   <div id="menu-ludo" style="display:none">
-    <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
+      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="toggleLudoRules()">Rules</button>
+    </div>
     <h1 class="ludo-title">LUDO</h1>
     <p class="subtitle">Roll. Race. Win.</p>
     <div style="margin-bottom:24px">
@@ -174,7 +192,10 @@
 
   <!-- Commune Menu -->
   <div id="menu-commune" style="display:none">
-    <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="backToGameList()">← Back</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
+      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="toggleCommuneRules()">Rules</button>
+    </div>
     <h1 style="color:#3b82f6;font-weight:900;letter-spacing:4px">COMMUNE</h1>
     <p class="subtitle">Bluff poker hands. Call the liar.</p>
     <div style="margin-bottom:24px">
