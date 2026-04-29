@@ -381,6 +381,7 @@ function resetJoinButtons() {
 }
 
 function handleWSMessage(e) {
+  try {
     const msg = JSON.parse(e.data);
     switch(msg.type) {
       case 'redirect':
@@ -562,6 +563,9 @@ function handleWSMessage(e) {
         } else if (gameState || pokerState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
         break;
     }
+  } catch(err) {
+    console.error('[WS] Error handling message:', err);
+  }
 }
 
 function tryReconnect() {

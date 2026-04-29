@@ -783,6 +783,25 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can start the game"}})
 			return
 		}
+		// Prevent re-starting an already active game (allow if game is in terminal state)
+		gameAlreadyActive := (room.gameState != nil && room.gameState.Phase != game.PhaseGameOver) ||
+			(room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver) ||
+			(room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseFinished) ||
+			(room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished) ||
+			(room.communeState != nil && room.communeState.Phase != game.CommunePhaseFinished) ||
+			(room.tnState != nil && room.tnState.Phase != game.TN_PhaseGameOver) ||
+			(room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver)
+		if gameAlreadyActive {
+			return
+		}
+		// Clear any stale terminal-state games
+		room.gameState = nil
+		room.pokerState = nil
+		room.ludoState = nil
+		room.nqState = nil
+		room.communeState = nil
+		room.tnState = nil
+		room.heartsState = nil
 		if len(room.players) < 2 {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Need at least 2 players to start"}})
 			return

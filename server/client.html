@@ -227,7 +227,27 @@
     </div>
   </div>
 
-  <!-- Hearts Menu -->\n  <div id=\"menu-hearts\" style=\"display:none\">\n    <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:16px\">\n      <button class=\"btn btn-outline btn-sm\" style=\"width:auto;margin:0\" onclick=\"backToGameList()\">\u2190 Back</button>\n      <button class=\"btn btn-sm\" style=\"width:auto;margin:0;background:#dc2626;color:#fff\" onclick=\"toggleHTRules()\">Rules</button>\n    </div>\n    <h1 style=\"color:#dc2626;font-weight:900;letter-spacing:4px\">HEARTS</h1>\n    <p class=\"subtitle\">Avoid penalty cards. Shoot the moon.</p>\n    <div style=\"margin-bottom:24px\">\n      <p class=\"section-title\">Create Game</p>\n      <button class=\"btn\" style=\"background:#dc2626;color:#fff\" onclick=\"createHTGame()\">Create Hearts Game</button>\n    </div>\n    <div>\n      <p class=\"section-title\">Join Game</p>\n      <input id=\"ht-join-code\" placeholder=\"Enter code\" maxlength=\"5\" style=\"text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b\" oninput=\"document.getElementById('ht-join-btn').disabled=!this.value.trim()\" onkeydown=\"if(event.key==='Enter'&&this.value.trim())joinHTWithCode()\">\n      <button class=\"btn btn-amber\" id=\"ht-join-btn\" disabled onclick=\"joinHTWithCode()\">Join Game</button>\n    </div>\n  </div>\n\n  <!-- Commune Menu -->
+
+  <!-- Hearts Menu -->
+  <div id="menu-hearts" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
+      <button class="btn btn-sm" style="width:auto;margin:0;background:#dc2626;color:#fff" onclick="toggleHTRules()">Rules</button>
+    </div>
+    <h1 style="color:#dc2626;font-weight:900;letter-spacing:4px">HEARTS</h1>
+    <p class="subtitle">Avoid penalty cards. Shoot the moon.</p>
+    <div style="margin-bottom:24px">
+      <p class="section-title">Create Game</p>
+      <button class="btn" style="background:#dc2626;color:#fff" onclick="createHTGame()">Create Hearts Game</button>
+    </div>
+    <div>
+      <p class="section-title">Join Game</p>
+      <input id="ht-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('ht-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinHTWithCode()">
+      <button class="btn btn-amber" id="ht-join-btn" disabled onclick="joinHTWithCode()">Join Game</button>
+    </div>
+  </div>
+
+  <!-- Commune Menu -->
   <div id="menu-commune" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>

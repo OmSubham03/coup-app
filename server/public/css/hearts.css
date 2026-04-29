@@ -49,6 +49,10 @@
 .ht-folded-cards.vertical .ht-folded-card { margin-left: 0; margin-top: -28px; width: 32px; height: 44px; }
 .ht-folded-cards.vertical .ht-folded-card:first-child { margin-top: 0; }
 
+/* Raised folded cards (during passing) */
+.ht-folded-card.ht-raised { transform: translateY(-8px); box-shadow: 0 4px 8px rgba(245,158,11,0.4); border-color: #f59e0b; }
+.ht-folded-cards.vertical .ht-folded-card.ht-raised { transform: translateX(-8px); }
+
 /* My cards */
 .ht-my-cards { display: flex; justify-content: center; flex-wrap: nowrap; padding: 4px 0; }
 .ht-card {
@@ -70,6 +74,8 @@
 .ht-card.clubs, .ht-card.spades { color: #1e293b; }
 .ht-card.penalty { border-color: #dc2626; box-shadow: 0 0 6px rgba(220,38,38,0.3); }
 .ht-card.pass-selected { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245,158,11,0.5); transform: translateY(-8px); }
+.ht-card.ht-received { border-color: #22c55e; box-shadow: 0 0 12px rgba(34,197,94,0.6); transform: translateY(-10px); animation: htReceivedPulse 0.6s ease-in-out infinite alternate; }
+@keyframes htReceivedPulse { from { box-shadow: 0 0 8px rgba(34,197,94,0.4); } to { box-shadow: 0 0 16px rgba(34,197,94,0.7); } }
 
 /* Center trick area */
 .ht-center {

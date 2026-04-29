@@ -7,34 +7,71 @@ let htAnimating = false;
 let htAnimTrick = null;
 let htAnimWinnerId = null;
 let htPendingState = null;
+let htPrevPhase = null; // track phase transitions
+let htReceivedCards = null; // cards received after passing (for highlight animation)
 
 const HT_SUIT_SYMBOLS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
 const HT_RANK_NAMES = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
 
 function handleHTStateUpdate(payload) {
-  htSelectedCards = [];
   if (htAnimating) { htPendingState = payload; htPrevTricksPlayed = payload.tricksPlayed || 0; return; }
 
   const newTP = payload.tricksPlayed || 0;
   const prev = htPrevTricksPlayed;
+
+  // Detect pass→play transition: show received cards for 3s
+  if (htPrevPhase === 'passing' && payload.phase === 'playing' && payload.tricksPlayed === 0) {
+    // Find which cards are new (not in the old hand)
+    const myIdx = payload.players.findIndex(p => p.id === playerId);
+    if (myIdx >= 0 && htState) {
+      const oldIds = new Set(htState.players[myIdx]?.cards?.map(c => c.id) || []);
+      const newCards = payload.players[myIdx].cards.filter(c => !c.id.startsWith('hidden_') && !oldIds.has(c.id));
+      if (newCards.length > 0) {
+        htReceivedCards = new Set(newCards.map(c => c.id));
+        htAnimating = true;
+        htPrevPhase = payload.phase;
+        htPrevTricksPlayed = newTP;
+        htSelectedCards = [];
+        htState = payload;
+        renderHTGame();
+        // After 3s, clear the highlight and re-render
+        setTimeout(() => {
+          htReceivedCards = null;
+          htAnimating = false;
+          if (htPendingState) {
+            htState = htPendingState;
+            htPendingState = null;
+          }
+          renderHTGame();
+        }, 3000);
+        return;
+      }
+    }
+  }
 
   // Detect completed trick for animation
   if (payload.phase === 'playing' && prev >= 0 && newTP > prev && payload.completedTricks?.length > 0) {
     const lt = payload.completedTricks[payload.completedTricks.length - 1];
     if (lt?.cards?.length === 4) {
       htAnimTrick = lt; htAnimWinnerId = lt.winnerId; htPendingState = payload;
-      htAnimating = true; htPrevTricksPlayed = newTP; htRunTrickAnimation(); return;
+      htAnimating = true; htPrevTricksPlayed = newTP; htPrevPhase = payload.phase;
+      htSelectedCards = [];
+      htRunTrickAnimation(); return;
     }
   }
   if ((payload.phase === 'hand_over' || payload.phase === 'game_over') && prev >= 0 && prev < 13 && payload.completedTricks?.length > 0) {
     const lt = payload.completedTricks[payload.completedTricks.length - 1];
     if (lt?.cards?.length === 4) {
       htAnimTrick = lt; htAnimWinnerId = lt.winnerId; htPendingState = payload;
-      htAnimating = true; htPrevTricksPlayed = payload.tricksPlayed || 0; htRunTrickAnimation(); return;
+      htAnimating = true; htPrevTricksPlayed = payload.tricksPlayed || 0; htPrevPhase = payload.phase;
+      htSelectedCards = [];
+      htRunTrickAnimation(); return;
     }
   }
 
   htPrevTricksPlayed = newTP;
+  htPrevPhase = payload.phase;
+  htSelectedCards = payload.phase !== 'passing' ? [] : htSelectedCards;
   htState = payload;
   renderHTGame();
 }
@@ -97,7 +134,7 @@ function renderHTGame() {
 
   switch (htState.phase) {
     case 'passing': phaseEl.textContent = `Hand ${htState.handNumber} — Pass ${htState.passDirName}`; break;
-    case 'playing': phaseEl.textContent = `Hand ${htState.handNumber} — Trick ${htState.tricksPlayed + 1}/13`; break;
+    case 'playing': phaseEl.textContent = `Hand ${htState.handNumber}`; break;
     case 'hand_over': phaseEl.textContent = 'Hand Over'; break;
     case 'game_over': phaseEl.textContent = 'Game Over'; break;
     default: phaseEl.textContent = htState.phase;
@@ -141,15 +178,40 @@ function renderHTScoreBar(myIdx) {
 }
 
 function renderHTPassingBoard(myIdx) {
-  let html = '<div style="text-align:center;padding:12px">';
-  html += `<div style="color:#f59e0b;font-size:14px;font-weight:700;margin-bottom:8px">Pass 3 cards ${htState.passDirName}</div>`;
+  const seatMap = myIdx >= 0 ? [(myIdx)%4,(myIdx+1)%4,(myIdx+2)%4,(myIdx+3)%4] : [0,1,2,3];
+  const posClasses = ['ht-player-bottom','ht-player-left','ht-player-top','ht-player-right'];
+
+  let html = '<div class="ht-board">';
+
+  // Center info
+  html += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;text-align:center">';
+  html += `<div style="color:#f59e0b;font-size:14px;font-weight:700">Pass ${htState.passDirName}</div>`;
+  html += '</div>';
+
+  // Other players — show 3 folded cards raised if they've passed, normal if not
+  for (let s = 1; s <= 3; s++) {
+    const pi = seatMap[s];
+    const p = htState.players[pi];
+    const cardCount = p.cards ? p.cards.length : 0;
+    const isVertical = s === 1 || s === 3;
+    html += `<div class="ht-player-spot ${posClasses[s]}">`;
+    html += `<div class="ht-player-name${p.hasPassed ? ' active' : ''}">${htEsc(p.name)}${p.hasPassed ? ' ✓' : ''}</div>`;
+    html += `<div class="ht-folded-cards${isVertical ? ' vertical' : ''}">`;
+    for (let ci = 0; ci < cardCount; ci++) {
+      // Show 3 random cards raised for other players
+      const raised = ci < 3;
+      html += `<div class="ht-folded-card${raised ? ' ht-raised' : ''}"></div>`;
+    }
+    html += '</div></div>';
+  }
+
+  html += '<div class="ht-center"></div>';
+
+  // My cards
   if (myIdx >= 0) {
     const me = htState.players[myIdx];
-    if (me.hasPassed) {
-      html += '<div class="ht-waiting">Waiting for others to pass...</div>';
-    } else {
-      html += `<div style="color:#94a3b8;font-size:12px;margin-bottom:8px">Select 3 cards to pass</div>`;
-    }
+    html += '<div class="ht-player-spot ht-player-bottom">';
+    html += `<div class="ht-player-name${me.hasPassed ? ' active' : ''}">${htEsc(me.name)}${me.hasPassed ? ' ✓' : ''}</div>`;
     html += '<div class="ht-my-cards">';
     for (const c of me.cards) {
       if (c.id.startsWith('hidden_')) continue;
@@ -158,8 +220,9 @@ function renderHTPassingBoard(myIdx) {
       html += `<div class="ht-card ${c.suit}${isPenalty ? ' penalty' : ''}${sel ? ' pass-selected' : ''}${me.hasPassed ? ' disabled' : ''}" onclick="htTogglePassCard('${c.id}')">
         <span class="ht-card-rank">${HT_RANK_NAMES[c.rank]}</span><span class="ht-card-suit">${HT_SUIT_SYMBOLS[c.suit]}</span></div>`;
     }
-    html += '</div>';
+    html += '</div></div>';
   }
+
   html += '</div>';
   return html;
 }
@@ -167,9 +230,9 @@ function renderHTPassingBoard(myIdx) {
 function renderHTPassingActions(myIdx) {
   if (myIdx < 0) return '';
   const me = htState.players[myIdx];
-  if (me.hasPassed) return '';
+  if (me.hasPassed) return '<div class="ht-waiting">Waiting for others to pass...</div>';
   return `<div style="text-align:center">
-    <button class="ht-pass-btn" ${htSelectedCards.length !== 3 ? 'disabled' : ''} onclick="htConfirmPass()">Pass ${htSelectedCards.length}/3 Cards</button>
+    <button class="ht-pass-btn" ${htSelectedCards.length !== 3 ? 'disabled' : ''} onclick="htConfirmPass()">Pass Cards (${htSelectedCards.length}/3)</button>
   </div>`;
 }
 
@@ -180,11 +243,11 @@ function renderHTPlayingBoard(myIdx) {
 
   let html = '<div class="ht-board">';
 
-  // Info bar
-  html += '<div style="position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:1;text-align:center">';
-  html += `<div class="ht-info-bar">Trick ${htState.tricksPlayed + 1}/13`;
-  if (htState.heartsBroken) html += ' · <span class="ht-hearts-broken">♥ Broken</span>';
-  html += '</div></div>';
+  // Info bar — only hearts broken indicator, no trick counter
+  if (htState.heartsBroken) {
+    html += '<div style="position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:1;text-align:center">';
+    html += '<div class="ht-info-bar"><span class="ht-hearts-broken">♥ Broken</span></div></div>';
+  }
 
   // Other players
   for (let s = 1; s <= 3; s++) {
@@ -234,7 +297,8 @@ function renderHTPlayingBoard(myIdx) {
       }
       const isPenalty = c.suit === 'hearts' || (c.suit === 'spades' && c.rank === 12);
       const selected = htSelectedCards.includes(c.id);
-      html += `<div class="ht-card ${c.suit}${isPenalty ? ' penalty' : ''}${!canPlay ? ' disabled' : ''}${selected ? ' selected' : ''}" onclick="htSelectCard('${c.id}')">
+      const isReceived = htReceivedCards && htReceivedCards.has(c.id);
+      html += `<div class="ht-card ${c.suit}${isPenalty ? ' penalty' : ''}${!canPlay ? ' disabled' : ''}${selected ? ' selected' : ''}${isReceived ? ' ht-received' : ''}" onclick="htSelectCard('${c.id}')">
         <span class="ht-card-rank">${HT_RANK_NAMES[c.rank]}</span><span class="ht-card-suit">${HT_SUIT_SYMBOLS[c.suit]}</span></div>`;
     }
     html += '</div></div>';
