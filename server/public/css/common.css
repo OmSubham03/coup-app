@@ -156,3 +156,6 @@ input::placeholder { color: #475569; }
 .game-card-commune { border-color: #3b82f633; }
 .game-card-commune:hover { border-color: #3b82f6; background: #0a1a3d; }
 .game-card-commune .game-card-title { color: #3b82f6; }
+.game-card-tn { border-color: #22c55e33; }
+.game-card-tn:hover { border-color: #22c55e; background: #0a2e1a; }
+.game-card-tn .game-card-title { color: #22c55e; }

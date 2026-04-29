@@ -26,10 +26,11 @@ function openGameMenu(type) {
   document.getElementById('menu-ludo').style.display = type === 'ludo' ? '' : 'none';
   document.getElementById('menu-nquestions').style.display = type === 'nquestions' ? '' : 'none';
   document.getElementById('menu-commune').style.display = type === 'commune' ? '' : 'none';
+  document.getElementById('menu-twentynine').style.display = type === 'twentynine' ? '' : 'none';
   document.getElementById('join-variant-row').style.display = type === 'coup' ? '' : 'none';
-  const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: '20 QUESTIONS', commune: 'COMMUNE' };
-  const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title', commune: '' };
-  const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Correct Guess in 20 turns', commune: 'Bluff poker hands. Call the liar.' };
+  const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: '20 QUESTIONS', commune: 'COMMUNE', twentynine: '29' };
+  const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title', commune: '', twentynine: '' };
+  const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Correct Guess in 20 turns', commune: 'Bluff poker hands. Call the liar.', twentynine: 'Trick-taking trump card game.' };
   ['join-game-title', 'entry-game-title', 'lobby-game-title'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.textContent = gameNames[type] || type.toUpperCase(); el.className = (gameClasses[type] || '') + ' '; el.style.fontSize = '36px'; }
@@ -47,6 +48,7 @@ function backToGameList() {
   document.getElementById('menu-ludo').style.display = 'none';
   document.getElementById('menu-nquestions').style.display = 'none';
   document.getElementById('menu-commune').style.display = 'none';
+  document.getElementById('menu-twentynine').style.display = 'none';
 }
 
 function showScreen(name) {
@@ -220,6 +222,32 @@ function joinCommuneWithCode() {
   connectWS();
 }
 
+async function createTNGame() {
+  currentGameType = 'twentynine';
+  try {
+    const res = await fetch(HTTP + SERVER + '/api/generate-code');
+    const data = await res.json();
+    roomCode = data.code;
+    connectWS('create');
+  } catch(e) { alert('Cannot connect to server: ' + e.message); }
+}
+
+function joinTNWithCode() {
+  const code = document.getElementById('tn-join-code').value.trim().toUpperCase();
+  if (!code) return;
+  const btn = document.getElementById('tn-join-btn');
+  btn.disabled = true;
+  btn.textContent = 'Joining...';
+  currentGameType = 'twentynine';
+  roomCode = code;
+  connectWS();
+}
+
+function toggleTNRules() {
+  const el = document.getElementById('tn-rules-overlay');
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
 let intentionalDisconnect = false;
 let reconnectTimer = null;
 let reconnectAttempts = 0;
@@ -267,6 +295,7 @@ function connectWS(action, pokerConfig, nqConfig) {
     document.getElementById('poker-active').style.display = 'none';
     document.getElementById('ludo-active').style.display = 'none';
     document.getElementById('commune-active').style.display = 'none';
+    document.getElementById('tn-active').style.display = 'none';
     document.getElementById('room-code-display').textContent = roomCode;
     document.getElementById('name-error').textContent = '';
   };
@@ -308,7 +337,8 @@ function resetJoinButtons() {
     { id: 'poker-join-btn', text: 'Join Game' },
     { id: 'ludo-join-btn', text: 'Join Game' },
     { id: 'nq-join-btn', text: 'Join Game' },
-    { id: 'commune-join-btn', text: 'Join Game' }
+    { id: 'commune-join-btn', text: 'Join Game' },
+    { id: 'tn-join-btn', text: 'Join Game' }
   ];
   buttons.forEach(({ id, text }) => {
     const btn = document.getElementById(id);
@@ -402,6 +432,18 @@ function handleWSMessage(e) {
         currentGameType = 'commune';
         handleCommuneStateUpdate(msg.payload);
         break;
+      case 'tn-started':
+        break;
+      case 'tn-state':
+        isSpectating = false;
+        currentGameType = 'twentynine';
+        handleTNStateUpdate(msg.payload);
+        break;
+      case 'tn-spectate':
+        isSpectating = true;
+        currentGameType = 'twentynine';
+        handleTNStateUpdate(msg.payload);
+        break;
       case 'ludo-colors':
         // Update color picker in lobby to show taken colors
         if (msg.payload) {
@@ -428,12 +470,14 @@ function handleWSMessage(e) {
           ludoState = null;
           nqState = null;
           communeState = null;
+          tnState = null;
           isSpectating = false;
           document.getElementById('game-active').style.display = 'none';
           document.getElementById('poker-active').style.display = 'none';
           document.getElementById('ludo-active').style.display = 'none';
           document.getElementById('nq-active').style.display = 'none';
           document.getElementById('commune-active').style.display = 'none';
+          document.getElementById('tn-active').style.display = 'none';
           document.getElementById('name-entry').style.display = 'none';
           document.getElementById('lobby').style.display = '';
           document.getElementById('lobby-code').textContent = roomCode;
@@ -537,6 +581,7 @@ function disconnect() {
   ludoState = null;
   nqState = null;
   communeState = null;
+  tnState = null;
   isSpectating = false;
   chatMessages = [];
 }
@@ -566,6 +611,11 @@ function exitGame() {
       if (!confirm('Exit Commune? You will be eliminated.')) return;
       send('exit-game');
     }
+  } else if (currentGameType === 'twentynine') {
+    if (tnState && tnState.phase !== 'game_over') {
+      if (!confirm('Exit 29? Your team will forfeit.')) return;
+      send('exit-game');
+    }
   } else {
     if (gameState && gameState.phase !== 'game_over') {
       if (!confirm('Exit game? Both your cards will be discarded and you will return to the lobby.')) return;
@@ -586,11 +636,13 @@ function stopSpectating() {
   ludoState = null;
   nqState = null;
   communeState = null;
+  tnState = null;
   document.getElementById('game-active').style.display = 'none';
   document.getElementById('poker-active').style.display = 'none';
   document.getElementById('ludo-active').style.display = 'none';
   document.getElementById('nq-active').style.display = 'none';
   document.getElementById('commune-active').style.display = 'none';
+  document.getElementById('tn-active').style.display = 'none';
   document.getElementById('lobby').style.display = '';
   document.getElementById('lobby-code').textContent = roomCode;
 }
@@ -616,7 +668,7 @@ function send(type, payload) {
 function renderLobby(players) {
   document.getElementById('player-count').textContent = players.length;
   const isHost = hostId === playerId;
-  const maxPlayers = currentGameType === 'poker' ? 8 : (currentGameType === 'ludo' ? 4 : 6);
+  const maxPlayers = currentGameType === 'poker' ? 8 : (currentGameType === 'ludo' || currentGameType === 'twentynine' ? 4 : 6);
   document.getElementById('lobby-poker-config').style.display = currentGameType === 'poker' ? '' : 'none';
   document.getElementById('lobby-ludo-config').style.display = currentGameType === 'ludo' ? '' : 'none';
   let html = '';
@@ -630,7 +682,8 @@ function renderLobby(players) {
   }
   document.getElementById('lobby-players').innerHTML = html;
   document.getElementById('start-btn').style.display = isHost ? '' : 'none';
-  document.getElementById('start-btn').disabled = players.length < 2;
+  const minPlayers = currentGameType === 'twentynine' ? 4 : 2;
+  document.getElementById('start-btn').disabled = players.length < minPlayers || (currentGameType === 'twentynine' && players.length !== 4);
   document.getElementById('lobby-wait').style.display = isHost ? 'none' : '';
   document.getElementById('lobby-spectate').style.display = gameActive ? '' : 'none';
 }
@@ -645,7 +698,8 @@ function sendChat() {
   const isLudo = currentGameType === 'ludo' && ludoState;
   const isNQ = currentGameType === 'nquestions' && nqState;
   const isCommune = currentGameType === 'commune' && communeState;
-  const input = document.getElementById(isCommune ? 'commune-chat-input' : (isNQ ? 'nq-chat-input' : (isLudo ? 'ludo-chat-input' : (isPoker ? 'poker-chat-input' : 'chat-input'))));
+  const isTN = currentGameType === 'twentynine' && tnState;
+  const input = document.getElementById(isTN ? 'tn-chat-input' : (isCommune ? 'commune-chat-input' : (isNQ ? 'nq-chat-input' : (isLudo ? 'ludo-chat-input' : (isPoker ? 'poker-chat-input' : 'chat-input')))));
   const text = input.value.trim();
   if (!text) return;
   send('chat', { message: text });
@@ -662,8 +716,9 @@ function appendChatMessage(data) {
   const isLudo = currentGameType === 'ludo' && ludoState;
   const isNQ = currentGameType === 'nquestions' && nqState;
   const isCommune = currentGameType === 'commune' && communeState;
-  const chatPanel = document.getElementById(isCommune ? 'commune-chat-tab' : (isNQ ? 'nq-chat-tab' : (isLudo ? 'ludo-chat-tab' : (isPoker ? 'poker-chat-tab' : 'chat-tab'))));
-  const chatTab = document.getElementById(isCommune ? 'cmtab-chat' : (isNQ ? 'nqtab-chat' : (isLudo ? 'ltab-chat' : (isPoker ? 'ptab-chat' : 'tab-chat'))));
+  const isTN = currentGameType === 'twentynine' && tnState;
+  const chatPanel = document.getElementById(isTN ? 'tn-chat-tab' : (isCommune ? 'commune-chat-tab' : (isNQ ? 'nq-chat-tab' : (isLudo ? 'ludo-chat-tab' : (isPoker ? 'poker-chat-tab' : 'chat-tab')))));
+  const chatTab = document.getElementById(isTN ? 'tntab-chat' : (isCommune ? 'cmtab-chat' : (isNQ ? 'nqtab-chat' : (isLudo ? 'ltab-chat' : (isPoker ? 'ptab-chat' : 'tab-chat')))));
   const notOnChat = !chatPanel || chatPanel.style.display === 'none';
   if (notOnChat && chatTab) {
     chatTab.classList.add('chat-unread');
@@ -675,7 +730,7 @@ function appendChatMessage(data) {
 }
 
 function renderChatMessages() {
-  const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages', 'commune-chat-messages'];
+  const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages', 'commune-chat-messages', 'tn-chat-messages'];
   for (const id of panels) {
     const el = document.getElementById(id);
     if (!el) continue;

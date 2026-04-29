@@ -22,6 +22,7 @@
 <link rel="stylesheet" href="/css/ludo.css">
 <link rel="stylesheet" href="/css/nquestions.css">
 <link rel="stylesheet" href="/css/commune.css">
+<link rel="stylesheet" href="/css/twentynine.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -85,6 +86,14 @@
         <div class="game-card-info">
           <div class="game-card-title">COMMUNE</div>
           <div class="game-card-desc">Bluff poker hands. Call the liar. · 2-10 players</div>
+        </div>
+        <div class="game-card-arrow">›</div>
+      </div>
+      <div class="game-card game-card-tn" onclick="openGameMenu('twentynine')">
+        <div class="game-card-icon">🂡</div>
+        <div class="game-card-info">
+          <div class="game-card-title">29</div>
+          <div class="game-card-desc">Trick-taking trump game. · 4 players</div>
         </div>
         <div class="game-card-arrow">›</div>
       </div>
@@ -187,6 +196,25 @@
       <p class="section-title">Join Game</p>
       <input id="ludo-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('ludo-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinLudoWithCode()">
       <button class="btn btn-blue" id="ludo-join-btn" disabled onclick="joinLudoWithCode()">Join Game</button>
+    </div>
+  </div>
+
+  <!-- 29 Menu -->
+  <div id="menu-twentynine" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
+      <button class="btn btn-sm" style="width:auto;margin:0;background:#22c55e;color:#fff" onclick="toggleTNRules()">Rules</button>
+    </div>
+    <h1 style="color:#22c55e;font-weight:900;letter-spacing:4px">29</h1>
+    <p class="subtitle">Trick-taking trump card game. 4 players.</p>
+    <div style="margin-bottom:24px">
+      <p class="section-title">Create Game</p>
+      <button class="btn" style="background:#22c55e;color:#fff" onclick="createTNGame()">Create 29 Game</button>
+    </div>
+    <div>
+      <p class="section-title">Join Game</p>
+      <input id="tn-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('tn-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinTNWithCode()">
+      <button class="btn btn-amber" id="tn-join-btn" disabled onclick="joinTNWithCode()">Join Game</button>
     </div>
   </div>
 
@@ -444,6 +472,43 @@
     </div>
   </div>
 
+  <!-- 29 Active Game -->
+  <div id="tn-active" style="display:none">
+    <div class="header-bar">
+      <div>
+        <span style="color:#22c55e;font-weight:900;font-size:24px">29</span>
+        <div class="phase-text" id="tn-phase-display"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:#94a3b8;font-size:12px" id="tn-turn-display"></span>
+        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
+        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab active" id="tntab-game" onclick="switchTNTab('game')">Game</button>
+      <button class="tab" id="tntab-chat" onclick="switchTNTab('chat')">💬 Chat</button>
+      <button class="tab-rules" style="background:#22c55e;color:#fff" onclick="toggleTNRules()">Rules</button>
+      <button class="tab-exit" id="tn-exit-btn" onclick="exitGame()">Exit</button>
+    </div>
+
+    <div id="tn-game-tab">
+      <div id="tn-table-area"></div>
+      <div id="tn-action-area"></div>
+    </div>
+
+    <div id="tn-chat-tab" style="display:none">
+      <div class="chat-panel">
+        <div class="chat-messages" id="tn-chat-messages"></div>
+        <div class="chat-input-row">
+          <input id="tn-chat-input" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-sm" style="background:#22c55e;color:#fff" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Commune Active Game -->
   <div id="commune-active" style="display:none">
     <div class="header-bar">
@@ -613,6 +678,50 @@
   </div>
 </div>
 
+<!-- 29 Rules Overlay -->
+<div class="rules-overlay" id="tn-rules-overlay">
+  <div class="rules-content" style="border-color:#22c55e">
+    <div class="rules-close"><button onclick="toggleTNRules()" style="background:#22c55e;color:#fff">✕ Close</button></div>
+    <h2>🃁 29 Card Game Rules</h2>
+    <h3>Overview</h3>
+    <p>29 is a 4-player <b>partnership trick-taking</b> game popular in South Asia. Partners sit opposite each other. The goal is to win tricks containing valuable cards.</p>
+    <h3>Cards &amp; Points</h3>
+    <ul>
+      <li><b>32 cards</b> used: J, 9, A, 10, K, Q, 8, 7 of each suit</li>
+      <li>Ranking (high→low): <b>J → 9 → A → 10 → K → Q → 8 → 7</b></li>
+      <li><b>J</b> = 3pts, <b>9</b> = 2pts, <b>A</b> = 1pt, <b>10</b> = 1pt, K/Q/8/7 = 0pts</li>
+      <li>Total: 28 card points + 1 for last trick = <b>29</b></li>
+    </ul>
+    <h3>Bidding</h3>
+    <ul>
+      <li>4 cards are dealt to each player first.</li>
+      <li>Players bid (15-28) for the right to choose trump. Highest bidder wins.</li>
+      <li>The bidder secretly picks a trump suit (hidden from others).</li>
+      <li>Then 4 more cards are dealt to each player (8 total).</li>
+    </ul>
+    <h3>Playing Tricks</h3>
+    <ul>
+      <li>You <b>must follow suit</b> if you can.</li>
+      <li>Trump is hidden initially. The first player unable to follow suit can <b>ask for trump reveal</b>.</li>
+      <li>After trump is revealed, trumps beat all other suits.</li>
+      <li>If you trump, next player must <b>over-trump</b> if possible.</li>
+      <li>Winner of each trick leads the next.</li>
+    </ul>
+    <h3>Pair (K+Q of Trump)</h3>
+    <ul>
+      <li>After trump is revealed, if you hold both <b>King and Queen of trumps</b>, you can declare a <b>Pair</b>.</li>
+      <li>Bidding team's pair: reduces target by 4 (min 15).</li>
+      <li>Opponent's pair: increases target by 4 (max 28).</li>
+    </ul>
+    <h3>Scoring</h3>
+    <ul>
+      <li>If bidding team meets their bid → they gain 1 game point.</li>
+      <li>If they fail → they lose 1 game point (2 if under half the bid).</li>
+      <li>First team to <b>+6</b> wins. A team at <b>-6</b> loses.</li>
+    </ul>
+  </div>
+</div>
+
 <!-- Commune Rules Overlay -->
 <div class="rules-overlay" id="commune-rules-overlay">
   <div class="rules-content" style="border-color:#3b82f6">
@@ -704,7 +813,7 @@
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 7;
+let totalScripts = 8;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
@@ -728,6 +837,7 @@ function checkScriptsLoaded() {
 <script src="/js/ludo.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/nquestions.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/commune.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/twentynine.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
