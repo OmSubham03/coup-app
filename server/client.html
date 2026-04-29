@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="/css/nquestions.css">
 <link rel="stylesheet" href="/css/commune.css">
 <link rel="stylesheet" href="/css/twentynine.css">
+<link rel="stylesheet" href="/css/hearts.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -94,6 +95,14 @@
         <div class="game-card-info">
           <div class="game-card-title">29</div>
           <div class="game-card-desc">Trick-taking trump game. · 4 players</div>
+        </div>
+        <div class="game-card-arrow">›</div>
+      </div>
+      <div class="game-card game-card-hearts" onclick="openGameMenu('hearts')">
+        <div class="game-card-icon">❤️</div>
+        <div class="game-card-info">
+          <div class="game-card-title">HEARTS</div>
+          <div class="game-card-desc">Avoid penalty cards. Shoot the moon. · 4 players</div>
         </div>
         <div class="game-card-arrow">›</div>
       </div>
@@ -218,7 +227,7 @@
     </div>
   </div>
 
-  <!-- Commune Menu -->
+  <!-- Hearts Menu -->\n  <div id=\"menu-hearts\" style=\"display:none\">\n    <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:16px\">\n      <button class=\"btn btn-outline btn-sm\" style=\"width:auto;margin:0\" onclick=\"backToGameList()\">\u2190 Back</button>\n      <button class=\"btn btn-sm\" style=\"width:auto;margin:0;background:#dc2626;color:#fff\" onclick=\"toggleHTRules()\">Rules</button>\n    </div>\n    <h1 style=\"color:#dc2626;font-weight:900;letter-spacing:4px\">HEARTS</h1>\n    <p class=\"subtitle\">Avoid penalty cards. Shoot the moon.</p>\n    <div style=\"margin-bottom:24px\">\n      <p class=\"section-title\">Create Game</p>\n      <button class=\"btn\" style=\"background:#dc2626;color:#fff\" onclick=\"createHTGame()\">Create Hearts Game</button>\n    </div>\n    <div>\n      <p class=\"section-title\">Join Game</p>\n      <input id=\"ht-join-code\" placeholder=\"Enter code\" maxlength=\"5\" style=\"text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b\" oninput=\"document.getElementById('ht-join-btn').disabled=!this.value.trim()\" onkeydown=\"if(event.key==='Enter'&&this.value.trim())joinHTWithCode()\">\n      <button class=\"btn btn-amber\" id=\"ht-join-btn\" disabled onclick=\"joinHTWithCode()\">Join Game</button>\n    </div>\n  </div>\n\n  <!-- Commune Menu -->
   <div id="menu-commune" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
@@ -509,6 +518,40 @@
     </div>
   </div>
 
+  <!-- Hearts Active Game -->
+  <div id="ht-active" style="display:none">
+    <div class="header-bar">
+      <div>
+        <span style="color:#dc2626;font-weight:900;font-size:24px">HEARTS</span>
+        <div class="phase-text" id="ht-phase-display"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:#94a3b8;font-size:12px" id="ht-turn-display"></span>
+        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
+        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab active" id="httab-game" onclick="switchHTTab('game')">Game</button>
+      <button class="tab" id="httab-chat" onclick="switchHTTab('chat')">💬 Chat</button>
+      <button class="tab-rules" style="background:#dc2626;color:#fff" onclick="toggleHTRules()">Rules</button>
+      <button class="tab-exit" id="ht-exit-btn" onclick="exitGame()">Exit</button>
+    </div>
+    <div id="ht-game-tab">
+      <div id="ht-table-area"></div>
+      <div id="ht-action-area"></div>
+    </div>
+    <div id="ht-chat-tab" style="display:none">
+      <div class="chat-panel">
+        <div class="chat-messages" id="ht-chat-messages"></div>
+        <div class="chat-input-row">
+          <input id="ht-chat-input" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Commune Active Game -->
   <div id="commune-active" style="display:none">
     <div class="header-bar">
@@ -722,6 +765,40 @@
   </div>
 </div>
 
+<!-- Hearts Rules Overlay -->
+<div class="rules-overlay" id="ht-rules-overlay">
+  <div class="rules-content" style="border-color:#dc2626">
+    <div class="rules-close"><button onclick="toggleHTRules()" style="background:#dc2626;color:#fff">✕ Close</button></div>
+    <h2>❤️ Hearts Rules</h2>
+    <h3>Overview</h3>
+    <p>Hearts is a 4-player <b>trick-avoidance</b> game. The goal is to have the <b>lowest score</b> when any player reaches 100 points.</p>
+    <h3>Cards & Points</h3>
+    <ul>
+      <li>Standard <b>52-card deck</b>, 13 cards per player</li>
+      <li>Each <b>♥ Heart</b> = 1 point</li>
+      <li><b>Q♠ Queen of Spades</b> = 13 points</li>
+      <li>Total possible per hand: <b>26 points</b></li>
+    </ul>
+    <h3>Passing</h3>
+    <ul>
+      <li>Before each hand, pass <b>3 cards</b> to another player</li>
+      <li>Rotation: <b>Left → Right → Across → No Pass</b> (repeats)</li>
+    </ul>
+    <h3>Playing</h3>
+    <ul>
+      <li>Player with <b>2♣</b> leads the first trick</li>
+      <li><b>Must follow suit</b> if possible</li>
+      <li>No hearts or Q♠ on the <b>first trick</b></li>
+      <li><b>Hearts can't be led</b> until a heart has been played (broken)</li>
+      <li>Highest card of led suit wins the trick (no trumps)</li>
+    </ul>
+    <h3>Shooting the Moon 🌙</h3>
+    <p>If one player takes <b>all 26 penalty points</b> (all hearts + Q♠), they score <b>0</b> and everyone else gets <b>+26</b>!</p>
+    <h3>Winning</h3>
+    <p>Game ends when someone hits <b>100 points</b>. Player with the <b>lowest score</b> wins!</p>
+  </div>
+</div>
+
 <!-- Commune Rules Overlay -->
 <div class="rules-overlay" id="commune-rules-overlay">
   <div class="rules-content" style="border-color:#3b82f6">
@@ -813,7 +890,7 @@
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 8;
+let totalScripts = 9;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
@@ -838,6 +915,7 @@ function checkScriptsLoaded() {
 <script src="/js/nquestions.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/commune.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/twentynine.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/hearts.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

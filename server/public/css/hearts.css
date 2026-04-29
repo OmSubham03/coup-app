@@ -1,0 +1,156 @@
+/* ========== Hearts Card Game Styles ========== */
+
+.ht-board {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  aspect-ratio: 3/4;
+  background: radial-gradient(ellipse at center, #2a1a1a 0%, #1a0d0d 60%, #100808 100%);
+  border-radius: 18px;
+  border: 2px solid #7f1d1d;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Player positions — reuse 29 layout */
+.ht-player-spot {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 2;
+}
+.ht-player-top { top: 8px; left: 50%; transform: translateX(-50%); }
+.ht-player-left { left: 8px; top: 50%; transform: translateY(-50%); }
+.ht-player-left > .ht-player-name { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); }
+.ht-player-right { right: 8px; top: 50%; transform: translateY(-50%); }
+.ht-player-right > .ht-player-name { writing-mode: vertical-rl; text-orientation: mixed; }
+.ht-player-bottom { bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 5; }
+
+.ht-player-name {
+  font-size: 11px; font-weight: 700; color: #e2e8f0;
+  background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 8px;
+  white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;
+}
+.ht-player-name.active { color: #fbbf24; box-shadow: 0 0 8px rgba(251,191,36,0.4); border: 1px solid #fbbf24; }
+
+/* Folded cards */
+.ht-folded-cards { display: flex; }
+.ht-folded-cards.vertical { flex-direction: column; }
+.ht-folded-card {
+  width: 28px; height: 40px;
+  background: linear-gradient(135deg, #5f1a1a 0%, #3d0f0f 50%, #5f1a1a 100%);
+  border: 1.5px solid #dc2626; border-radius: 4px; margin-left: -12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.ht-folded-card:first-child { margin-left: 0; }
+.ht-folded-cards.vertical .ht-folded-card { margin-left: 0; margin-top: -28px; width: 32px; height: 44px; }
+.ht-folded-cards.vertical .ht-folded-card:first-child { margin-top: 0; }
+
+/* My cards */
+.ht-my-cards { display: flex; justify-content: center; flex-wrap: nowrap; padding: 4px 0; }
+.ht-card {
+  width: 38px; min-width: 38px; height: 54px; background: #fff;
+  border: 1.5px solid #94a3b8; border-radius: 5px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 12px; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.2); margin: 0 -4px;
+}
+.ht-card:first-child { margin-left: 0; }
+.ht-card:last-child { margin-right: 0; }
+.ht-card:hover { transform: translateY(-6px); box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
+.ht-card.selected { transform: translateY(-10px); border-color: #fbbf24; box-shadow: 0 0 12px rgba(251,191,36,0.5); }
+.ht-card.disabled { opacity: 1; pointer-events: none; cursor: default; }
+.ht-card .ht-card-rank { font-size: 13px; line-height: 1; }
+.ht-card .ht-card-suit { font-size: 14px; line-height: 1; }
+.ht-card.hearts, .ht-card.diamonds { color: #dc2626; }
+.ht-card.clubs, .ht-card.spades { color: #1e293b; }
+.ht-card.penalty { border-color: #dc2626; box-shadow: 0 0 6px rgba(220,38,38,0.3); }
+.ht-card.pass-selected { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245,158,11,0.5); transform: translateY(-8px); }
+
+/* Center trick area */
+.ht-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 160px; height: 160px; z-index: 3;
+}
+.ht-trick-card {
+  position: absolute; width: 44px; height: 62px; background: #fff;
+  border: 1.5px solid #94a3b8; border-radius: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+.ht-trick-card.hearts, .ht-trick-card.diamonds { color: #dc2626; }
+.ht-trick-card.clubs, .ht-trick-card.spades { color: #1e293b; }
+.ht-trick-card.pos-bottom { bottom: 0; left: 50%; transform: translateX(-50%); }
+.ht-trick-card.pos-top { top: 0; left: 50%; transform: translateX(-50%) rotate(180deg); }
+.ht-trick-card.pos-left { left: 0; top: 50%; transform: translateY(-50%) rotate(90deg); }
+.ht-trick-card.pos-right { right: 0; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+
+/* Trick collect animation */
+.ht-anim-collect { transition: all 0.6s ease-in-out !important; }
+.ht-anim-collect.ht-anim-to-bottom { top: auto !important; bottom: -80px !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(0) !important; opacity: 0; }
+.ht-anim-collect.ht-anim-to-top { top: -80px !important; bottom: auto !important; left: 50% !important; right: auto !important; transform: translateX(-50%) scale(0) !important; opacity: 0; }
+.ht-anim-collect.ht-anim-to-left { top: 50% !important; bottom: auto !important; left: -80px !important; right: auto !important; transform: translateY(-50%) scale(0) !important; opacity: 0; }
+.ht-anim-collect.ht-anim-to-right { top: 50% !important; bottom: auto !important; right: -80px !important; left: auto !important; transform: translateY(-50%) scale(0) !important; opacity: 0; }
+
+/* Score bar */
+.ht-score-bar {
+  display: flex; justify-content: space-around; padding: 6px 8px;
+  background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;
+}
+.ht-score-item { text-align: center; }
+.ht-score-name { font-size: 10px; color: #94a3b8; font-weight: 600; }
+.ht-score-name.me { color: #fbbf24; }
+.ht-score-val { font-size: 16px; font-weight: 800; }
+.ht-score-val.low { color: #22c55e; }
+.ht-score-val.mid { color: #f59e0b; }
+.ht-score-val.high { color: #dc2626; }
+.ht-hand-pts { font-size: 9px; color: #64748b; }
+
+/* Pass area */
+.ht-pass-area { text-align: center; padding: 12px; }
+.ht-pass-info { color: #94a3b8; font-size: 13px; margin-bottom: 8px; }
+.ht-pass-btn {
+  background: #f59e0b; color: #fff; border: none; padding: 10px 32px;
+  border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px;
+}
+.ht-pass-btn:hover { background: #d97706; }
+.ht-pass-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Action buttons */
+.ht-play-btn {
+  background: #dc2626; color: #fff; border: none; padding: 10px 32px;
+  border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; margin: 4px;
+}
+.ht-play-btn:hover { background: #b91c1c; }
+.ht-play-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Round/Game result */
+.ht-result { text-align: center; padding: 16px; background: rgba(0,0,0,0.4); border-radius: 12px; margin: 8px; }
+.ht-result h3 { color: #fbbf24; font-size: 18px; margin-bottom: 8px; }
+.ht-result p { color: #e2e8f0; font-size: 14px; margin-bottom: 4px; }
+.ht-result-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.ht-result-table th, .ht-result-table td { padding: 4px 8px; text-align: center; font-size: 13px; border-bottom: 1px solid #334155; color: #e2e8f0; }
+.ht-result-table th { color: #94a3b8; font-size: 11px; text-transform: uppercase; }
+.ht-next-btn {
+  background: #dc2626; color: #fff; border: none; padding: 10px 32px;
+  border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 12px;
+}
+.ht-next-btn:hover { background: #b91c1c; }
+
+.ht-waiting { color: #94a3b8; text-align: center; font-size: 14px; padding: 20px; animation: htPulse 2s infinite; }
+@keyframes htPulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+.ht-info-bar { color: #94a3b8; font-size: 11px; text-align: center; padding: 2px; }
+.ht-info-bar .ht-hearts-broken { color: #dc2626; font-weight: 700; }
+
+/* Points button */
+.ht-points-btn {
+  background: #dc2626; color: #fff; border: none; padding: 6px 16px;
+  border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer;
+}
+.ht-points-btn:hover { background: #b91c1c; }
