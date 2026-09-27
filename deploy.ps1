@@ -1,7 +1,7 @@
-$registry = "coupgamesacr"
-$app = "coup-server"
-$rg = "coup-rg"
-$tag = "coup-server:" + (Get-Date -Format "yyyyMMddHHmmss")
+$registry = "timecrushersacr"
+$app = "timecrushers"
+$rg = "timecrushers-rg"
+$tag = "timecrushers:" + (Get-Date -Format "yyyyMMddHHmmss")
 
 Write-Host "Attempting Az Login"
 az account set --subscription "Visual Studio Enterprise Subscription"

@@ -134,6 +134,9 @@ input::placeholder { color: #475569; }
 
 /* Game List */
 .game-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.site-footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; padding: 16px 8px 8px; border-top: 1px solid #1e293b; color: #64748b; font-size: 12px; text-align: center; }
+.site-footer a { color: #94a3b8; text-decoration: none; }
+.site-footer a:hover { color: #e2e8f0; text-decoration: underline; }
 .game-card { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 14px; border: 2px solid #1e293b; background: #0f172a; cursor: pointer; transition: all .2s; }
 .game-card:hover { border-color: #475569; transform: translateY(-1px); }
 .game-card-icon { font-size: 36px; width: 52px; text-align: center; flex-shrink: 0; }
