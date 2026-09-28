@@ -95,6 +95,22 @@ function renderCommunePlaying(tableArea, actionArea, me) {
   const cur = communeState.players[communeState.currentPlayerIdx];
   const isMyTurn = cur && cur.id === playerId;
 
+  // Players bar
+  let playersHtml = '<div class="cm-players">';
+  for (let i = 0; i < communeState.players.length; i++) {
+    const p = communeState.players[i];
+    const isCur = i === communeState.currentPlayerIdx;
+    const cls = !p.isAlive ? 'cm-p-dead' : isCur ? 'cm-p-active' : '';
+    const cardCount = p.cards ? p.cards.length : 0;
+    const initials = p.name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
+    playersHtml += `<div class="cm-player ${cls}">
+      <div class="cm-avatar cm-avatar-${i % 6}">${esc(initials)}</div>
+      <div class="cm-p-name">${esc(p.name)}</div>
+      <div class="cm-p-info">${cardCount} card${cardCount !== 1 ? 's' : ''}</div>
+    </div>`;
+  }
+  playersHtml += '</div>';
+
   // Community cards
   let communityHtml = '<div class="cm-community"><div class="cm-hand-label">Community Cards</div><div class="cm-cards">';
   if (communeState.communityCards) {
@@ -102,26 +118,12 @@ function renderCommunePlaying(tableArea, actionArea, me) {
   }
   communityHtml += '</div></div>';
 
-  // Players bar
-  let playersHtml = '<div class="cm-players">';
-  for (let i = 0; i < communeState.players.length; i++) {
-    const p = communeState.players[i];
-    const isCur = i === communeState.currentPlayerIdx;
-    const cls = !p.isAlive ? 'cm-p-dead' : isCur ? 'cm-p-active' : '';
-    const tokens = '●'.repeat(p.tokens) + '○'.repeat(5 - p.tokens);
-    const cardCount = p.cards ? p.cards.length : 0;
-    const isMe = p.id === playerId;
-    playersHtml += `<div class="cm-player ${cls}">
-      <div class="cm-p-name">${esc(p.name)}${isMe ? ' <span class="badge">You</span>' : ''}${i === communeState.dealerIdx ? ' 🎴' : ''}</div>
-      <div class="cm-p-info"><span class="cm-tokens">${tokens}</span> · ${cardCount} card${cardCount !== 1 ? 's' : ''}</div>
-    </div>`;
-  }
-  playersHtml += '</div>';
-
   // My cards
   let cardsHtml = '';
   if (me && me.cards) {
-    cardsHtml = '<div class="cm-my-hand"><div class="cm-hand-label">Your Hand</div><div class="cm-cards">';
+    const myPlayerIndex = communeState.players.findIndex(player => player.id === playerId);
+    const myInitials = me.name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
+    cardsHtml = `<div class="cm-my-hand"><div class="cm-my-hand-header"><div class="cm-avatar cm-avatar-${myPlayerIndex % 6}">${esc(myInitials)}</div><div class="cm-my-hand-player"><b>${esc(me.name)} · You</b><span>${me.cards.length} cards</span></div></div><div class="cm-cards">`;
     for (const c of me.cards) cardsHtml += cmCard(c);
     cardsHtml += '</div></div>';
   }
@@ -137,7 +139,7 @@ function renderCommunePlaying(tableArea, actionArea, me) {
   }
   declHtml += '</div>';
 
-  tableArea.innerHTML = communityHtml + playersHtml + cardsHtml + declHtml;
+  tableArea.innerHTML = playersHtml + communityHtml + cardsHtml + declHtml;
 
   // Action area
   if (isMyTurn && !isSpectating) {

@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="/css/commune.css">
 <link rel="stylesheet" href="/css/twentynine.css">
 <link rel="stylesheet" href="/css/hearts.css">
+<link rel="stylesheet" href="/css/uno.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -103,6 +104,14 @@
         <div class="game-card-info">
           <div class="game-card-title">HEARTS</div>
           <div class="game-card-desc">Avoid penalty cards. Shoot the moon. · 4 players</div>
+        </div>
+        <div class="game-card-arrow">›</div>
+      </div>
+      <div class="game-card game-card-uno" onclick="openGameMenu('uno')">
+        <div class="game-card-icon">🟨</div>
+        <div class="game-card-info">
+          <div class="game-card-title">UNO</div>
+          <div class="game-card-desc">Match colors and numbers. First to 500 points wins. · 2-6 players</div>
         </div>
         <div class="game-card-arrow">›</div>
       </div>
@@ -251,6 +260,28 @@
     </div>
   </div>
 
+  <!-- UNO Menu -->
+  <div id="menu-uno" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
+      <button class="btn btn-sm" style="width:auto;margin:0;background:#2563eb;color:#fff" onclick="toggleUNORules()">Rules</button>
+    </div>
+    <h1 class="uno-title">UNO</h1>
+    <p class="subtitle">Match colors and numbers. Play your hand first.</p>
+    <div class="uno-create-options">
+      <label class="uno-checkbox-row"><input type="checkbox" id="uno-stacking-enabled"><span><b>Enable draw-card stacking</b><small>House rule: +2 on +2, +4 on +2, +4 on +4, and matching-color +2 on +4.</small></span></label>
+    </div>
+    <div style="margin-bottom:24px">
+      <p class="section-title">Create Game</p>
+      <button class="btn" style="background:#ef3340;color:#fff" onclick="createUNOGame()">Create UNO Game</button>
+    </div>
+    <div>
+      <p class="section-title">Join Game</p>
+      <input id="uno-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('uno-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinUNOWithCode()">
+      <button class="btn btn-amber" id="uno-join-btn" disabled onclick="joinUNOWithCode()">Join Game</button>
+    </div>
+  </div>
+
   <!-- Commune Menu -->
   <div id="menu-commune" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -323,6 +354,7 @@
         </div>
       </div>
     </div>
+    <div id="lobby-uno-config" style="display:none" class="lobby-uno-config"></div>
     <p class="section-title">Players (<span id="player-count">0</span>/6)</p>
     <div id="lobby-players"></div>
     <button class="btn btn-green" id="start-btn" style="display:none" onclick="ws.send(JSON.stringify({type:'start-game'}))">Start Game</button>
@@ -576,6 +608,40 @@
     </div>
   </div>
 
+  <!-- UNO Active Game -->
+  <div id="uno-active" style="display:none">
+    <div class="header-bar">
+      <div>
+        <span class="uno-active-title">UNO</span>
+        <div class="phase-text" id="uno-phase-display"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:#94a3b8;font-size:12px" id="uno-turn-display"></span>
+        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
+        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab active" id="unotab-game" onclick="switchUNOTab('game')">Game</button>
+      <button class="tab" id="unotab-chat" onclick="switchUNOTab('chat')">💬 Chat</button>
+      <button class="tab-rules" onclick="toggleUNORules()">Rules</button>
+      <button class="tab-exit" onclick="exitGame()">Exit</button>
+    </div>
+    <div id="uno-game-tab">
+      <div id="uno-table-area"></div>
+      <div id="uno-action-area"></div>
+    </div>
+    <div id="uno-chat-tab" style="display:none">
+      <div class="chat-panel">
+        <div class="chat-messages" id="uno-chat-messages"></div>
+        <div class="chat-input-row">
+          <input id="uno-chat-input" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-sm" style="background:#ef3340;color:#fff" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Commune Active Game -->
   <div id="commune-active" style="display:none">
     <div class="header-bar">
@@ -823,6 +889,32 @@
   </div>
 </div>
 
+<!-- UNO Rules Overlay -->
+<div class="rules-overlay" id="uno-rules-overlay">
+  <div class="rules-content uno-rules-content">
+    <div class="rules-close"><button onclick="toggleUNORules()">✕ Close</button></div>
+    <h2>UNO Rules</h2>
+    <h3>Setup and goal</h3>
+    <p>2-6 players receive 7 cards. Be the first to empty your hand. The winner scores the value of cards left in opponents' hands; the first player to reach 500 points wins the match.</p>
+    <h3>On your turn</h3>
+    <ul>
+      <li>Play a card matching the discard's color or symbol, or play a Wild.</li>
+      <li>If you have no playable card, draw one. If it can be played, you may play that drawn card immediately; otherwise end your turn. You may choose to draw instead of playing a card from your hand.</li>
+      <li>Skip makes the next player miss a turn. Reverse changes direction; with 2 players it acts as Skip.</li>
+      <li>Draw Two makes the next player draw 2 and miss their turn. Wild changes the color. Wild Draw Four changes the color and makes the next player draw 4 and miss their turn.</li>
+      <li>Wild Draw Four may only be played when you have no card matching the current color. The next player may challenge: if illegal, its player draws 4 and the challenger continues; if legal, the challenger draws 6 and loses their turn.</li>
+      <li>When you play down to one card, call UNO before the next player begins. If caught first, draw 2 cards.</li>
+    </ul>
+    <h3>Scoring</h3>
+    <ul>
+      <li>Number cards score their number; Skip, Reverse, and Draw Two score 20; Wild and Wild Draw Four score 50.</li>
+      <li>A hand ends when a player has no cards (any final draw penalty is resolved first). Match ends at 500 points.</li>
+    </ul>
+    <h3>Optional stacking house rule</h3>
+    <p>When enabled by the room creator, draw penalties may be stacked: +2 on +2; +4 on +2; +4 on +4; and a +2 matching the color chosen after +4 on +4. The next player draws the accumulated total or stacks a permitted draw card. Stacking is not part of the standard rules.</p>
+  </div>
+</div>
+
 <!-- Commune Rules Overlay -->
 <div class="rules-overlay" id="commune-rules-overlay">
   <div class="rules-content" style="border-color:#3b82f6">
@@ -914,12 +1006,13 @@
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 9;
+let totalScripts = 10;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
   scriptsLoaded++;
   if (scriptsLoaded === totalScripts) {
+    if (typeof resumeSavedSessionReconnect === 'function') resumeSavedSessionReconnect();
     let elapsed = Date.now() - loaderStartTime;
     let remaining = Math.max(0, minLoaderTime - elapsed);
     setTimeout(() => {
@@ -940,6 +1033,7 @@ function checkScriptsLoaded() {
 <script src="/js/commune.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/twentynine.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/hearts.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/uno.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

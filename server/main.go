@@ -22,27 +22,29 @@ var upgrader = websocket.Upgrader{
 
 // Room represents a game room
 type Room struct {
-	mu               sync.Mutex
-	code             string
-	gameType         string // "coup", "poker", "ludo", "nquestions", "commune", "twentynine", or "hearts"
+	mu                 sync.Mutex
+	code               string
+	gameType           string // "coup", "poker", "ludo", "nquestions", "commune", "twentynine", or "hearts"
 	variant          game.VariantKey
-	gameState        *game.GameState
-	pokerState       *game.PokerState
-	pokerConfig      *PokerConfig
-	ludoState        *game.LudoState
-	ludoColors       map[string]string // playerID -> color choice
-	nqState          *game.NQState
-	nqConfig         *NQConfig
-	communeState     *game.CommuneState
-	tnState          *game.TwentyNineState
-	heartsState      *game.HeartsState
-	players          map[string]*PlayerConn // playerID -> PlayerConn
-	hostID           string
-	created          bool
-	connections      map[string]*websocket.Conn // connID -> ws conn
-	connPlayer       map[string]string          // connID -> playerID
-	disconnectTimers map[string]*time.Timer     // playerID -> pending elimination timer
-	lastActivity     time.Time
+	gameState          *game.GameState
+	pokerState         *game.PokerState
+	pokerConfig        *PokerConfig
+	ludoState          *game.LudoState
+	ludoColors         map[string]string // playerID -> color choice
+	nqState            *game.NQState
+	nqConfig           *NQConfig
+	communeState       *game.CommuneState
+	tnState            *game.TwentyNineState
+	heartsState        *game.HeartsState
+	unoState           *game.UNOState
+	unoStackingEnabled bool
+	players            map[string]*PlayerConn // playerID -> PlayerConn
+	hostID             string
+	created            bool
+	connections        map[string]*websocket.Conn // connID -> ws conn
+	connPlayer         map[string]string          // connID -> playerID
+	disconnectTimers   map[string]*time.Timer     // playerID -> pending elimination timer
+	lastActivity       time.Time
 }
 
 type PokerConfig struct {
@@ -59,6 +61,7 @@ type PlayerConn struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
+
 
 // Message types
 type InMessage struct {
@@ -120,7 +123,8 @@ func findPlayerActiveRoom(playerID string) *Room {
 				(room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished) ||
 				(room.communeState != nil && room.communeState.Phase != game.CommunePhaseFinished) ||
 				(room.tnState != nil && room.tnState.Phase != game.TN_PhaseGameOver) ||
-				(room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver)
+				(room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver) ||
+				(room.unoState != nil && room.unoState.Phase != game.UNOPhaseGameOver)
 			room.mu.Unlock()
 			if gameActive {
 				return room
@@ -187,6 +191,10 @@ func (r *Room) broadcastState() {
 	}
 	if r.gameType == "hearts" {
 		r.broadcastHTState()
+		return
+	}
+	if r.gameType == "uno" {
+		r.broadcastUNOState()
 		return
 	}
 	if r.gameState == nil {
@@ -404,12 +412,35 @@ func (r *Room) broadcastHTState() {
 	}
 }
 
+func (r *Room) broadcastUNOState() {
+	if r.unoState == nil {
+		return
+	}
+	gamePlayers := make(map[string]bool)
+	for _, p := range r.unoState.Players {
+		gamePlayers[p.ID] = true
+	}
+	spectatorState := game.UNOSanitizeState(r.unoState, "")
+	spectateData, _ := json.Marshal(OutMessage{Type: "uno-spectate", Payload: spectatorState})
+	for connID, conn := range r.connections {
+		pID := r.connPlayer[connID]
+		if gamePlayers[pID] {
+			personalized := game.UNOSanitizeState(r.unoState, pID)
+			data, _ := json.Marshal(OutMessage{Type: "uno-state", Payload: personalized})
+			conn.WriteMessage(websocket.TextMessage, data)
+		} else {
+			conn.WriteMessage(websocket.TextMessage, spectateData)
+		}
+	}
+}
+
 func handleWS(w http.ResponseWriter, req *http.Request) {
 	roomCode := req.URL.Query().Get("room")
 	action := req.URL.Query().Get("action")
 	playerID := req.URL.Query().Get("playerId")
 	variantStr := req.URL.Query().Get("variant")
 	gameType := req.URL.Query().Get("gameType")
+	unoStacking := req.URL.Query().Get("unoStacking") == "true"
 
 	if roomCode == "" {
 		http.Error(w, "room required", http.StatusBadRequest)
@@ -449,6 +480,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 
 	if action == "create" {
 		room.created = true
+		if gameType == "uno" {
+			room.unoStackingEnabled = unoStacking
+		}
 		log.Printf("[ROOM] Created room %s by player %s", roomCode, playerID[:8])
 	}
 
@@ -473,7 +507,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// If game already started, check reconnection
-	gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil || room.tnState != nil || room.heartsState != nil
+	gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil || room.tnState != nil || room.heartsState != nil || room.unoState != nil
 	if gameInProgress {
 		isReconnecting := false
 		if room.gameType == "poker" && room.pokerState != nil {
@@ -518,6 +552,13 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 					break
 				}
 			}
+		} else if room.gameType == "uno" && room.unoState != nil {
+			for _, p := range room.unoState.Players {
+				if p.ID == playerID {
+					isReconnecting = true
+					break
+				}
+			}
 		} else if room.gameState != nil {
 			for _, p := range room.gameState.Players {
 				if p.ID == playerID {
@@ -546,6 +587,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			} else if room.gameType == "hearts" {
 				spectatorState := game.SanitizeHTStateForPlayer(room.heartsState, "")
 				room.sendTo(connID, OutMessage{Type: "ht-spectate", Payload: spectatorState})
+			} else if room.gameType == "uno" {
+				spectatorState := game.UNOSanitizeState(room.unoState, "")
+				room.sendTo(connID, OutMessage{Type: "uno-spectate", Payload: spectatorState})
 			} else {
 				room.sendTo(connID, OutMessage{Type: "spectate-state", Payload: room.gameState})
 			}
@@ -580,6 +624,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			} else if room.gameType == "hearts" {
 				personalized := game.SanitizeHTStateForPlayer(room.heartsState, playerID)
 				room.sendTo(connID, OutMessage{Type: "ht-state", Payload: personalized})
+			} else if room.gameType == "uno" {
+				personalized := game.UNOSanitizeState(room.unoState, playerID)
+				room.sendTo(connID, OutMessage{Type: "uno-state", Payload: personalized})
 			} else {
 				room.sendTo(connID, OutMessage{Type: "state", Payload: room.gameState})
 			}
@@ -591,6 +638,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			"hostId":     room.hostID,
 			"gameActive": false,
 			"gameType":   room.gameType,
+			"unoStackingEnabled": room.unoStackingEnabled,
 		}})
 		room.mu.Unlock()
 	}
@@ -625,6 +673,8 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 				gameInProgress = room.tnState != nil && room.tnState.Phase != game.TN_PhaseWaiting && room.tnState.Phase != game.TN_PhaseGameOver
 			} else if room.gameType == "hearts" {
 				gameInProgress = room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseWaiting && room.heartsState.Phase != game.HT_PhaseGameOver
+			} else if room.gameType == "uno" {
+				gameInProgress = room.unoState != nil && room.unoState.Phase == game.UNOPhasePlaying
 			} else {
 				gameInProgress = room.gameState != nil && room.gameState.Phase != game.PhaseWaiting && room.gameState.Phase != game.PhaseGameOver
 			}
@@ -672,6 +722,12 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 						if room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver {
 							game.HTVoluntaryExit(room.heartsState, pID)
 							room.broadcastState()
+						}
+					} else if room.gameType == "uno" {
+						if room.unoState != nil && room.unoState.Phase == game.UNOPhasePlaying {
+							if err := game.UNOForfeitPlayer(room.unoState, pID); err == nil {
+								room.broadcastState()
+							}
 						}
 					} else {
 						if room.gameState != nil && room.gameState.Phase != game.PhaseGameOver {
@@ -749,9 +805,17 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		json.Unmarshal(msg.Payload, &payload)
 
-		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil
+		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil || room.tnState != nil || room.heartsState != nil || room.unoState != nil
 		if gameInProgress {
+			if room.gameType == "uno" && room.unoState != nil && game.UNOFindPlayer(room.unoState, playerID) >= 0 {
+				room.broadcastUNOState()
+				return
+			}
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "The Game Already Started"}})
+			return
+		}
+		if room.gameType == "uno" && len(room.players) >= 6 && room.players[playerID] == nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "UNO supports 2 to 6 players"}})
 			return
 		}
 
@@ -776,6 +840,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			"hostId":     room.hostID,
 			"gameActive": false,
 			"gameType":   room.gameType,
+			"unoStackingEnabled": room.unoStackingEnabled,
 		}})
 
 	case "start-game":
@@ -790,7 +855,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			(room.nqState != nil && room.nqState.Phase != game.NQPhaseFinished) ||
 			(room.communeState != nil && room.communeState.Phase != game.CommunePhaseFinished) ||
 			(room.tnState != nil && room.tnState.Phase != game.TN_PhaseGameOver) ||
-			(room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver)
+			(room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver) ||
+			(room.unoState != nil && room.unoState.Phase != game.UNOPhaseGameOver)
 		if gameAlreadyActive {
 			return
 		}
@@ -802,6 +868,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		room.communeState = nil
 		room.tnState = nil
 		room.heartsState = nil
+		room.unoState = nil
 		if len(room.players) < 2 {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Need at least 2 players to start"}})
 			return
@@ -925,6 +992,20 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			log.Printf("[HT] room=%s Hearts game started with 4 players", room.code)
 			room.broadcast(OutMessage{Type: "ht-started", Payload: nil})
 			room.broadcastHTState()
+		} else if room.gameType == "uno" {
+			if len(room.players) > 6 {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "UNO supports max 6 players"}})
+				return
+			}
+			var err error
+			room.unoState, err = game.UNOInitializeGame(playerList, room.unoStackingEnabled)
+			if err != nil {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+				return
+			}
+			log.Printf("[UNO] room=%s started with %d players; stacking=%t", room.code, len(playerList), room.unoStackingEnabled)
+			room.broadcast(OutMessage{Type: "uno-started", Payload: nil})
+			room.broadcastUNOState()
 		} else {
 			room.gameState = game.InitializeGame(playerList, room.variant)
 			log.Printf("[CARDS] room=%s Coup game started", room.code)
@@ -1056,6 +1137,19 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				return
 			}
 			room.heartsState = nil
+		} else if room.gameType == "uno" {
+			if room.unoState == nil {
+				room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+				room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+					"players": room.playerList(), "hostId": room.hostID, "gameActive": false, "gameType": room.gameType,
+				}})
+				return
+			}
+			if room.unoState.Phase != game.UNOPhaseGameOver {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Game is still in progress"}})
+				return
+			}
+			room.unoState = nil
 		} else {
 			hostShort := "(none)"
 			if len(room.hostID) >= 8 { hostShort = room.hostID[:8] }
@@ -1186,6 +1280,19 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				"hostId":     room.hostID,
 				"gameActive": room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver,
 				"gameType":   room.gameType,
+			}})
+		} else if room.gameType == "uno" {
+			if room.unoState == nil || room.unoState.Phase != game.UNOPhasePlaying {
+				return
+			}
+			if err := game.UNOForfeitPlayer(room.unoState, playerID); err != nil {
+				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+				return
+			}
+			room.broadcastUNOState()
+			room.sendTo(connID, OutMessage{Type: "state", Payload: nil})
+			room.sendTo(connID, OutMessage{Type: "players-updated", Payload: map[string]interface{}{
+				"players": room.playerList(), "hostId": room.hostID, "gameActive": room.unoState.Phase == game.UNOPhasePlaying, "gameType": room.gameType,
 			}})
 		} else {
 			if room.gameState == nil || room.gameState.Phase == game.PhaseGameOver {
@@ -1755,6 +1862,110 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		game.HTNextHand(room.heartsState)
 		room.broadcastHTState()
+
+	// UNO card game actions
+	case "uno-play-card":
+		if room.unoState == nil {
+			return
+		}
+		var payload struct {
+			CardID      string `json:"cardId"`
+			ChosenColor string `json:"chosenColor"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.UNOPlayCard(room.unoState, playerID, payload.CardID, payload.ChosenColor); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
+
+	case "uno-draw-card":
+		if room.unoState == nil {
+			return
+		}
+		if err := game.UNODrawCard(room.unoState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
+
+	case "uno-end-turn":
+		if room.unoState == nil {
+			return
+		}
+		if err := game.UNOEndTurn(room.unoState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
+
+	case "uno-say-uno":
+		if room.unoState == nil {
+			return
+		}
+		if err := game.UNOSayUNO(room.unoState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
+
+	case "uno-catch-uno":
+		if room.unoState == nil {
+			return
+		}
+		var payload struct {
+			TargetPlayerID string `json:"targetPlayerId"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.UNOCatchUNO(room.unoState, playerID, payload.TargetPlayerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
+
+	case "uno-accept-penalty":
+		if room.unoState == nil {
+			return
+		}
+		if err := game.UNOAcceptDrawPenalty(room.unoState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
+
+	case "uno-challenge-wild-draw-four":
+		if room.unoState == nil {
+			return
+		}
+		if err := game.UNOChallengeWildDrawFour(room.unoState, playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
+
+	case "uno-choose-initial-color":
+		if room.unoState == nil {
+			return
+		}
+		var payload struct {
+			Color string `json:"color"`
+		}
+		json.Unmarshal(msg.Payload, &payload)
+		if err := game.UNOChooseInitialColor(room.unoState, playerID, payload.Color); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
+
+	case "uno-next-round":
+		if room.unoState == nil || playerID != room.hostID {
+			return
+		}
+		if err := game.UNOStartNextRound(room.unoState); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			return
+		}
+		room.broadcastUNOState()
 
 	case "chat":
 		var payload struct {

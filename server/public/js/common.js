@@ -17,6 +17,8 @@ let joinVariant = 'standard';
 let isSpectating = false;
 let gameActive = false;
 let currentGameType = 'coup';
+let unoRoomStackingEnabled = false;
+let savedSessionReconnectPending = false;
 
 function openGameMenu(type) {
   currentGameType = type;
@@ -28,10 +30,11 @@ function openGameMenu(type) {
   document.getElementById('menu-commune').style.display = type === 'commune' ? '' : 'none';
   document.getElementById('menu-twentynine').style.display = type === 'twentynine' ? '' : 'none';
   document.getElementById('menu-hearts').style.display = type === 'hearts' ? '' : 'none';
+  document.getElementById('menu-uno').style.display = type === 'uno' ? '' : 'none';
   document.getElementById('join-variant-row').style.display = type === 'coup' ? '' : 'none';
-  const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: '20 QUESTIONS', commune: 'COMMUNE', twentynine: '29', hearts: 'HEARTS' };
-  const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title', commune: '', twentynine: '', hearts: '' };
-  const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Correct Guess in 20 turns', commune: 'Bluff poker hands. Call the liar.', twentynine: 'Trick-taking trump card game.', hearts: 'Avoid penalty cards. Shoot the moon.' };
+  const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: '20 QUESTIONS', commune: 'COMMUNE', twentynine: '29', hearts: 'HEARTS', uno: 'UNO' };
+  const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title', commune: '', twentynine: '', hearts: '', uno: 'uno-title' };
+  const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Correct Guess in 20 turns', commune: 'Bluff poker hands. Call the liar.', twentynine: 'Trick-taking trump card game.', hearts: 'Avoid penalty cards. Shoot the moon.', uno: 'Match colors and numbers. Play your hand first.' };
   ['join-game-title', 'entry-game-title', 'lobby-game-title'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.textContent = gameNames[type] || type.toUpperCase(); el.className = (gameClasses[type] || '') + ' '; el.style.fontSize = '36px'; }
@@ -51,6 +54,7 @@ function backToGameList() {
   document.getElementById('menu-commune').style.display = 'none';
   document.getElementById('menu-twentynine').style.display = 'none';
   document.getElementById('menu-hearts').style.display = 'none';
+  document.getElementById('menu-uno').style.display = 'none';
 }
 
 function showScreen(name) {
@@ -276,13 +280,40 @@ function toggleHTRules() {
   el.style.display = el.style.display === 'block' ? 'none' : 'block';
 }
 
+async function createUNOGame() {
+  currentGameType = 'uno';
+  unoRoomStackingEnabled = document.getElementById('uno-stacking-enabled').checked;
+  try {
+    const res = await fetch(HTTP + SERVER + '/api/generate-code');
+    const data = await res.json();
+    roomCode = data.code;
+    connectWS('create', null, null, unoRoomStackingEnabled);
+  } catch(e) { alert('Cannot connect to server: ' + e.message); }
+}
+
+function joinUNOWithCode() {
+  const code = document.getElementById('uno-join-code').value.trim().toUpperCase();
+  if (!code) return;
+  const btn = document.getElementById('uno-join-btn');
+  btn.disabled = true;
+  btn.textContent = 'Joining...';
+  currentGameType = 'uno';
+  roomCode = code;
+  connectWS();
+}
+
+function toggleUNORules() {
+  const el = document.getElementById('uno-rules-overlay');
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
 let intentionalDisconnect = false;
 let reconnectTimer = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 15;
 let wsConnecting = false;
 
-function connectWS(action, pokerConfig, nqConfig) {
+function connectWS(action, pokerConfig, nqConfig, unoStacking) {
   intentionalDisconnect = false;
   wsConnecting = true;
   showConnectingState();
@@ -292,6 +323,7 @@ function connectWS(action, pokerConfig, nqConfig) {
   sessionStorage.setItem('coup_variant', variant);
   sessionStorage.setItem('coup_gameType', currentGameType);
   const params = new URLSearchParams({ room: roomCode, playerId, variant, gameType: currentGameType });
+  if (action === 'create' && currentGameType === 'uno') params.set('unoStacking', unoStacking ? 'true' : 'false');
   if (action) params.set('action', action);
   ws = new WebSocket(WS + SERVER + '/ws?' + params);
 
@@ -325,6 +357,7 @@ function connectWS(action, pokerConfig, nqConfig) {
     document.getElementById('commune-active').style.display = 'none';
     document.getElementById('tn-active').style.display = 'none';
     document.getElementById('ht-active').style.display = 'none';
+    document.getElementById('uno-active').style.display = 'none';
     document.getElementById('room-code-display').textContent = roomCode;
     document.getElementById('name-error').textContent = '';
   };
@@ -368,7 +401,8 @@ function resetJoinButtons() {
     { id: 'nq-join-btn', text: 'Join Game' },
     { id: 'commune-join-btn', text: 'Join Game' },
     { id: 'tn-join-btn', text: 'Join Game' },
-    { id: 'ht-join-btn', text: 'Join Game' }
+    { id: 'ht-join-btn', text: 'Join Game' },
+    { id: 'uno-join-btn', text: 'Join Game' }
   ];
   buttons.forEach(({ id, text }) => {
     const btn = document.getElementById(id);
@@ -407,6 +441,7 @@ function handleWSMessage(e) {
         hostId = msg.payload?.hostId;
         gameActive = !!msg.payload?.gameActive;
         if (msg.payload?.gameType) currentGameType = msg.payload.gameType;
+        unoRoomStackingEnabled = !!msg.payload?.unoStackingEnabled;
         renderLobby(msg.payload?.players || []);
         break;
       case 'game-started':
@@ -487,6 +522,18 @@ function handleWSMessage(e) {
         currentGameType = 'hearts';
         handleHTStateUpdate(msg.payload);
         break;
+      case 'uno-started':
+        break;
+      case 'uno-state':
+        isSpectating = false;
+        currentGameType = 'uno';
+        handleUNOStateUpdate(msg.payload);
+        break;
+      case 'uno-spectate':
+        isSpectating = true;
+        currentGameType = 'uno';
+        handleUNOStateUpdate(msg.payload);
+        break;
       case 'ludo-colors':
         // Update color picker in lobby to show taken colors
         if (msg.payload) {
@@ -515,6 +562,7 @@ function handleWSMessage(e) {
           communeState = null;
           tnState = null;
           htState = null;
+          unoState = null;
           isSpectating = false;
           document.getElementById('game-active').style.display = 'none';
           document.getElementById('poker-active').style.display = 'none';
@@ -523,6 +571,7 @@ function handleWSMessage(e) {
           document.getElementById('commune-active').style.display = 'none';
           document.getElementById('tn-active').style.display = 'none';
           document.getElementById('ht-active').style.display = 'none';
+          document.getElementById('uno-active').style.display = 'none';
           document.getElementById('name-entry').style.display = 'none';
           document.getElementById('lobby').style.display = '';
           document.getElementById('lobby-code').textContent = roomCode;
@@ -560,7 +609,7 @@ function handleWSMessage(e) {
           document.getElementById('conn-banner').textContent = 'Game session ended.';
           document.getElementById('conn-banner').classList.add('show');
           setTimeout(() => { disconnect(); showScreen('menu'); backToGameList(); }, 1500);
-        } else if (gameState || pokerState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
+        } else if (gameState || pokerState || unoState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
         break;
     }
   } catch(err) {
@@ -602,6 +651,12 @@ function tryReconnect() {
   };
 }
 
+function resumeSavedSessionReconnect() {
+  if (!savedSessionReconnectPending) return;
+  savedSessionReconnectPending = false;
+  tryReconnect();
+}
+
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && roomCode && joinedName && !intentionalDisconnect) {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -631,6 +686,7 @@ function disconnect() {
   communeState = null;
   tnState = null;
   htState = null;
+  unoState = null;
   isSpectating = false;
   chatMessages = [];
 }
@@ -670,6 +726,11 @@ function exitGame() {
       if (!confirm('Exit Hearts? You will forfeit.')) return;
       send('exit-game');
     }
+  } else if (currentGameType === 'uno') {
+    if (unoState && unoState.phase === 'playing') {
+      if (!confirm('Exit UNO? You will forfeit this round.')) return;
+      send('exit-game');
+    }
   } else {
     if (gameState && gameState.phase !== 'game_over') {
       if (!confirm('Exit game? Both your cards will be discarded and you will return to the lobby.')) return;
@@ -692,6 +753,7 @@ function stopSpectating() {
   communeState = null;
   tnState = null;
   htState = null;
+  unoState = null;
   document.getElementById('game-active').style.display = 'none';
   document.getElementById('poker-active').style.display = 'none';
   document.getElementById('ludo-active').style.display = 'none';
@@ -699,6 +761,7 @@ function stopSpectating() {
   document.getElementById('commune-active').style.display = 'none';
   document.getElementById('tn-active').style.display = 'none';
   document.getElementById('ht-active').style.display = 'none';
+  document.getElementById('uno-active').style.display = 'none';
   document.getElementById('lobby').style.display = '';
   document.getElementById('lobby-code').textContent = roomCode;
 }
@@ -727,6 +790,8 @@ function renderLobby(players) {
   const maxPlayers = currentGameType === 'poker' ? 8 : (currentGameType === 'ludo' || currentGameType === 'twentynine' || currentGameType === 'hearts' ? 4 : 6);
   document.getElementById('lobby-poker-config').style.display = currentGameType === 'poker' ? '' : 'none';
   document.getElementById('lobby-ludo-config').style.display = currentGameType === 'ludo' ? '' : 'none';
+  document.getElementById('lobby-uno-config').style.display = currentGameType === 'uno' ? '' : 'none';
+  document.getElementById('lobby-uno-config').textContent = unoRoomStackingEnabled ? 'Draw-card stacking house rules enabled' : 'Standard rules · no draw-card stacking';
   let html = '';
   for (const p of players) {
     html += '<div class="player-list-item"><span>' + esc(p.name) +
@@ -756,7 +821,8 @@ function sendChat() {
   const isCommune = currentGameType === 'commune' && communeState;
   const isTN = currentGameType === 'twentynine' && tnState;
   const isHT = currentGameType === 'hearts' && htState;
-  const input = document.getElementById(isHT ? 'ht-chat-input' : (isTN ? 'tn-chat-input' : (isCommune ? 'commune-chat-input' : (isNQ ? 'nq-chat-input' : (isLudo ? 'ludo-chat-input' : (isPoker ? 'poker-chat-input' : 'chat-input'))))));
+  const isUNO = currentGameType === 'uno' && unoState;
+  const input = document.getElementById(isUNO ? 'uno-chat-input' : (isHT ? 'ht-chat-input' : (isTN ? 'tn-chat-input' : (isCommune ? 'commune-chat-input' : (isNQ ? 'nq-chat-input' : (isLudo ? 'ludo-chat-input' : (isPoker ? 'poker-chat-input' : 'chat-input')))))));
   const text = input.value.trim();
   if (!text) return;
   send('chat', { message: text });
@@ -775,8 +841,9 @@ function appendChatMessage(data) {
   const isCommune = currentGameType === 'commune' && communeState;
   const isTN = currentGameType === 'twentynine' && tnState;
   const isHT = currentGameType === 'hearts' && htState;
-  const chatPanel = document.getElementById(isHT ? 'ht-chat-tab' : (isTN ? 'tn-chat-tab' : (isCommune ? 'commune-chat-tab' : (isNQ ? 'nq-chat-tab' : (isLudo ? 'ludo-chat-tab' : (isPoker ? 'poker-chat-tab' : 'chat-tab'))))));
-  const chatTab = document.getElementById(isHT ? 'httab-chat' : (isTN ? 'tntab-chat' : (isCommune ? 'cmtab-chat' : (isNQ ? 'nqtab-chat' : (isLudo ? 'ltab-chat' : (isPoker ? 'ptab-chat' : 'tab-chat'))))));
+  const isUNO = currentGameType === 'uno' && unoState;
+  const chatPanel = document.getElementById(isUNO ? 'uno-chat-tab' : (isHT ? 'ht-chat-tab' : (isTN ? 'tn-chat-tab' : (isCommune ? 'commune-chat-tab' : (isNQ ? 'nq-chat-tab' : (isLudo ? 'ludo-chat-tab' : (isPoker ? 'poker-chat-tab' : 'chat-tab')))))));
+  const chatTab = document.getElementById(isUNO ? 'unotab-chat' : (isHT ? 'httab-chat' : (isTN ? 'tntab-chat' : (isCommune ? 'cmtab-chat' : (isNQ ? 'nqtab-chat' : (isLudo ? 'ltab-chat' : (isPoker ? 'ptab-chat' : 'tab-chat')))))));
   const notOnChat = !chatPanel || chatPanel.style.display === 'none';
   if (notOnChat && chatTab) {
     chatTab.classList.add('chat-unread');
@@ -788,7 +855,7 @@ function appendChatMessage(data) {
 }
 
 function renderChatMessages() {
-  const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages', 'commune-chat-messages', 'tn-chat-messages', 'ht-chat-messages'];
+  const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages', 'commune-chat-messages', 'tn-chat-messages', 'ht-chat-messages', 'uno-chat-messages'];
   for (const id of panels) {
     const el = document.getElementById(id);
     if (!el) continue;
@@ -873,6 +940,6 @@ function saveNamePopup() {
     variant = sessionStorage.getItem('coup_variant') || 'standard';
     currentGameType = sessionStorage.getItem('coup_gameType') || 'coup';
     console.log('[INIT] Rejoining room ' + roomCode + ' as ' + joinedName);
-    tryReconnect();
+    savedSessionReconnectPending = true;
   }
 })();
