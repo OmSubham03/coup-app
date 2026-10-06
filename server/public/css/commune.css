@@ -79,7 +79,7 @@
 /* Tabs — keep default purple active tab, just style chat-unread */
 #commune-active .tab.chat-unread { color:#f59e0b; }
 
-/* Light, card-first Commune styling */
+/* Card-first Commune styling */
 #commune-active {
 	min-height: 100dvh;
 	margin: -48px -16px 0;
@@ -143,7 +143,7 @@
 #commune-action-area .cm-rank-btn.selected { border-color: #4a47d2; background: #4a47d2; color: #fff; }
 #commune-action-area .cm-action-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 #commune-action-area .cm-btn-declare { background: #4a47d2; }
-#commune-action-area .cm-btn-call { background: #f1d36b; color: #45370d; }
+#commune-action-area .cm-btn-call { background: #c7cdd3; color: #171a1e; }
 #commune-action-area .cm-wait { padding: 14px; border: 1px solid #e2e7ee; border-radius: 9px; background: #f2f4f8; color: #788498; }
 #commune-table-area .cm-call-banner { border: 1px solid #e4d59f; background: #fffdf5; }
 #commune-table-area .cm-call-title { color: #8b6a14; }
@@ -156,6 +156,54 @@
 #commune-table-area .cm-stand-title { color: #788498; }
 #commune-table-area .cm-stand-row { border-color: #e5e9ef; color: #748094; }
 #commune-table-area .cm-stand-row.cm-stand-alive { color: #293548; }
+
+#commune-active {
+	--cm-steel-bg: #141619;
+	--cm-steel-panel: #23272c;
+	--cm-steel-raised: #333940;
+	--cm-steel-border: #505861;
+	--cm-steel-text: #f0f2f4;
+	--cm-steel-muted: #b1b8c0;
+	background: var(--cm-steel-bg);
+	color: var(--cm-steel-text);
+	color-scheme: dark;
+}
+#commune-active .header-bar { border-color: var(--cm-steel-border); }
+#commune-active .phase-text { color: var(--cm-steel-muted); }
+#commune-active .header-bar > div:first-child > span { color: var(--cm-steel-text) !important; }
+#commune-active .tab { background: var(--cm-steel-panel); color: var(--cm-steel-muted); }
+#commune-active .tab.active { background: #c7cdd3; color: #171a1e; }
+#commune-table-area .cm-community { background: linear-gradient(145deg, #333940, #23272c); border-color: #747e88; }
+#commune-table-area .cm-community .cm-hand-label { color: #e2e6ea; }
+#commune-table-area .cm-player.cm-p-active { background: var(--cm-steel-raised); border-color: #a4aeb8; box-shadow: none; }
+#commune-table-area .cm-player.cm-p-active .cm-avatar { box-shadow: 0 0 0 2px #a4aeb8; }
+#commune-table-area .cm-p-name, #commune-table-area .cm-my-hand-player { color: var(--cm-steel-text); }
+#commune-table-area .cm-p-info, #commune-table-area .cm-my-hand-player span,
+#commune-table-area .cm-hand-label, #commune-table-area .cm-decl-empty { color: var(--cm-steel-muted); }
+#commune-table-area .cm-my-hand, #commune-table-area .cm-decl-list,
+#commune-action-area .cm-declare-form, #commune-action-area .cm-wait,
+#commune-table-area .cm-standings { background: var(--cm-steel-panel); border-color: var(--cm-steel-border); }
+#commune-table-area .cm-decl-item { border-color: var(--cm-steel-border); color: #d0d6dc; }
+#commune-table-area .cm-decl-item strong, #commune-action-area .cm-prompt { color: var(--cm-steel-text); }
+#commune-action-area .cm-type-btn, #commune-action-area .cm-rank-btn { background: var(--cm-steel-raised); border-color: #66717c; color: var(--cm-steel-text); }
+#commune-action-area .cm-type-btn.selected, #commune-action-area .cm-rank-btn.selected { background: #c7cdd3; border-color: #f0f2f4; color: #171a1e; }
+#commune-action-area .cm-rank-label, #commune-action-area .cm-wait { color: var(--cm-steel-muted); }
+#commune-action-area .cm-btn-declare, #commune-active .cm-btn-next,
+#commune-active .cm-btn-lobby { background: #c7cdd3; color: #171a1e; }
+#commune-table-area .cm-call-banner { background: var(--cm-steel-raised); border-color: #c5a653; }
+#commune-table-area .cm-call-title { color: #f1d36b; }
+#commune-table-area .cm-call-decl { color: var(--cm-steel-text); }
+#commune-table-area .cm-result-present { background: #19372b; color: #9be0b7; border-color: #4e926b; }
+#commune-table-area .cm-result-absent { background: #3a2228; color: #ffb1bc; border-color: #a45a67; }
+#commune-table-area .cm-winner-card { background: linear-gradient(145deg, #333940, #23272c); border-color: #87939e; }
+#commune-table-area .cm-winner-card h3, #commune-table-area .cm-stand-row.cm-stand-alive { color: var(--cm-steel-text); }
+#commune-table-area .cm-stand-title, #commune-table-area .cm-stand-row { color: var(--cm-steel-muted); border-color: var(--cm-steel-border); }
+#commune-active .cm-log-entry { color: #d0d6dc; border-color: var(--cm-steel-border); }
+#commune-active .cm-log-time { color: var(--cm-steel-muted); }
+#commune-active .chat-input-row input { background: var(--cm-steel-panel); border-color: #66717c; }
+#commune-active .chat-msg-name { color: #d3dce5; }
+#commune-active .chat-msg-time { color: var(--cm-steel-muted); }
+#commune-active .cm-type-btn:focus-visible, #commune-active .cm-rank-btn:focus-visible { outline: 2px solid #f0f2f4; outline-offset: 2px; }
 
 @media (max-width: 520px) {
 	#commune-active { margin-right: -16px; margin-left: -16px; padding: 12px 10px 22px; }

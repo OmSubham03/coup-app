@@ -419,7 +419,7 @@ func communeDeclText(d CommuneDeclaration) string {
 	case CommuneTwoTrips:
 		return "Two Trips — " + communeRankName(d.PrimaryRank) + " and " + communeRankName(d.SecondaryRank)
 	case CommuneUltaStraight:
-		return "Ulta Straight (3 to A)"
+		return "Ultra Straight (3 to A)"
 	case CommuneFourPlusThree:
 		return "Four " + communeRankName(d.PrimaryRank) + " + Three " + communeRankName(d.SecondaryRank)
 	case CommuneFiveOfAKind:

@@ -11,7 +11,7 @@ const CM_HAND_TYPES = [
   { id: 6, name: 'Full House', short: 'Full H.' },
   { id: 7, name: 'Four of a Kind', short: 'Quads' },
   { id: 8, name: 'Two Trips', short: '2 Trips' },
-  { id: 9, name: 'Ulta Straight', short: 'Ulta St.' },
+  { id: 9, name: 'Ultra Straight', short: 'Ultra St.' },
   { id: 10, name: 'Four + Three', short: '4+3' },
   { id: 11, name: 'Five of a Kind', short: '5 Kind' }
 ];
@@ -245,7 +245,7 @@ function cmDeclPreview() {
     case 6: return `${r[cmSelRank1]} full of ${r[cmSelRank2]}`;
     case 7: return `Four ${r[cmSelRank1]}`;
     case 8: return `Two Trips: ${r[cmSelRank1]} & ${r[cmSelRank2]}`;
-    case 9: return `Ulta Straight (3→A)`;
+    case 9: return `Ultra Straight (3→A)`;
     case 10: return `Four ${r[cmSelRank1]} + Three ${r[cmSelRank2]}`;
     case 11: return `Five ${r[cmSelRank1]}`;
   }
