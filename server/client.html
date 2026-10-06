@@ -268,11 +268,18 @@
     </div>
     <h1 class="uno-title">UNO</h1>
     <p class="subtitle">Match colors and numbers. Play your hand first.</p>
-    <div class="uno-create-options">
-      <label class="uno-checkbox-row"><input type="checkbox" id="uno-stacking-enabled"><span><b>Enable draw-card stacking</b><small>House rule: +2 on +2, +4 on +2, +4 on +4, and matching-color +2 on +4.</small></span></label>
-    </div>
     <div style="margin-bottom:24px">
       <p class="section-title">Create Game</p>
+      <div class="uno-create-options">
+        <div class="uno-checkbox-row">
+          <label for="uno-stacking-enabled"><input type="checkbox" id="uno-stacking-enabled"><b>Enable draw-card stacking</b></label>
+          <button type="button" class="uno-rule-info" onclick="openUNOHouseRule('stacking')" title="Draw-card stacking house rule" aria-label="About draw-card stacking" aria-haspopup="dialog">i</button>
+        </div>
+        <div class="uno-checkbox-row">
+          <label for="uno-multi-skip-enabled"><input type="checkbox" id="uno-multi-skip-enabled"><b>Enable Multi Skip rule</b></label>
+          <button type="button" class="uno-rule-info" onclick="openUNOHouseRule('multiSkip')" title="Multi Skip house rule" aria-label="About Multi Skip" aria-haspopup="dialog">i</button>
+        </div>
+      </div>
       <button class="btn" style="background:#ef3340;color:#fff" onclick="createUNOGame()">Create UNO Game</button>
     </div>
     <div>
@@ -672,6 +679,14 @@
 <div class="chat-toast" id="chat-toast"></div>
 <div class="conn-banner" id="conn-banner">Connection lost — reconnecting...</div>
 
+<dialog id="uno-house-rule-dialog" class="game-settings-dialog uno-house-rule-dialog" aria-labelledby="uno-house-rule-title" aria-describedby="uno-house-rule-description" onkeydown="if(event.key==='Escape'){event.preventDefault();this.close();}">
+  <div class="game-settings-heading">
+    <h2 id="uno-house-rule-title">House rule</h2>
+    <button type="button" class="game-settings-close" onclick="document.getElementById('uno-house-rule-dialog').close()" aria-label="Close house rule">&times;</button>
+  </div>
+  <p id="uno-house-rule-description"></p>
+</dialog>
+
 <dialog id="game-settings-dialog" class="game-settings-dialog" aria-labelledby="game-settings-title">
   <div class="game-settings-heading">
     <h2 id="game-settings-title">Settings</h2>
@@ -910,6 +925,8 @@
     </ul>
     <h3>Optional stacking house rule</h3>
     <p>When enabled by the room creator, draw penalties may be stacked: +2 on +2; +4 on +2; +4 on +4; and a +2 matching the color chosen after +4 on +4. The next player draws the accumulated total or stacks a permitted draw card. Stacking is not part of the standard rules.</p>
+    <h3>Optional Multi Skip house rule</h3>
+    <p>A Skip can normally be played on another Skip on your turn because the symbols match; only the next player is skipped. With Multi Skip enabled, that next player may instead play another Skip of any color, adding one to the chain. The chain continues until a player has no Skip. Starting with that player, skip as many turns as there are Skips in the chain, following the current direction of play. In two-player games the skipped turns can wrap around. Emptying your hand still ends the round.</p>
   </div>
 </div>
 

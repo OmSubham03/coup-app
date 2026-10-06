@@ -18,6 +18,7 @@ let isSpectating = false;
 let gameActive = false;
 let currentGameType = 'coup';
 let unoRoomStackingEnabled = false;
+let unoRoomMultiSkipEnabled = false;
 let savedSessionReconnectPending = false;
 let roomIsPublic = false;
 let publicJoinPending = false;
@@ -388,6 +389,7 @@ function toggleHTRules() {
 async function createUNOGame() {
   currentGameType = 'uno';
   unoRoomStackingEnabled = document.getElementById('uno-stacking-enabled').checked;
+  unoRoomMultiSkipEnabled = document.getElementById('uno-multi-skip-enabled').checked;
   try {
     const res = await fetch(HTTP + SERVER + '/api/generate-code');
     const data = await res.json();
@@ -432,6 +434,7 @@ function connectWS(action, pokerConfig, nqConfig, unoStacking, publicRoom = fals
   sessionStorage.setItem('coup_gameType', currentGameType);
   const params = new URLSearchParams({ room: roomCode, playerId, variant, gameType: currentGameType });
   if (action === 'create' && currentGameType === 'uno') params.set('unoStacking', unoStacking ? 'true' : 'false');
+  if (action === 'create' && currentGameType === 'uno') params.set('unoMultiSkip', unoRoomMultiSkipEnabled ? 'true' : 'false');
   if (action) params.set('action', action);
   ws = new WebSocket(WS + SERVER + '/ws?' + params);
 
@@ -532,6 +535,8 @@ function handleWSMessage(e) {
       case 'room-visibility':
         roomIsPublic = !!msg.payload?.public;
         hostId = msg.payload?.hostId;
+        unoRoomStackingEnabled = !!msg.payload?.unoStackingEnabled;
+        unoRoomMultiSkipEnabled = !!msg.payload?.unoMultiSkipEnabled;
         updateRoomVisibilityControl();
         break;
       case 'redirect':
@@ -557,7 +562,8 @@ function handleWSMessage(e) {
         hostId = msg.payload?.hostId;
         gameActive = !!msg.payload?.gameActive;
         if (msg.payload?.gameType) currentGameType = msg.payload.gameType;
-        unoRoomStackingEnabled = !!msg.payload?.unoStackingEnabled;
+        if ('unoStackingEnabled' in (msg.payload || {})) unoRoomStackingEnabled = !!msg.payload.unoStackingEnabled;
+        if ('unoMultiSkipEnabled' in (msg.payload || {})) unoRoomMultiSkipEnabled = !!msg.payload.unoMultiSkipEnabled;
         renderLobby(msg.payload?.players || []);
         break;
       case 'game-started':
@@ -933,7 +939,10 @@ function renderLobby(players) {
   document.getElementById('lobby-poker-config').style.display = currentGameType === 'poker' ? '' : 'none';
   document.getElementById('lobby-ludo-config').style.display = currentGameType === 'ludo' ? '' : 'none';
   document.getElementById('lobby-uno-config').style.display = currentGameType === 'uno' ? '' : 'none';
-  document.getElementById('lobby-uno-config').textContent = unoRoomStackingEnabled ? 'Draw-card stacking house rules enabled' : 'Standard rules · no draw-card stacking';
+  const unoHouseRules = [];
+  if (unoRoomStackingEnabled) unoHouseRules.push('Draw-card stacking');
+  if (unoRoomMultiSkipEnabled) unoHouseRules.push('Multi Skip');
+  document.getElementById('lobby-uno-config').textContent = unoHouseRules.length ? 'House rules: ' + unoHouseRules.join(' · ') : 'Standard rules · no draw-card stacking';
   let html = '';
   for (const p of players) {
     html += '<div class="player-list-item"><span>' + esc(p.name) +

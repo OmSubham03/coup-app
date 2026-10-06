@@ -4,6 +4,25 @@ let unoState = null;
 let unoSelectedCardId = '';
 let unoColorChoiceForCard = '';
 
+function openUNOHouseRule(rule) {
+  const rules = {
+    stacking: {
+      title: 'Draw-card stacking house rule',
+      description: 'Stack +2 on +2, +4 on +2, +4 on +4, or a +2 matching the color chosen after +4 on +4. The draw penalty accumulates until a player accepts it. This is an optional house rule, not standard UNO.'
+    },
+    multiSkip: {
+      title: 'Multi Skip house rule',
+      description: 'The next player can stack a Skip of any color. Continue until someone has no Skip; starting with that player, skip as many turns as the number of Skips piled, following the current direction. Skipped turns can wrap around the players. Emptying a hand still ends the round. This is an optional house rule, not standard UNO.'
+    }
+  };
+  const selected = rules[rule];
+  if (!selected) return;
+  document.getElementById('uno-house-rule-title').textContent = selected.title;
+  document.getElementById('uno-house-rule-description').textContent = selected.description;
+  const dialog = document.getElementById('uno-house-rule-dialog');
+  if (!dialog.open) dialog.showModal();
+}
+
 const UNO_COLORS = ['red', 'yellow', 'green', 'blue'];
 const UNO_COLOR_NAMES = { red: 'Red', yellow: 'Yellow', green: 'Green', blue: 'Blue' };
 const UNO_CARD_LABELS = { skip: 'SKIP', reverse: 'REVERSE', draw_two: '+2', wild: 'WILD', wild_draw_four: '+4' };
@@ -27,8 +46,11 @@ function renderUNOGame() {
   document.getElementById('name-entry').style.display = 'none';
 
   const phase = document.getElementById('uno-phase-display');
+  const houseRules = [];
+  if (unoState.stackingEnabled) houseRules.push('Stacking on');
+  if (unoState.multiSkipEnabled) houseRules.push('Multi Skip on');
   phase.textContent = unoState.phase === 'playing'
-    ? `Round ${unoState.round} · ${unoState.stackingEnabled ? 'Stacking on' : 'Standard rules'}`
+    ? `Round ${unoState.round} · ${houseRules.length ? houseRules.join(' · ') : 'Standard rules'}`
     : unoState.phase === 'round_over' ? `Round ${unoState.round} complete`
       : 'Match complete';
   document.getElementById('uno-turn-display').textContent =
@@ -59,10 +81,10 @@ function renderUNOTable() {
   const currentPlayer = unoState.players[unoState.currentPlayerIdx];
   html += '<div class="uno-table-center">';
   html += '<div class="uno-card-stacks">';
-  html += `<div class="uno-card-stack"><span class="uno-pile-caption">DRAW PILE</span><button class="uno-card-back uno-draw-pile" ${!myTurn || unoState.pendingDraw > 0 || unoState.players[myIdx]?.hasDrawn ? 'disabled' : ''} onclick="send('uno-draw-card')" aria-label="Draw a card"></button></div>`;
+  html += `<div class="uno-card-stack"><span class="uno-pile-caption">DRAW PILE</span><button class="uno-card-back uno-draw-pile" ${!myTurn || unoState.pendingDraw > 0 || unoState.pendingSkips > 0 || unoState.players[myIdx]?.hasDrawn ? 'disabled' : ''} onclick="send('uno-draw-card')" aria-label="Draw a card"></button></div>`;
   html += `<div class="uno-card-stack"><span class="uno-pile-caption">ON TABLE</span>${topCard ? unoCardMarkup(topCard, false, false) : ''}</div>`;
   html += '</div>';
-  html += `<div class="uno-turn-banner${myTurn ? ' my-turn' : ''}"><span>${unoState.awaitingInitialColor ? 'Choose the opening color' : myTurn ? 'Your turn' : `${unoEsc(currentPlayer?.name || 'Player')}'s turn`}</span><i class="uno-swatch ${unoState.currentColor || 'wild'}"></i><b>${unoState.pendingDraw > 0 ? `+${unoState.pendingDraw} cards` : (UNO_COLOR_NAMES[unoState.currentColor] || 'Wild')}</b></div>`;
+  html += `<div class="uno-turn-banner${myTurn ? ' my-turn' : ''}"><span>${unoState.awaitingInitialColor ? 'Choose the opening color' : myTurn ? 'Your turn' : `${unoEsc(currentPlayer?.name || 'Player')}'s turn`}</span><i class="uno-swatch ${unoState.currentColor || 'wild'}"></i><b>${unoState.pendingSkips > 0 ? `${unoState.pendingSkips} skip${unoState.pendingSkips === 1 ? '' : 's'}` : unoState.pendingDraw > 0 ? `+${unoState.pendingDraw} cards` : (UNO_COLOR_NAMES[unoState.currentColor] || 'Wild')}</b></div>`;
   html += '</div>';
 
   if (myIdx >= 0) {
@@ -93,6 +115,7 @@ function unoCardMarkup(card, playable, selected) {
 }
 
 function unoIsPlayable(card, player) {
+  if (unoState.pendingSkips > 0) return unoState.multiSkipEnabled && card.kind === 'skip';
   if (unoState.pendingDraw > 0) {
     if (!unoState.stackingEnabled) return false;
     const top = unoState.discardPile[unoState.discardPile.length - 1];
@@ -135,7 +158,10 @@ function renderUNOActions() {
 
   let html = '';
   const selected = me.cards.find(card => card.id === unoSelectedCardId);
-  if (unoState.pendingDraw > 0) {
+  if (unoState.pendingSkips > 0) {
+    html += `<div class="uno-waiting">Skip chain: ${unoState.pendingSkips}. Play a Skip to continue.</div>`;
+    if (selected && unoIsPlayable(selected, me)) html += unoPlayButton(selected);
+  } else if (unoState.pendingDraw > 0) {
     html += `<button class="uno-action-btn uno-action-red" onclick="send('uno-accept-penalty')">Draw ${unoState.pendingDraw} cards</button>`;
     if (unoState.challengeAvailable) html += '<button class="uno-action-btn uno-action-blue" onclick="send(\'uno-challenge-wild-draw-four\')">Challenge +4</button>';
     if (selected && unoIsPlayable(selected, me)) html += unoPlayButton(selected);

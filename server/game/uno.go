@@ -42,6 +42,8 @@ type UNOState struct {
 	CurrentColor                string      `json:"currentColor"`
 	PendingDraw                 int         `json:"pendingDraw"`
 	StackingEnabled             bool        `json:"stackingEnabled"`
+	MultiSkipEnabled            bool        `json:"multiSkipEnabled"`
+	PendingSkips                int         `json:"pendingSkips"`
 	PendingWinnerID             string      `json:"pendingWinnerId,omitempty"`
 	UncalledUNOPlayerID         string      `json:"uncalledUnoPlayerId,omitempty"`
 	ChallengeAvailable          bool        `json:"challengeAvailable"`
@@ -168,6 +170,9 @@ func UNOTopCard(state *UNOState) UNOCard {
 }
 
 func UNOPlayable(state *UNOState, card UNOCard) bool {
+	if state.PendingSkips > 0 {
+		return state.MultiSkipEnabled && card.Kind == "skip"
+	}
 	if state.PendingDraw > 0 {
 		return state.StackingEnabled && UNOCanStack(UNOTopCard(state), card, state.CurrentColor)
 	}
@@ -221,6 +226,9 @@ func UNODrawCard(state *UNOState, playerID string) error {
 	}
 	if state.PendingDraw > 0 {
 		return fmt.Errorf("accept the pending draw penalty")
+	}
+	if state.PendingSkips > 0 {
+		return fmt.Errorf("play a Skip to continue the multi-skip chain")
 	}
 	if state.Players[idx].HasDrawn {
 		return fmt.Errorf("you already drew this turn")
@@ -319,7 +327,12 @@ func UNOPlayCard(state *UNOState, playerID, cardID, chosenColor string) error {
 	next := idx
 	switch card.Kind {
 	case "skip":
-		next = unoAdvance(state, idx, 2)
+		if state.MultiSkipEnabled && state.Phase == UNOPhasePlaying {
+			state.PendingSkips++
+			next = unoAdvance(state, idx, 1)
+		} else {
+			next = unoAdvance(state, idx, 2)
+		}
 	case "reverse":
 		if len(state.Players) == 2 {
 			// In a two-player game Reverse acts like Skip.
@@ -343,7 +356,22 @@ func UNOPlayCard(state *UNOState, playerID, cardID, chosenColor string) error {
 	}
 	state.CurrentPlayerIdx = next
 	state.TurnNumber++
+	unoResolveSkipChain(state)
 	return nil
+}
+
+func unoResolveSkipChain(state *UNOState) {
+	if state.PendingSkips == 0 || state.Phase != UNOPhasePlaying {
+		return
+	}
+	idx := state.CurrentPlayerIdx
+	if unoHasSkip(state.Players[idx]) {
+		return
+	}
+	amount := state.PendingSkips
+	state.CurrentPlayerIdx = unoAdvance(state, idx, amount)
+	state.PendingSkips = 0
+	state.LastAction += fmt.Sprintf("; %d turns skipped starting with %s", amount, state.Players[idx].Name)
 }
 
 func UNOSayUNO(state *UNOState, playerID string) error {
@@ -396,6 +424,9 @@ func UNOEndTurn(state *UNOState, playerID string) error {
 	}
 	if state.PendingDraw > 0 {
 		return fmt.Errorf("accept the pending draw penalty first")
+	}
+	if state.PendingSkips > 0 {
+		return fmt.Errorf("play a Skip to continue the multi-skip chain")
 	}
 	if !state.Players[idx].HasDrawn {
 		return fmt.Errorf("draw a card before ending your turn")
@@ -515,6 +546,7 @@ func UNOStartNextRound(state *UNOState) error {
 		return err
 	}
 	next.ID = state.ID
+	next.MultiSkipEnabled = state.MultiSkipEnabled
 	next.Round = state.Round + 1
 	for i := range next.Players {
 		next.Players[i].Score = scores[i]
@@ -535,6 +567,7 @@ func UNOForfeitPlayer(state *UNOState, playerID string) error {
 	state.Players = append(state.Players[:idx], state.Players[idx+1:]...)
 	if len(state.Players) == 1 {
 		state.Phase = UNOPhaseGameOver
+		state.PendingSkips = 0
 		state.WinnerID = state.Players[0].ID
 		state.WinnerName = state.Players[0].Name
 		state.LastAction = fmt.Sprintf("%s forfeited; %s wins", name, state.WinnerName)
@@ -542,13 +575,18 @@ func UNOForfeitPlayer(state *UNOState, playerID string) error {
 	}
 	if len(state.Players) == 0 {
 		state.Phase = UNOPhaseGameOver
+		state.PendingSkips = 0
 		state.LastAction = fmt.Sprintf("%s forfeited", name)
 		return nil
 	}
 	if idx < state.CurrentPlayerIdx {
 		state.CurrentPlayerIdx--
 	} else if idx == state.CurrentPlayerIdx {
-		state.CurrentPlayerIdx %= len(state.Players)
+		if state.PendingSkips > 0 && state.Direction < 0 {
+			state.CurrentPlayerIdx = (idx - 1 + len(state.Players)) % len(state.Players)
+		} else {
+			state.CurrentPlayerIdx %= len(state.Players)
+		}
 	}
 	if state.UncalledUNOPlayerID == playerID {
 		state.UncalledUNOPlayerID = ""
@@ -559,6 +597,7 @@ func UNOForfeitPlayer(state *UNOState, playerID string) error {
 		state.PendingWildDrawFourIllegal = false
 	}
 	state.LastAction = fmt.Sprintf("%s left the game", name)
+	unoResolveSkipChain(state)
 	return nil
 }
 
@@ -567,6 +606,7 @@ func unoFinishRound(state *UNOState, winnerID string) {
 	if winnerIdx < 0 {
 		return
 	}
+	state.PendingSkips = 0
 	points := 0
 	for i := range state.Players {
 		if i == winnerIdx {
@@ -642,6 +682,15 @@ func unoAdvance(state *UNOState, from, steps int) int {
 		idx = (idx + state.Direction + len(state.Players)) % len(state.Players)
 	}
 	return idx
+}
+
+func unoHasSkip(player UNOPlayer) bool {
+	for _, card := range player.Cards {
+		if card.Kind == "skip" {
+			return true
+		}
+	}
+	return false
 }
 
 func unoValidColor(color string) bool {

@@ -38,6 +38,7 @@ type Room struct {
 	heartsState        *game.HeartsState
 	unoState           *game.UNOState
 	unoStackingEnabled bool
+	unoMultiSkipEnabled bool
 	players            map[string]*PlayerConn // playerID -> PlayerConn
 	hostID             string
 	created            bool
@@ -442,6 +443,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	variantStr := req.URL.Query().Get("variant")
 	gameType := req.URL.Query().Get("gameType")
 	unoStacking := req.URL.Query().Get("unoStacking") == "true"
+	unoMultiSkip := req.URL.Query().Get("unoMultiSkip") == "true"
 
 	if roomCode == "" {
 		http.Error(w, "room required", http.StatusBadRequest)
@@ -483,6 +485,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 		room.created = true
 		if gameType == "uno" {
 			room.unoStackingEnabled = unoStacking
+			room.unoMultiSkipEnabled = unoMultiSkip
 		}
 		log.Printf("[ROOM] Created room %s by player %s", roomCode, playerID[:8])
 	}
@@ -641,6 +644,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			"gameActive": false,
 			"gameType":   room.gameType,
 			"unoStackingEnabled": room.unoStackingEnabled,
+			"unoMultiSkipEnabled": room.unoMultiSkipEnabled,
 		}})
 		room.mu.Unlock()
 	}
@@ -864,6 +868,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			"gameActive": false,
 			"gameType":   room.gameType,
 			"unoStackingEnabled": room.unoStackingEnabled,
+			"unoMultiSkipEnabled": room.unoMultiSkipEnabled,
 		}})
 
 	case "start-game":
@@ -1026,6 +1031,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 				room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
 				return
 			}
+			room.unoState.MultiSkipEnabled = room.unoMultiSkipEnabled
 			log.Printf("[UNO] room=%s started with %d players; stacking=%t", room.code, len(playerList), room.unoStackingEnabled)
 			room.broadcast(OutMessage{Type: "uno-started", Payload: nil})
 			room.broadcastUNOState()

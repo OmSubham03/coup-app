@@ -56,6 +56,7 @@ func (room *Room) setPublicVisibility(playerID string, public bool) error {
 func (room *Room) visibilityMessage() OutMessage {
 	return OutMessage{Type: "room-visibility", Payload: map[string]interface{}{
 		"public": room.isPublic, "hostId": room.hostID,
+		"unoStackingEnabled": room.unoStackingEnabled, "unoMultiSkipEnabled": room.unoMultiSkipEnabled,
 	}}
 }
 

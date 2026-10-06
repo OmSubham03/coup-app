@@ -3,10 +3,14 @@
 .uno-title, .uno-active-title { color: #ef3340; font-weight: 900; letter-spacing: 4px; }
 .uno-active-title { font-size: 24px; }
 .uno-create-options { margin: 0 0 20px; }
-.uno-checkbox-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; cursor: pointer; }
-.uno-checkbox-row input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: #ef3340; flex: 0 0 auto; }
-.uno-checkbox-row span { display: grid; gap: 4px; color: #e2e8f0; font-size: 14px; }
-.uno-checkbox-row small { color: #94a3b8; font-size: 12px; line-height: 1.4; }
+.uno-create-options .uno-checkbox-row + .uno-checkbox-row { margin-top: 8px; }
+.uno-checkbox-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; }
+.uno-checkbox-row label { display: flex; align-items: center; flex: 1; min-width: 0; gap: 10px; color: #e2e8f0; font-size: 14px; cursor: pointer; }
+.uno-checkbox-row input { width: 20px; height: 20px; margin: 0; accent-color: #ef3340; flex: 0 0 auto; }
+.uno-rule-info { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; padding: 0; border: 1px solid #64748b; border-radius: 50%; background: #1e293b; color: #cbd5e1; font-family: Georgia, serif; font-size: 16px; font-weight: 700; cursor: pointer; }
+.uno-rule-info:hover { border-color: #e2e8f0; color: #fff; }
+.uno-rule-info:focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
+.uno-house-rule-dialog p { color: #526075; font-size: 14px; line-height: 1.6; }
 .lobby-uno-config { padding: 10px 14px; margin-bottom: 12px; background: #101b2c; border: 1px solid #334155; border-radius: 8px; color: #cbd5e1; text-align: center; font-size: 13px; }
 .uno-rules-content { border-color: #ef3340; }
 .uno-rules-content h2 { color: #ef3340; }
