@@ -8,21 +8,22 @@ h1.coup-title { color: #4f46e5; }
 .char-Contessa { background: #9a3412; border-color: #f97316; }
 .char-Inquisitor { background: #065f46; border-color: #10b981; }
 
-/* Light, compact Coup table styling */
+/* Dark purple, compact Coup table styling */
 #game-active {
+	color-scheme: dark;
 	min-height: 100dvh;
 	margin: -48px -16px 0;
 	padding: 12px 16px 24px;
-	background: #fff;
-	color: #182230;
+	background: #0d0616;
+	color: #edf0f5;
 }
-#game-active .header-bar { border-color: #e5e7eb; }
-#game-active .phase-text { color: #748094; }
-#game-active .tab { background: #f1f3f8; color: #596579; }
-#game-active .tab.active { background: #e9e9ff; color: #3d39c7; }
+#game-active .header-bar { border-color: #49305e; }
+#game-active .phase-text { color: #aab3c0; }
+#game-active .tab { background: #1b1029; color: #c6b8d4; }
+#game-active .tab.active { background: #38204f; color: #f0e1ff; }
 #game-active .tab-rules { background: #4a47d2; }
 #game-active .tab-exit { background: #ef3340; }
-#game-active .header-bar > div:first-child > span { color: #4a47d2 !important; }
+#game-active .header-bar > div:first-child > span { color: #d6b2ff !important; }
 #game-active #players-board {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -34,19 +35,19 @@ h1.coup-title { color: #4f46e5; }
 	min-width: 0;
 	padding: 10px;
 	margin: 0;
-	border: 1px solid #e2e7ee;
+	border: 1px solid #49305e;
 	border-radius: 10px;
-	background: #f8f9fb;
-	color: #293548;
+	background: #1b1029;
+	color: #edf0f5;
 	transition: border-color .15s, background .15s;
 }
-#game-active .player-card.mine { border-color: #b8b5ff; background: #f7f6ff; }
-#game-active .player-card.current { border-color: #e9bd39; background: #fffaf0; }
+#game-active .player-card.mine { border-color: #986ac7; background: #251534; }
+#game-active .player-card.current { border-color: #e9bd39; background: #2c193d; }
 #game-active .player-card.dead { opacity: .55; }
 #game-active .player-header { gap: 5px; margin-bottom: 8px; }
-#game-active .player-name { color: #364153; font-size: 12px; }
-#game-active .coins { color: #3c4ba8; font-size: 14px; white-space: nowrap; }
-#game-active .badge { background: #4a47d2; }
+#game-active .player-name { color: #edf0f5; font-size: 12px; }
+#game-active .coins { color: #fbbf24; font-size: 14px; white-space: nowrap; }
+#game-active .badge { background: #70409e; }
 #game-active .card-box {
 	width: 64px;
 	height: 90px;
@@ -64,24 +65,25 @@ h1.coup-title { color: #4f46e5; }
 #game-active .panel {
 	width: min(100%, 560px);
 	margin: 10px auto 0;
-	border: 1px solid #e1e6ee;
+	border: 1px solid #49305e;
 	border-radius: 10px;
-	background: #f8f9fb;
-	color: #293548;
+	background: #1b1029;
+	color: #edf0f5;
 }
-#game-active .panel h2 { color: #3f48b7; font-size: 17px; }
-#game-active .panel p { color: #596579; }
-#game-active .panel-block { background: #fffaf0; border-color: #eedb9e; }
-#game-active .panel-challenge, #game-active .panel-targeted { background: #fff5f5; border-color: #f1caca; }
-#game-active .panel-exchange { background: #f7f6ff; border-color: #d8d6ff; }
-#game-active .panel-action { background: #f8f9fb; }
+#game-active .panel h2 { color: #d6b2ff; font-size: 17px; }
+#game-active .panel p { color: #bdc9d9; }
+#game-active .panel-block { background: #302b1d; border-color: #897339; }
+#game-active .panel-challenge, #game-active .panel-targeted { background: #351e2a; border-color: #914653; }
+#game-active .panel-exchange { background: #251534; border-color: #986ac7; }
+#game-active .panel-action { background: #1b1029; }
 #game-active .action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 #game-active .action-grid .btn { width: 100%; min-width: 0; min-height: 54px; margin: 0; border-radius: 8px; }
 #game-active .action-label { font-size: 13px; }
 #game-active .action-desc { color: inherit; opacity: .75; }
-#game-active .waiting, #game-active .spectate-banner { background: #f2f4f8; border-color: #e1e6ee; color: #667286; }
+#game-active .waiting, #game-active .spectate-banner { background: #1b1029; border-color: #49305e; color: #d0c2df; }
 #game-active .card-select { cursor: pointer; }
-#game-active .victory { width: min(100%, 560px); margin: 12px auto; border: 1px solid #e1e6ee; border-radius: 12px; background: #f8f9fb; }
+#game-active .victory { width: min(100%, 560px); margin: 12px auto; border: 1px solid #49305e; border-radius: 12px; background: #1b1029; }
+#game-active .chat-input-row input { background: #1b1029; border-color: #795394; }
 
 @media (max-width: 520px) {
 	#game-active { margin-right: -16px; margin-left: -16px; padding: 12px 10px 22px; }
