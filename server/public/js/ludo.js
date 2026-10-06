@@ -321,15 +321,6 @@ function renderLudoGame() {
   document.getElementById('ludo-phase-display').textContent = isSpectating ? 'Spectating' : phase;
   document.getElementById('ludo-turn-display').textContent = 'Turn ' + ludoState.turnNumber;
 
-  const exitBtn = document.getElementById('ludo-exit-btn');
-  if (isSpectating) {
-    exitBtn.style.display = '';
-    exitBtn.textContent = 'Stop Spectating';
-  } else {
-    exitBtn.style.display = ludoState.phase === 'finished' ? 'none' : '';
-    exitBtn.textContent = 'Exit Game';
-  }
-
   renderLudoBoard();
   renderLudoActions();
   renderLudoLog();

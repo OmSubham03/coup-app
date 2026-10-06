@@ -526,6 +526,9 @@ function handleWSMessage(e) {
   try {
     const msg = JSON.parse(e.data);
     switch(msg.type) {
+      case 'room-left':
+        finishGameExit();
+        break;
       case 'room-visibility':
         roomIsPublic = !!msg.payload?.public;
         hostId = msg.payload?.hostId;
@@ -790,6 +793,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function disconnect() {
+  closeGameSettings();
   stopPublicRoomDiscovery();
   publicJoinPending = false;
   roomIsPublic = false;
@@ -815,52 +819,64 @@ function disconnect() {
   chatMessages = [];
 }
 
+function openGameSettings() {
+  document.getElementById('game-settings-room-code').textContent = roomCode || 'Unavailable';
+  document.getElementById('game-settings-status').textContent = '';
+  updateVoiceUI();
+  const dialog = document.getElementById('game-settings-dialog');
+  if (!dialog.open) dialog.showModal();
+}
+
+function closeGameSettings() {
+  document.getElementById('game-settings-dialog').close();
+}
+
+async function copySettingsRoomCode() {
+  const status = document.getElementById('game-settings-status');
+  try {
+    await navigator.clipboard.writeText(roomCode);
+    status.textContent = 'Room code copied';
+  } catch (error) {
+    status.textContent = 'Copy unavailable. Room code: ' + roomCode;
+  }
+}
+
+function openSettingsRules() {
+  const rules = { coup: toggleRules, poker: togglePokerRules, ludo: toggleLudoRules,
+    nquestions: toggleNQRules, commune: toggleCommuneRules, twentynine: toggleTNRules,
+    hearts: toggleHTRules, uno: toggleUNORules };
+  closeGameSettings();
+  rules[currentGameType]?.();
+}
+
 function exitGame() {
-  if (isSpectating) {
-    stopSpectating();
-    return;
-  }
-  if (currentGameType === 'poker') {
-    if (pokerState && pokerState.phase !== 'game_over' && pokerState.phase !== 'showdown') {
-      if (!confirm('Exit poker? You will forfeit all your chips.')) return;
-      send('exit-game');
-    }
-  } else if (currentGameType === 'ludo') {
-    if (ludoState && ludoState.phase !== 'finished') {
-      if (!confirm('Exit Ludo? Your tokens will be removed from the game.')) return;
-      send('exit-game');
-    }
-  } else if (currentGameType === 'nquestions') {
-    if (nqState && nqState.phase !== 'finished') {
-      if (!confirm('Exit 20 QUESTIONS?')) return;
-      send('exit-game');
-    }
-  } else if (currentGameType === 'commune') {
-    if (communeState && communeState.phase !== 'finished') {
-      if (!confirm('Exit Commune? You will be eliminated.')) return;
-      send('exit-game');
-    }
-  } else if (currentGameType === 'twentynine') {
-    if (tnState && tnState.phase !== 'game_over') {
-      if (!confirm('Exit 29? Your team will forfeit.')) return;
-      send('exit-game');
-    }
-  } else if (currentGameType === 'hearts') {
-    if (htState && htState.phase !== 'game_over') {
-      if (!confirm('Exit Hearts? You will forfeit.')) return;
-      send('exit-game');
-    }
-  } else if (currentGameType === 'uno') {
-    if (unoState && unoState.phase === 'playing') {
-      if (!confirm('Exit UNO? You will forfeit this round.')) return;
-      send('exit-game');
-    }
+  const states = { coup: gameState, poker: pokerState, ludo: ludoState,
+    nquestions: nqState, commune: communeState, twentynine: tnState, hearts: htState, uno: unoState };
+  const state = states[currentGameType];
+  const finished = !state || ['game_over', 'finished'].includes(state.phase);
+  const warnings = { poker: 'You will forfeit your chips.', ludo: 'Your tokens will be removed.',
+    twentynine: 'Your team will forfeit.', commune: 'You will be eliminated.' };
+  if (!isSpectating && !finished && !confirm('Exit game? ' + (warnings[currentGameType] || 'You will forfeit your place in this game.'))) return;
+  closeGameSettings();
+  if (ws?.readyState === WebSocket.OPEN) {
+    send('leave-room');
   } else {
-    if (gameState && gameState.phase !== 'game_over') {
-      if (!confirm('Exit game? Both your cards will be discarded and you will return to the lobby.')) return;
-      send('exit-game');
-    }
+    finishGameExit();
   }
+}
+
+function finishGameExit() {
+  disconnect();
+  document.querySelectorAll('.rules-overlay').forEach(overlay => {
+    overlay.classList.remove('active');
+    overlay.style.display = '';
+  });
+  roomCode = '';
+  joinedName = '';
+  gameActive = false;
+  hostId = null;
+  backToGameList();
+  showScreen('menu');
 }
 
 function requestSpectate() {

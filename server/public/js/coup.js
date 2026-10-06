@@ -16,17 +16,6 @@ function renderGame() {
   document.getElementById('game-active').style.display = '';
   document.getElementById('poker-active').style.display = 'none';
 
-  const exitBtn = document.getElementById('exit-game-btn');
-  if (isSpectating) {
-    exitBtn.style.display = '';
-    exitBtn.textContent = 'Exit';
-  } else if (gameState.phase === 'game_over') {
-    exitBtn.style.display = 'none';
-  } else {
-    exitBtn.style.display = '';
-    exitBtn.textContent = 'Exit';
-  }
-
   const phase = gameState.phase.replace(/_/g, ' ');
   document.getElementById('phase-display').textContent = (isSpectating ? '\ud83d\udc41 Spectating — ' : '') + phase;
   document.getElementById('turn-display').textContent = 'Turn ' + gameState.turn;

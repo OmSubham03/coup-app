@@ -133,6 +133,25 @@ input::placeholder { color: #475569; }
 .conn-banner.show { display: block; }
 
 /* Game List */
+.game-settings-dialog { width: min(360px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 20px; overflow-y: auto; border: 1px solid #dce2ea; border-radius: 8px; background: #fff; color: #293548; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.game-settings-dialog::backdrop { background: rgba(2,6,23,.65); }
+.game-settings-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.game-settings-heading h2 { margin: 0; color: #293548; font-size: 20px; }
+.game-settings-close { width: 32px; height: 32px; border: none; border-radius: 6px; background: #f1f3f8; color: #46546a; font-size: 24px; cursor: pointer; }
+.game-settings-code-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #e1e6ee; }
+.game-settings-code-row div { display: grid; gap: 4px; }
+.game-settings-code-row span { color: #748094; font-size: 12px; }
+.game-settings-code-row strong { color: #3546a0; font-size: 22px; }
+.game-settings-code-row button { padding: 8px 12px; border: 1px solid #dce2ea; border-radius: 6px; background: #f8f9fb; color: #3546a0; cursor: pointer; }
+.game-settings-row { display: flex; align-items: center; justify-content: space-between; min-height: 48px; border-bottom: 1px solid #e1e6ee; font-size: 14px; cursor: pointer; }
+.game-settings-row input { width: 20px; height: 20px; margin: 0; padding: 0; accent-color: #3546a0; cursor: pointer; }
+.game-settings-command { display: block; width: 100%; min-height: 44px; margin-top: 12px; padding: 10px 14px; border: 1px solid #dce2ea; border-radius: 6px; background: #f1f3f8; color: #3546a0; font: inherit; font-weight: 700; cursor: pointer; }
+.game-settings-exit { border-color: #f0c7ca; background: #fff2f2; color: #b4232f; }
+.game-settings-status { margin-top: 10px; color: #748094; font-size: 12px; }
+.game-settings-open { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; padding: 0; border: 1px solid #475569; border-radius: 50%; background: #334155; color: #fff; font-size: 24px; line-height: 1; cursor: pointer; }
+.game-settings-open:hover { background: #475569; }
+.game-settings-open:focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
+#screen-game .tab-bar > .tab { flex: 1 1 0; min-width: 0; padding: 8px 6px; }
 .lobby-visibility { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 .room-public-switch { display: flex; align-items: center; gap: 10px; color: #cbd5e1; font-size: 13px; cursor: pointer; }
 .room-public-switch input { appearance: none; position: relative; width: 42px; height: 24px; flex: 0 0 42px; margin: 0; padding: 0; border: 1px solid #64748b; border-radius: 12px; background: #334155; cursor: pointer; }

@@ -176,6 +176,10 @@ function voiceCleanup() {
 
 // ---- UI update ----
 function updateVoiceUI() {
+  const microphoneSwitch = document.getElementById('settings-microphone');
+  const speakerSwitch = document.getElementById('settings-speaker');
+  if (microphoneSwitch) microphoneSwitch.checked = voiceMicOn;
+  if (speakerSwitch) speakerSwitch.checked = voiceSpeakerOn;
   document.querySelectorAll('.voice-mic-btn').forEach(btn => {
     btn.classList.toggle('active', voiceMicOn);
     btn.innerHTML = voiceMicOn ? '🎙️' : '🎤';

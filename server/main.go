@@ -801,6 +801,11 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 
 func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 	switch msg.Type {
+	case "leave-room":
+		if err := room.leaveGameRoom(playerID); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+		}
+
 	case "set-room-visibility":
 		var payload struct { Public bool `json:"public"` }
 		if err := json.Unmarshal(msg.Payload, &payload); err != nil { return }

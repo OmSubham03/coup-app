@@ -26,15 +26,6 @@ function renderPokerGame() {
   document.getElementById('poker-phase-display').textContent = isSpectating ? 'Spectating' : phase;
   document.getElementById('poker-hand-display').textContent = 'Hand #' + pokerState.handNumber;
 
-  const exitBtn = document.getElementById('poker-exit-btn');
-  if (isSpectating) {
-    exitBtn.style.display = '';
-    exitBtn.textContent = 'Stop Spectating';
-  } else {
-    exitBtn.style.display = (pokerState.phase === 'game_over' || pokerState.phase === 'showdown') ? 'none' : '';
-    exitBtn.textContent = 'Exit Game';
-  }
-
   renderPokerTable();
   renderPokerActions();
   renderPokerLog();

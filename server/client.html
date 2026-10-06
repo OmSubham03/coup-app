@@ -384,8 +384,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="turn-display"></span>
-        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
-        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+        <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
 
@@ -393,8 +392,6 @@
       <button class="tab active" id="tab-game" onclick="switchTab('game')">Game</button>
       <button class="tab" id="tab-log" onclick="switchTab('log')">📜 Log</button>
       <button class="tab" id="tab-chat" onclick="switchTab('chat')">💬 Chat</button>
-      <button class="tab-rules" onclick="toggleRules()">Rules</button>
-      <button class="tab-exit" id="exit-game-btn" onclick="exitGame()">Exit</button>
     </div>
 
     <div id="game-tab">
@@ -426,8 +423,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="poker-hand-display"></span>
-        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
-        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+        <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
 
@@ -435,8 +431,6 @@
       <button class="tab active" id="ptab-game" onclick="switchPokerTab('game')">Table</button>
       <button class="tab" id="ptab-log" onclick="switchPokerTab('log')">📜 Log</button>
       <button class="tab" id="ptab-chat" onclick="switchPokerTab('chat')">💬 Chat</button>
-      <button class="tab-rules" style="background:#16a34a" onclick="togglePokerRules()">Rules</button>
-      <button class="tab-exit" id="poker-exit-btn" onclick="exitGame()">Exit</button>
     </div>
 
     <div id="poker-game-tab">
@@ -468,8 +462,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="nq-turn-display"></span>
-        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
-        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+        <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
 
@@ -477,8 +470,6 @@
       <button class="tab active" id="nqtab-game" onclick="switchNQTab('game')">Game</button>
       <button class="tab" id="nqtab-log" onclick="switchNQTab('log')">📜 Log</button>
       <button class="tab" id="nqtab-chat" onclick="switchNQTab('chat')">💬 Chat</button>
-      <button class="tab-rules" style="background:#7c3aed" onclick="toggleNQRules()">Rules</button>
-      <button class="tab-exit" id="nq-exit-btn" onclick="exitGame()">Exit</button>
     </div>
 
     <div id="nq-game-tab">
@@ -510,8 +501,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="ludo-turn-display"></span>
-        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
-        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+        <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
 
@@ -519,8 +509,6 @@
       <button class="tab active" id="ltab-game" onclick="switchLudoTab('game')">Board</button>
       <button class="tab" id="ltab-log" onclick="switchLudoTab('log')">📜 Log</button>
       <button class="tab" id="ltab-chat" onclick="switchLudoTab('chat')">💬 Chat</button>
-      <button class="tab-rules" style="background:#ef4444" onclick="toggleLudoRules()">Rules</button>
-      <button class="tab-exit" id="ludo-exit-btn" onclick="exitGame()">Exit</button>
     </div>
 
     <div id="ludo-game-tab">
@@ -552,16 +540,13 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="tn-turn-display"></span>
-        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
-        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+        <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
 
     <div class="tab-bar">
       <button class="tab active" id="tntab-game" onclick="switchTNTab('game')">Game</button>
       <button class="tab" id="tntab-chat" onclick="switchTNTab('chat')">💬 Chat</button>
-      <button class="tab-rules" style="background:#22c55e;color:#fff" onclick="toggleTNRules()">Rules</button>
-      <button class="tab-exit" id="tn-exit-btn" onclick="exitGame()">Exit</button>
     </div>
 
     <div id="tn-game-tab">
@@ -589,15 +574,12 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="ht-turn-display"></span>
-        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
-        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+        <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
     <div class="tab-bar">
       <button class="tab active" id="httab-game" onclick="switchHTTab('game')">Game</button>
       <button class="tab" id="httab-chat" onclick="switchHTTab('chat')">💬 Chat</button>
-      <button class="tab-rules" style="background:#dc2626;color:#fff" onclick="toggleHTRules()">Rules</button>
-      <button class="tab-exit" id="ht-exit-btn" onclick="exitGame()">Exit</button>
     </div>
     <div id="ht-game-tab">
       <div id="ht-table-area"></div>
@@ -623,15 +605,12 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="uno-turn-display"></span>
-        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
-        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+        <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
     <div class="tab-bar">
       <button class="tab active" id="unotab-game" onclick="switchUNOTab('game')">Game</button>
       <button class="tab" id="unotab-chat" onclick="switchUNOTab('chat')">💬 Chat</button>
-      <button class="tab-rules" onclick="toggleUNORules()">Rules</button>
-      <button class="tab-exit" onclick="exitGame()">Exit</button>
     </div>
     <div id="uno-game-tab">
       <div id="uno-table-area"></div>
@@ -657,8 +636,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="color:#94a3b8;font-size:12px" id="commune-turn-display"></span>
-        <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎙️</button>
-        <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
+        <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
 
@@ -666,8 +644,6 @@
       <button class="tab active" id="cmtab-game" onclick="switchCommuneTab('game')">Game</button>
       <button class="tab" id="cmtab-log" onclick="switchCommuneTab('log')">📜 Log</button>
       <button class="tab" id="cmtab-chat" onclick="switchCommuneTab('chat')">💬 Chat</button>
-      <button class="tab-rules" style="background:#3b82f6;color:#fff" onclick="toggleCommuneRules()">Rules</button>
-      <button class="tab-exit" id="commune-exit-btn" onclick="exitGame()">Exit</button>
     </div>
 
     <div id="commune-game-tab">
@@ -695,6 +671,22 @@
 
 <div class="chat-toast" id="chat-toast"></div>
 <div class="conn-banner" id="conn-banner">Connection lost — reconnecting...</div>
+
+<dialog id="game-settings-dialog" class="game-settings-dialog" aria-labelledby="game-settings-title">
+  <div class="game-settings-heading">
+    <h2 id="game-settings-title">Settings</h2>
+    <button class="game-settings-close" type="button" onclick="closeGameSettings()" aria-label="Close settings">&times;</button>
+  </div>
+  <div class="game-settings-code-row">
+    <div><span>Room code</span><strong id="game-settings-room-code"></strong></div>
+    <button type="button" onclick="copySettingsRoomCode()">Copy</button>
+  </div>
+  <label class="game-settings-row"><span>Microphone</span><input id="settings-microphone" type="checkbox" role="switch" onchange="toggleMic()"></label>
+  <label class="game-settings-row"><span>Speaker</span><input id="settings-speaker" type="checkbox" role="switch" onchange="toggleSpeaker()"></label>
+  <button class="game-settings-command" type="button" onclick="openSettingsRules()">Rules</button>
+  <button class="game-settings-command game-settings-exit" type="button" onclick="exitGame()">Exit Game</button>
+  <p id="game-settings-status" class="game-settings-status" role="status"></p>
+</dialog>
 
 <div class="name-popup-overlay" id="name-popup-overlay">
   <div class="name-popup">
