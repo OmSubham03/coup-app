@@ -111,33 +111,34 @@
   .uno-action-btn { flex: 1 1 42%; }
 }
 
-/* Screenshot-inspired light, card-first UNO layout */
+/* Dark, card-first UNO layout */
 #uno-active {
+  color-scheme: dark;
   min-height: 100dvh;
   margin: -48px -16px 0;
   padding: 12px 14px 22px;
-  background: #fff;
-  color: #182230;
+  background: #071329;
+  color: #edf0f5;
 }
-#uno-active .header-bar { border-color: #e5e7eb; }
-#uno-active .phase-text { color: #748094; }
-#uno-active .tab { background: #f1f3f8; color: #596579; }
-#uno-active .tab.active { background: #e9e9ff; color: #3d39c7; }
+#uno-active .header-bar { border-color: #263c5c; }
+#uno-active .phase-text { color: #aab3c0; }
+#uno-active .tab { background: #132642; color: #b8c1ce; }
+#uno-active .tab.active { background: #244777; color: #e0edff; }
 #uno-active .tab-exit { background: #ef3340; }
 #uno-active .uno-active-title { color: #ef3340; }
 .uno-card-table { width: min(100%, 760px); margin: 0 auto; }
 .uno-opponents-row { display: flex; align-items: flex-start; justify-content: center; gap: 12px; min-height: 86px; padding: 5px 0 12px; overflow-x: auto; }
 .uno-opponent { display: grid; justify-items: center; align-content: start; gap: 3px; flex: 0 0 72px; min-width: 62px; padding: 3px 4px 6px; border: 1px solid transparent; border-radius: 12px; text-align: center; }
-.uno-opponent.active { border-color: #d9d9ff; background: #f7f7ff; }
-.uno-avatar { display: grid; place-items: center; width: 40px; height: 40px; border: 2px solid #dce4ec; border-radius: 50%; background: #e8eef4; color: #35465b; font-size: 13px; font-weight: 900; }
-.uno-avatar-red { border-color: #726cff; background: #e9e8ff; color: #4943d7; }
-.uno-avatar-yellow { border-color: #e8c12e; background: #fff6d4; color: #806400; }
-.uno-avatar-green { border-color: #30a86c; background: #e2f7eb; color: #187447; }
-.uno-avatar-blue { border-color: #5592ed; background: #e4f0ff; color: #2863b8; }
-.uno-avatar-self { border-color: #cbc9ff; background: #edecff; color: #4742c3; }
-.uno-opponent-name { max-width: 72px; overflow: hidden; color: #364153; font-size: 11px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-.uno-opponent-meta { color: #8792a2; font-size: 9px; white-space: nowrap; }
-.uno-catch-btn { padding: 3px 5px; border-color: #f1cb4d; background: #fff7d7; color: #775900; font-size: 9px; }
+.uno-opponent.active { border-color: #fbbf24; background: #30291c; }
+.uno-avatar { display: grid; place-items: center; width: 40px; height: 40px; border: 2px solid #566171; border-radius: 50%; background: #252b34; color: #edf0f5; font-size: 13px; font-weight: 900; }
+.uno-avatar-red { border-color: #ee6575; background: #49212a; color: #ffb5bf; }
+.uno-avatar-yellow { border-color: #e8c12e; background: #3e3317; color: #ffe28a; }
+.uno-avatar-green { border-color: #30a86c; background: #193a2b; color: #89e5b4; }
+.uno-avatar-blue { border-color: #5592ed; background: #1c304b; color: #b3d2ff; }
+.uno-avatar-self { border-color: #ee6575; background: #49212a; color: #ffb5bf; }
+.uno-opponent-name { max-width: 72px; overflow: hidden; color: #edf0f5; font-size: 11px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.uno-opponent-meta { color: #aab3c0; font-size: 9px; white-space: nowrap; }
+.uno-catch-btn { padding: 3px 5px; border-color: #f1cb4d; background: #3e3317; color: #ffe28a; font-size: 9px; }
 .uno-table-center { display: flex; flex-direction: column; align-items: center; gap: 13px; padding: 12px 8px 18px; }
 .uno-card-stacks { display: flex; align-items: center; justify-content: center; gap: 30px; min-height: 150px; }
 .uno-card-stack { display: flex; flex-direction: column; align-items: center; gap: 7px; }
@@ -149,15 +150,15 @@
 .uno-card-face { font-size: 23px; }
 .uno-card-wild .uno-card-face { font-size: 12px; }
 .uno-corner { font-size: 9px; }
-.uno-turn-banner { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; width: min(100%, 440px); padding: 8px 12px; border-radius: 25px; background: #f0efff; color: #727c90; font-size: 12px; }
-.uno-turn-banner span { color: #7c879b; }
-.uno-turn-banner b { color: #443ec8; font-size: 14px; }
-.uno-turn-banner.my-turn { background: #efefff; }
+.uno-turn-banner { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; width: min(100%, 440px); padding: 8px 12px; border-radius: 8px; background: #132642; color: #b8c1ce; font-size: 12px; }
+.uno-turn-banner span { color: #c5cdd9; }
+.uno-turn-banner b { color: #fbbf24; font-size: 14px; }
+.uno-turn-banner.my-turn { background: #1b3559; }
 .uno-pending-draw { color: #c62837; }
-.uno-my-hand-header { display: flex; align-items: center; gap: 9px; width: min(100%, 580px); margin: 2px auto 5px; padding: 8px 10px; border-radius: 10px; background: #f7f8fb; }
+.uno-my-hand-header { display: flex; align-items: center; gap: 9px; width: min(100%, 580px); margin: 2px auto 5px; padding: 8px 10px; border-radius: 8px; background: #132642; }
 .uno-my-hand-header .uno-avatar { width: 34px; height: 34px; flex: 0 0 auto; }
-.uno-my-hand-header > div:last-child { display: grid; gap: 2px; min-width: 0; color: #293548; font-size: 12px; }
-.uno-my-hand-header span { color: #7a8697; font-size: 10px; }
+.uno-my-hand-header > div:last-child { display: grid; gap: 2px; min-width: 0; color: #edf0f5; font-size: 12px; }
+.uno-my-hand-header span { color: #aab3c0; font-size: 10px; }
 .uno-hand { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); justify-items: center; align-items: start; gap: 9px 7px; width: min(100%, 580px); min-height: 0; margin: 0 auto; padding: 7px 2px 12px; overflow: visible; }
 .uno-hand .uno-card { width: 100%; max-width: 68px; height: auto; aspect-ratio: 2 / 3; margin: 0; padding: 3px; }
 .uno-hand .uno-card-oval { width: 84%; height: 82%; }
@@ -166,15 +167,16 @@
 .uno-hand .uno-corner { left: 3px; font-size: 8px; }
 .uno-hand .uno-corner.bottom { right: 3px; left: auto; }
 .uno-card.disabled { opacity: .93; }
-.uno-last-action { color: #8993a2; }
-.uno-action-btn { border-color: #d7dce5; background: #f2f4f8; color: #26344a; }
+.uno-last-action { color: #aab3c0; }
+.uno-action-btn { border-color: #405d83; background: #132642; color: #edf0f5; }
 .uno-action-red { border-color: #ef3340; background: #ef3340; color: #fff; }
-.uno-action-blue { border-color: #4a47d2; background: #4a47d2; color: #fff; }
+.uno-action-blue { border-color: #3e7ad4; background: #2256a3; color: #fff; }
 .uno-action-green { border-color: #15834c; background: #15834c; color: #fff; }
 .uno-action-yellow { border-color: #e3b81c; background: #f6d95c; color: #332b0a; }
-.uno-waiting { color: #788498; }
-.uno-result { border-color: #e3e7ee; background: #f8f9fb; }
-.uno-result h2 { color: #303c50; }
+.uno-waiting { color: #aab3c0; }
+.uno-result { border-color: #263c5c; background: #132642; }
+.uno-result h2 { color: #edf0f5; }
+#uno-active .chat-input-row input { background: #132642; border-color: #405d83; }
 
 @media (max-width: 520px) {
   #uno-active { margin-right: -14px; margin-left: -14px; padding-right: 10px; padding-left: 10px; }
