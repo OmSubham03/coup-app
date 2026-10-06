@@ -110,8 +110,8 @@ function htRunTrickAnimation() {
     setTimeout(() => {
       htAnimating = false; htState = htPendingState; htPendingState = null;
       htAnimTrick = null; htAnimWinnerId = null; renderHTGame();
-    }, 700);
-  }, 3000);
+    }, 650);
+  }, 900);
 }
 
 function renderHTGame() {
@@ -139,7 +139,8 @@ function renderHTGame() {
     case 'game_over': phaseEl.textContent = 'Game Over'; break;
     default: phaseEl.textContent = htState.phase;
   }
-  turnEl.textContent = `Hand ${htState.handNumber}`;
+  turnEl.textContent = htState.phase === 'passing' ? `Pass ${htState.passDirName}` :
+    htState.phase === 'playing' ? (myIdx === htState.currentPlayerIdx ? 'Your turn' : `${htState.players[htState.currentPlayerIdx].name}'s turn`) : '';
 
   let html = renderHTScoreBar(myIdx);
 
@@ -169,8 +170,8 @@ function renderHTScoreBar(myIdx) {
     const cls = s < 30 ? 'low' : (s < 70 ? 'mid' : 'high');
     html += `<div class="ht-score-item">
       <div class="ht-score-name${i === myIdx ? ' me' : ''}">${htEsc(p.name)}</div>
-      <div class="ht-score-val ${cls}">${s}</div>
-      <div class="ht-hand-pts">+${p.handPoints}</div>
+      <div class="ht-score-val ${cls}">${s}<span class="ht-score-label">Total</span></div>
+      <div class="ht-hand-pts">Hand +${p.handPoints}</div>
     </div>`;
   }
   html += '</div>';
@@ -193,37 +194,29 @@ function renderHTPassingBoard(myIdx) {
     const pi = seatMap[s];
     const p = htState.players[pi];
     const cardCount = p.cards ? p.cards.length : 0;
-    const isVertical = s === 1 || s === 3;
     html += `<div class="ht-player-spot ${posClasses[s]}">`;
     html += `<div class="ht-player-name${p.hasPassed ? ' active' : ''}">${htEsc(p.name)}${p.hasPassed ? ' ✓' : ''}</div>`;
-    html += `<div class="ht-folded-cards${isVertical ? ' vertical' : ''}">`;
-    for (let ci = 0; ci < cardCount; ci++) {
-      // Show 3 random cards raised for other players
-      const raised = ci < 3;
-      html += `<div class="ht-folded-card${raised ? ' ht-raised' : ''}"></div>`;
-    }
-    html += '</div></div>';
+    html += `<div class="ht-card-count">${cardCount} cards</div></div>`;
   }
 
-  html += '<div class="ht-center"></div>';
+  html += '<div class="ht-center"></div></div>';
 
   // My cards
   if (myIdx >= 0) {
     const me = htState.players[myIdx];
-    html += '<div class="ht-player-spot ht-player-bottom">';
+    html += '<div class="ht-hand">';
     html += `<div class="ht-player-name${me.hasPassed ? ' active' : ''}">${htEsc(me.name)}${me.hasPassed ? ' ✓' : ''}</div>`;
     html += '<div class="ht-my-cards">';
     for (const c of me.cards) {
       if (c.id.startsWith('hidden_')) continue;
       const sel = htSelectedCards.includes(c.id);
       const isPenalty = c.suit === 'hearts' || (c.suit === 'spades' && c.rank === 12);
-      html += `<div class="ht-card ${c.suit}${isPenalty ? ' penalty' : ''}${sel ? ' pass-selected' : ''}${me.hasPassed ? ' disabled' : ''}" onclick="htTogglePassCard('${c.id}')">
-        <span class="ht-card-rank">${HT_RANK_NAMES[c.rank]}</span><span class="ht-card-suit">${HT_SUIT_SYMBOLS[c.suit]}</span></div>`;
+      html += `<button type="button" aria-label="${HT_RANK_NAMES[c.rank]} of ${c.suit}" aria-pressed="${sel}" ${me.hasPassed ? 'disabled' : ''} class="ht-card ${c.suit}${isPenalty ? ' penalty' : ''}${sel ? ' pass-selected' : ''}${me.hasPassed ? ' disabled' : ''}" onclick="htTogglePassCard('${c.id}')">
+        <span class="ht-card-rank">${HT_RANK_NAMES[c.rank]}</span><span class="ht-card-suit">${HT_SUIT_SYMBOLS[c.suit]}</span></button>`;
     }
     html += '</div></div>';
   }
 
-  html += '</div>';
   return html;
 }
 
@@ -255,12 +248,9 @@ function renderHTPlayingBoard(myIdx) {
     const p = htState.players[pi];
     const isActive = pi === htState.currentPlayerIdx;
     const cardCount = p.cards ? p.cards.length : 0;
-    const isVertical = s === 1 || s === 3;
     html += `<div class="ht-player-spot ${posClasses[s]}">`;
     html += `<div class="ht-player-name${isActive ? ' active' : ''}">${htEsc(p.name)}(+${p.handPoints})</div>`;
-    html += `<div class="ht-folded-cards${isVertical ? ' vertical' : ''}">`;
-    for (let ci = 0; ci < cardCount; ci++) html += '<div class="ht-folded-card"></div>';
-    html += '</div></div>';
+    html += `<div class="ht-card-count">${cardCount} cards</div></div>`;
   }
 
   // Center trick
@@ -275,13 +265,13 @@ function renderHTPlayingBoard(myIdx) {
         <span class="ht-card-rank">${HT_RANK_NAMES[tc.rank]}</span><span class="ht-card-suit">${HT_SUIT_SYMBOLS[tc.suit]}</span></div>`;
     }
   }
-  html += '</div>';
+  html += '</div></div>';
 
   // My cards
   if (myIdx >= 0) {
     const me = htState.players[myIdx];
     const isMyTurn = myIdx === htState.currentPlayerIdx;
-    html += '<div class="ht-player-spot ht-player-bottom">';
+    html += '<div class="ht-hand">';
     html += `<div class="ht-player-name${isMyTurn ? ' active' : ''}">${htEsc(me.name)}(+${me.handPoints})</div>`;
     html += '<div class="ht-my-cards">';
     const leadSuit = htState.currentTrick?.leadSuit;
@@ -298,12 +288,11 @@ function renderHTPlayingBoard(myIdx) {
       const isPenalty = c.suit === 'hearts' || (c.suit === 'spades' && c.rank === 12);
       const selected = htSelectedCards.includes(c.id);
       const isReceived = htReceivedCards && htReceivedCards.has(c.id);
-      html += `<div class="ht-card ${c.suit}${isPenalty ? ' penalty' : ''}${!canPlay ? ' disabled' : ''}${selected ? ' selected' : ''}${isReceived ? ' ht-received' : ''}" onclick="htSelectCard('${c.id}')">
-        <span class="ht-card-rank">${HT_RANK_NAMES[c.rank]}</span><span class="ht-card-suit">${HT_SUIT_SYMBOLS[c.suit]}</span></div>`;
+      html += `<button type="button" aria-label="${HT_RANK_NAMES[c.rank]} of ${c.suit}" aria-pressed="${selected}" ${!canPlay ? 'disabled' : ''} class="ht-card ${c.suit}${isPenalty ? ' penalty' : ''}${!canPlay ? ' disabled' : ''}${selected ? ' selected' : ''}${isReceived ? ' ht-received' : ''}" onclick="htSelectCard('${c.id}')">
+        <span class="ht-card-rank">${HT_RANK_NAMES[c.rank]}</span><span class="ht-card-suit">${HT_SUIT_SYMBOLS[c.suit]}</span></button>`;
     }
     html += '</div></div>';
   }
-  html += '</div>';
   return html;
 }
 
