@@ -332,6 +332,12 @@
 
   <!-- Lobby -->
   <div id="lobby" style="display:none">
+    <div class="lobby-visibility">
+      <label class="room-public-switch" title="Show this lobby in available rooms">
+        <span>Public room</span>
+        <input id="room-public-toggle" type="checkbox" role="switch" disabled onchange="setRoomVisibility(this.checked)">
+      </label>
+    </div>
     <h1 id="lobby-game-title" class="coup-title" style="font-size:36px">COUP</h1>
     <p class="subtitle" id="lobby-game-subtitle">Bluff. Deceive. Survive.</p>
     <div class="code-display" id="lobby-code"></div>
@@ -355,7 +361,7 @@
       </div>
     </div>
     <div id="lobby-uno-config" style="display:none" class="lobby-uno-config"></div>
-    <p class="section-title">Players (<span id="player-count">0</span>/6)</p>
+    <p class="section-title">Players (<span id="player-count">0</span>/<span id="player-capacity">6</span>)</p>
     <div id="lobby-players"></div>
     <button class="btn btn-green" id="start-btn" style="display:none" onclick="ws.send(JSON.stringify({type:'start-game'}))">Start Game</button>
     <p id="lobby-wait" class="waiting" style="display:none">Waiting for host to start...</p>

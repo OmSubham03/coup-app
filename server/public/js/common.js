@@ -19,6 +19,105 @@ let gameActive = false;
 let currentGameType = 'coup';
 let unoRoomStackingEnabled = false;
 let savedSessionReconnectPending = false;
+let roomIsPublic = false;
+let publicJoinPending = false;
+let publicRoomTimer = null;
+let publicRoomRequest = null;
+const GAME_CAPACITIES = { coup: 6, poker: 8, ludo: 4, nquestions: 10, commune: 10, twentynine: 4, hearts: 4, uno: 6 };
+
+function stopPublicRoomDiscovery() {
+  if (publicRoomTimer) clearInterval(publicRoomTimer);
+  publicRoomTimer = null;
+  if (publicRoomRequest) publicRoomRequest.abort();
+  publicRoomRequest = null;
+}
+
+function startPublicRoomDiscovery(type) {
+  stopPublicRoomDiscovery();
+  const menu = document.getElementById('menu-' + type);
+  if (!menu) return;
+  let section = menu.querySelector('.available-rooms');
+  if (!section) {
+    section = document.createElement('section');
+    section.className = 'available-rooms';
+    const heading = document.createElement('h2');
+    heading.className = 'section-title';
+    heading.textContent = 'Available Rooms';
+    const list = document.createElement('div');
+    list.className = 'available-rooms-list';
+    list.setAttribute('aria-live', 'polite');
+    section.append(heading, list);
+    menu.append(section);
+  }
+  refreshPublicRooms(type, section.querySelector('.available-rooms-list'));
+  publicRoomTimer = setInterval(() => refreshPublicRooms(type, section.querySelector('.available-rooms-list')), 5000);
+}
+
+async function refreshPublicRooms(type, list) {
+  if (publicRoomRequest || type !== currentGameType) return;
+  const request = new AbortController();
+  publicRoomRequest = request;
+  if (!list.children.length) list.textContent = 'Loading rooms...';
+  try {
+    const response = await fetch(HTTP + SERVER + '/api/public-rooms?' + new URLSearchParams({ gameType: type }), { cache: 'no-store', signal: request.signal });
+    if (!response.ok) throw new Error('Cannot load rooms');
+    const rooms = await response.json();
+    if (request.signal.aborted || type !== currentGameType) return;
+    const signature = JSON.stringify(rooms);
+    if (list.dataset.rooms === signature) return;
+    list.dataset.rooms = signature;
+    list.replaceChildren();
+    if (!rooms.length) {
+      const empty = document.createElement('p');
+      empty.className = 'available-rooms-status';
+      empty.textContent = 'No public rooms available';
+      list.append(empty);
+    }
+    for (const room of rooms.slice(0, 5)) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'available-room';
+      const name = document.createElement('span');
+      name.className = 'available-room-name';
+      name.textContent = room.code;
+      if (type === 'coup') {
+        const variantLabel = document.createElement('span');
+        variantLabel.className = 'available-room-variant';
+        variantLabel.textContent = room.variant === 'inquisitor' ? 'Inquisitor' : 'Standard';
+        name.append(variantLabel);
+      }
+      const count = document.createElement('span');
+      count.className = 'available-room-count';
+      count.textContent = room.members + '/' + room.capacity + ' players';
+      button.append(name, count);
+      button.addEventListener('click', () => {
+        if (type !== currentGameType || wsConnecting) return;
+        roomCode = room.code;
+        if (type === 'coup') variant = room.variant;
+        connectWS(null, null, null, null, true);
+      });
+      list.append(button);
+    }
+  } catch (error) {
+    if (!request.signal.aborted && type === currentGameType) {
+      delete list.dataset.rooms;
+      list.textContent = 'Unable to load rooms. Retrying...';
+    }
+  } finally {
+    if (publicRoomRequest === request) publicRoomRequest = null;
+  }
+}
+
+function updateRoomVisibilityControl() {
+  const toggle = document.getElementById('room-public-toggle');
+  toggle.checked = roomIsPublic;
+  toggle.disabled = hostId !== playerId || gameActive;
+}
+
+function setRoomVisibility(publicRoom) {
+  document.getElementById('room-public-toggle').disabled = true;
+  send('set-room-visibility', { public: publicRoom });
+}
 
 function openGameMenu(type) {
   currentGameType = type;
@@ -43,9 +142,11 @@ function openGameMenu(type) {
     const el = document.getElementById(id);
     if (el) { el.textContent = gameSubs[type] || ''; }
   });
+  startPublicRoomDiscovery(type);
 }
 
 function backToGameList() {
+  stopPublicRoomDiscovery();
   document.getElementById('game-list-view').style.display = '';
   document.getElementById('menu-coup').style.display = 'none';
   document.getElementById('menu-poker').style.display = 'none';
@@ -58,8 +159,12 @@ function backToGameList() {
 }
 
 function showScreen(name) {
+  if (name !== 'menu') stopPublicRoomDiscovery();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'menu' && document.getElementById('game-list-view').style.display === 'none') {
+    startPublicRoomDiscovery(currentGameType);
+  }
 }
 
 function switchTab(tab) {
@@ -313,7 +418,10 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 15;
 let wsConnecting = false;
 
-function connectWS(action, pokerConfig, nqConfig, unoStacking) {
+function connectWS(action, pokerConfig, nqConfig, unoStacking, publicRoom = false) {
+  stopPublicRoomDiscovery();
+  publicJoinPending = publicRoom;
+  roomIsPublic = false;
   intentionalDisconnect = false;
   wsConnecting = true;
   showConnectingState();
@@ -346,7 +454,7 @@ function connectWS(action, pokerConfig, nqConfig, unoStacking) {
       document.getElementById('lobby-code').textContent = roomCode;
       joinedName = getFullName(savedName);
       sessionStorage.setItem('coup_joinedName', joinedName);
-      send('join', { playerName: joinedName });
+      send('join', { playerName: joinedName, publicRoom: publicJoinPending });
     } else {
       document.getElementById('name-entry').style.display = '';
       document.getElementById('lobby').style.display = 'none';
@@ -418,6 +526,11 @@ function handleWSMessage(e) {
   try {
     const msg = JSON.parse(e.data);
     switch(msg.type) {
+      case 'room-visibility':
+        roomIsPublic = !!msg.payload?.public;
+        hostId = msg.payload?.hostId;
+        updateRoomVisibilityControl();
+        break;
       case 'redirect':
         // Player is already in another active game
         if (msg.payload?.roomCode) {
@@ -605,6 +718,14 @@ function handleWSMessage(e) {
         break;
       case 'error':
         const errMsg = msg.payload?.message || 'Error';
+        if (errMsg === 'This public room is no longer available') {
+          const selectedGame = currentGameType;
+          disconnect();
+          showScreen('menu');
+          openGameMenu(selectedGame);
+          alert(errMsg);
+          break;
+        }
         if (errMsg.includes('Incorrect Game Code') || errMsg.includes('No Session Found')) {
           document.getElementById('conn-banner').textContent = 'Game session ended.';
           document.getElementById('conn-banner').classList.add('show');
@@ -669,6 +790,9 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function disconnect() {
+  stopPublicRoomDiscovery();
+  publicJoinPending = false;
+  roomIsPublic = false;
   intentionalDisconnect = true;
   reconnectAttempts = 0;
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
@@ -774,7 +898,7 @@ function submitName() {
   localStorage.setItem('coup_name', name);
   sessionStorage.setItem('coup_joinedName', fullName);
   updateProfileBar();
-  send('join', { playerName: fullName });
+  send('join', { playerName: fullName, publicRoom: publicJoinPending });
   document.getElementById('name-entry').style.display = 'none';
   document.getElementById('lobby').style.display = '';
   document.getElementById('lobby-code').textContent = roomCode;
@@ -787,7 +911,9 @@ function send(type, payload) {
 function renderLobby(players) {
   document.getElementById('player-count').textContent = players.length;
   const isHost = hostId === playerId;
-  const maxPlayers = currentGameType === 'poker' ? 8 : (currentGameType === 'ludo' || currentGameType === 'twentynine' || currentGameType === 'hearts' ? 4 : 6);
+  const maxPlayers = GAME_CAPACITIES[currentGameType] || 6;
+  document.getElementById('player-capacity').textContent = maxPlayers;
+  updateRoomVisibilityControl();
   document.getElementById('lobby-poker-config').style.display = currentGameType === 'poker' ? '' : 'none';
   document.getElementById('lobby-ludo-config').style.display = currentGameType === 'ludo' ? '' : 'none';
   document.getElementById('lobby-uno-config').style.display = currentGameType === 'uno' ? '' : 'none';

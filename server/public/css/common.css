@@ -133,6 +133,22 @@ input::placeholder { color: #475569; }
 .conn-banner.show { display: block; }
 
 /* Game List */
+.lobby-visibility { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.room-public-switch { display: flex; align-items: center; gap: 10px; color: #cbd5e1; font-size: 13px; cursor: pointer; }
+.room-public-switch input { appearance: none; position: relative; width: 42px; height: 24px; flex: 0 0 42px; margin: 0; padding: 0; border: 1px solid #64748b; border-radius: 12px; background: #334155; cursor: pointer; }
+.room-public-switch input::before { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.room-public-switch input:checked { border-color: #22c55e; background: #15803d; }
+.room-public-switch input:checked::before { transform: translateX(18px); }
+.room-public-switch input:focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
+.room-public-switch input:disabled { opacity: .55; cursor: default; }
+.available-rooms { margin-top: 24px; border-top: 1px solid #334155; padding-top: 12px; }
+.available-rooms-list { display: grid; gap: 8px; }
+.available-room { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid #334155; border-radius: 8px; background: #0f172a; color: #e2e8f0; font: inherit; cursor: pointer; text-align: left; }
+.available-room:hover, .available-room:focus-visible { border-color: #3b82f6; background: #152139; }
+.available-room-name { display: grid; gap: 3px; min-width: 0; font-size: 14px; font-weight: 700; }
+.available-room-variant { color: #94a3b8; font-size: 11px; font-weight: 400; }
+.available-room-count { flex-shrink: 0; color: #94a3b8; font-size: 12px; }
+.available-rooms-status { color: #94a3b8; font-size: 13px; padding: 8px 0; }
 .game-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
 .site-footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; padding: 16px 8px 8px; border-top: 1px solid #1e293b; color: #64748b; font-size: 12px; text-align: center; }
 .site-footer a { color: #94a3b8; text-decoration: none; }

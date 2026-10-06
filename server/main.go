@@ -41,6 +41,7 @@ type Room struct {
 	players            map[string]*PlayerConn // playerID -> PlayerConn
 	hostID             string
 	created            bool
+	isPublic           bool
 	connections        map[string]*websocket.Conn // connID -> ws conn
 	connPlayer         map[string]string          // connID -> playerID
 	disconnectTimers   map[string]*time.Timer     // playerID -> pending elimination timer
@@ -497,6 +498,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	// Store connection
 	room.connections[connID] = conn
 	room.connPlayer[connID] = playerID
+	room.sendRoomVisibility(connID)
 	log.Printf("[ROOM] %s: stored conn %s -> player %s (total conns: %d, players: %d)", roomCode, connID[:8], playerID[:8], len(room.connections), len(room.players))
 
 	// Cancel any pending disconnect timer for this player
@@ -799,11 +801,26 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 
 func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 	switch msg.Type {
+	case "set-room-visibility":
+		var payload struct { Public bool `json:"public"` }
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil { return }
+		if err := room.setPublicVisibility(playerID, payload.Public); err != nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": err.Error()}})
+			room.sendRoomVisibility(connID)
+			return
+		}
+		room.broadcastVisibility()
+
 	case "join":
 		var payload struct {
 			PlayerName string `json:"playerName"`
+			PublicRoom bool `json:"publicRoom"`
 		}
 		json.Unmarshal(msg.Payload, &payload)
+		if payload.PublicRoom && room.players[playerID] == nil && !room.availablePublicRoom() {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "This public room is no longer available"}})
+			return
+		}
 
 		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil || room.tnState != nil || room.heartsState != nil || room.unoState != nil
 		if gameInProgress {
@@ -833,6 +850,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 
 		room.players[playerID] = &PlayerConn{ID: playerID, Name: name}
+		room.broadcastVisibility()
 		log.Printf("[JOIN] room=%s player=%s name=%q (total players: %d)", room.code, playerID[:8], name, len(room.players))
 
 		room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
@@ -2077,6 +2095,7 @@ func main() {
 
 	http.HandleFunc("/ws", handleWS)
 	http.HandleFunc("/api/generate-code", handleGenerateCode)
+	http.HandleFunc("/api/public-rooms", handlePublicRooms)
 	http.HandleFunc("/api/variant-config", handleVariantConfig)
 
 	// Serve static files (textures, icons, css, js, etc)
