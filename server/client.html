@@ -41,15 +41,18 @@
 
   <!-- Game List -->
   <div id="game-list-view">
-    <div class="profile-bar" id="profile-bar" style="display:none">
-      <div>
-        <div class="profile-label">Playing as</div>
-        <div class="profile-name" id="profile-display-name"></div>
+    <header class="home-header">
+      <div class="home-brand">
+        <img src="/icons/timecrusher-mark.svg" width="36" height="36" alt="">
+        <h1>Timecrushers</h1>
       </div>
-      <button class="profile-edit" onclick="showNamePopup()">Change</button>
-    </div>
-    <h1 style="color:#e2e8f0;font-size:32px;letter-spacing:3px;margin-bottom:4px">GAMES</h1>
-    <p class="subtitle">Choose a game to play</p>
+      <div class="home-account">
+        <div class="home-online" title="Players inside all game rooms" role="status">
+          <strong id="room-player-total">--</strong><span>online</span>
+        </div>
+        <button type="button" id="home-profile-button" class="home-profile-button" onclick="showNamePopup()" title="Profile" aria-label="Edit profile"><span id="home-profile-initials" aria-hidden="true">?</span></button>
+      </div>
+    </header>
     <div class="game-list">
       <div class="game-card game-card-coup" onclick="openGameMenu('coup')">
         <div class="game-card-icon">🎭</div>

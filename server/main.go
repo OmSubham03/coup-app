@@ -2107,6 +2107,7 @@ func main() {
 	http.HandleFunc("/ws", handleWS)
 	http.HandleFunc("/api/generate-code", handleGenerateCode)
 	http.HandleFunc("/api/public-rooms", handlePublicRooms)
+	http.HandleFunc("/api/room-stats", handleRoomStats)
 	http.HandleFunc("/api/variant-config", handleVariantConfig)
 
 	// Serve static files (textures, icons, css, js, etc)

@@ -1049,12 +1049,25 @@ function getFullName(name) {
 
 function updateProfileBar() {
   const name = localStorage.getItem('coup_name');
-  const bar = document.getElementById('profile-bar');
-  if (name) {
-    bar.style.display = '';
-    document.getElementById('profile-display-name').textContent = getFullName(name);
-  } else {
-    bar.style.display = 'none';
+  const button = document.getElementById('home-profile-button');
+  const initials = name ? name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase() : '?';
+  document.getElementById('home-profile-initials').textContent = initials;
+  button.title = name ? getFullName(name) : 'Profile';
+  button.setAttribute('aria-label', name ? 'Edit profile: ' + getFullName(name) : 'Edit profile');
+}
+
+async function loadRoomPlayerCount() {
+  const total = document.getElementById('room-player-total');
+  try {
+    const response = await fetch(HTTP + SERVER + '/api/room-stats', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Room stats unavailable');
+    const stats = await response.json();
+    if (!Number.isInteger(stats.players) || stats.players < 0) throw new Error('Invalid room stats');
+    total.textContent = stats.players;
+    total.parentElement.title = stats.players + ' players inside game rooms at page load';
+  } catch (error) {
+    total.textContent = '--';
+    total.parentElement.title = 'Room player count unavailable';
   }
 }
 
@@ -1077,6 +1090,8 @@ function saveNamePopup() {
 
 // ========== INIT ==========
 (function() {
+  loadRoomPlayerCount();
+  updateProfileBar();
   const saved = localStorage.getItem('coup_name');
   if (saved) {
     updateProfileBar();
