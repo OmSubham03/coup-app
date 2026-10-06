@@ -1,7 +1,7 @@
 {
-  "name": "Coup - Bluff. Deceive. Survive.",
-  "short_name": "Coup",
-  "description": "The classic card game of bluffing and deception",
+  "name": "TimeCrusher",
+  "short_name": "TimeCrusher",
+  "description": "A collection of multiplayer card and party games",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",

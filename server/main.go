@@ -2114,6 +2114,11 @@ func main() {
 		w.Header().Set("Content-Type", "application/manifest+json")
 		http.ServeFile(w, r, "public/manifest.json")
 	})
+	http.HandleFunc("/favicon.svg", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		http.ServeFile(w, r, "public/favicon.svg")
+	})
 	http.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
