@@ -37,6 +37,9 @@ type Room struct {
 	tnState            *game.TwentyNineState
 	heartsState        *game.HeartsState
 	unoState           *game.UNOState
+	bluffState         *game.BluffState
+	blackjackState     *game.BlackjackState
+	twoDecks           bool
 	unoStackingEnabled bool
 	unoMultiSkipEnabled bool
 	players            map[string]*PlayerConn // playerID -> PlayerConn
@@ -126,7 +129,7 @@ func findPlayerActiveRoom(playerID string) *Room {
 				(room.communeState != nil && room.communeState.Phase != game.CommunePhaseFinished) ||
 				(room.tnState != nil && room.tnState.Phase != game.TN_PhaseGameOver) ||
 				(room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver) ||
-				(room.unoState != nil && room.unoState.Phase != game.UNOPhaseGameOver)
+				(room.unoState != nil && room.unoState.Phase != game.UNOPhaseGameOver) || room.additionalPlayerActive(playerID)
 			room.mu.Unlock()
 			if gameActive {
 				return room
@@ -171,6 +174,10 @@ func (r *Room) playerList() []PlayerConn {
 }
 
 func (r *Room) broadcastState() {
+	if r.gameType == "bluff" || r.gameType == "blackjack" {
+		r.broadcastAdditionalState()
+		return
+	}
 	if r.gameType == "poker" {
 		r.broadcastPokerState()
 		return
@@ -444,6 +451,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	gameType := req.URL.Query().Get("gameType")
 	unoStacking := req.URL.Query().Get("unoStacking") == "true"
 	unoMultiSkip := req.URL.Query().Get("unoMultiSkip") == "true"
+	twoDecks := req.URL.Query().Get("twoDecks") == "true"
 
 	if roomCode == "" {
 		http.Error(w, "room required", http.StatusBadRequest)
@@ -481,8 +489,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	room := getOrCreateRoom(roomCode, gameType, variant)
 	room.mu.Lock()
 
-	if action == "create" {
+	if action == "create" && !room.created {
 		room.created = true
+		room.twoDecks = twoDecks
 		if gameType == "uno" {
 			room.unoStackingEnabled = unoStacking
 			room.unoMultiSkipEnabled = unoMultiSkip
@@ -512,9 +521,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// If game already started, check reconnection
-	gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil || room.tnState != nil || room.heartsState != nil || room.unoState != nil
+	gameInProgress := room.hasStartedGame()
 	if gameInProgress {
-		isReconnecting := false
+		isReconnecting := room.additionalPlayerInGame(playerID)
 		if room.gameType == "poker" && room.pokerState != nil {
 			for _, p := range room.pokerState.Players {
 				if p.ID == playerID {
@@ -575,7 +584,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 
 		if !isReconnecting {
 			// Allow spectating — send current game state as spectator
-			if room.gameType == "poker" {
+			if room.gameType == "bluff" || room.gameType == "blackjack" {
+				room.sendAdditionalState(connID, "")
+			} else if room.gameType == "poker" {
 				personalized := room.createPersonalizedPokerState("")
 				room.sendTo(connID, OutMessage{Type: "poker-spectate", Payload: personalized})
 			} else if room.gameType == "ludo" {
@@ -600,7 +611,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			}
 			room.mu.Unlock()
 		} else {
-			if room.gameType == "poker" {
+			if room.gameType == "bluff" || room.gameType == "blackjack" {
+				room.sendAdditionalState(connID, playerID)
+			} else if room.gameType == "poker" {
 				personalized := room.createPersonalizedPokerState(playerID)
 				room.sendTo(connID, OutMessage{Type: "poker-state", Payload: personalized})
 			} else if room.gameType == "ludo" {
@@ -645,6 +658,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			"gameType":   room.gameType,
 			"unoStackingEnabled": room.unoStackingEnabled,
 			"unoMultiSkipEnabled": room.unoMultiSkipEnabled,
+			"twoDecks": room.twoDecks,
 		}})
 		room.mu.Unlock()
 	}
@@ -667,7 +681,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 
 		if !hasOtherConn && pID != "" {
 			gameInProgress := false
-			if room.gameType == "poker" {
+			if room.gameType == "bluff" || room.gameType == "blackjack" {
+				gameInProgress = room.additionalPlayerActive(pID)
+			} else if room.gameType == "poker" {
 				gameInProgress = room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseWaiting && room.pokerState.Phase != game.PokerPhaseGameOver
 			} else if room.gameType == "ludo" {
 				gameInProgress = room.ludoState != nil && room.ludoState.Phase != game.LudoPhaseWaiting && room.ludoState.Phase != game.LudoPhaseFinished
@@ -699,7 +715,10 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 					}
 					delete(room.disconnectTimers, pID)
 					log.Printf("[DISCONNECT] room=%s player=%s — grace period expired, eliminating", room.code, pID[:8])
-					if room.gameType == "poker" {
+					if room.gameType == "bluff" || room.gameType == "blackjack" {
+						room.exitAdditionalPlayer(pID)
+						room.broadcastState()
+					} else if room.gameType == "poker" {
 						if room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver {
 							game.PokerVoluntaryExit(room.pokerState, pID)
 							room.broadcastState()
@@ -760,6 +779,10 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 					}
 					// Remove from players map
 					delete(room.players, pID)
+					if room.gameType == "bluff" || room.gameType == "blackjack" {
+						room.broadcastVisibility()
+						room.broadcast(room.additionalLobbyMessage())
+					}
 				})
 				room.disconnectTimers[pID] = timer
 			} else {
@@ -775,7 +798,8 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 				room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
 					"players":    room.playerList(),
 					"hostId":     room.hostID,
-					"gameActive": false,
+					"gameActive": (room.gameType == "bluff" || room.gameType == "blackjack") && room.hasStartedGame(),
+					"twoDecks": room.twoDecks,
 				}})
 			}
 		}
@@ -804,6 +828,9 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleMessage(room *Room, connID, playerID string, msg InMessage) {
+	if room.handleAdditionalMessage(connID, playerID, msg) {
+		return
+	}
 	switch msg.Type {
 	case "leave-room":
 		if err := room.leaveGameRoom(playerID); err != nil {
@@ -831,8 +858,12 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			return
 		}
 
-		gameInProgress := room.gameState != nil || room.pokerState != nil || room.ludoState != nil || room.nqState != nil || room.communeState != nil || room.tnState != nil || room.heartsState != nil || room.unoState != nil
+		gameInProgress := room.hasStartedGame()
 		if gameInProgress {
+			if room.additionalPlayerActive(playerID) {
+				room.sendAdditionalState(connID, playerID)
+				return
+			}
 			if room.gameType == "uno" && room.unoState != nil && game.UNOFindPlayer(room.unoState, playerID) >= 0 {
 				room.broadcastUNOState()
 				return
@@ -842,6 +873,10 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		if room.gameType == "uno" && len(room.players) >= 6 && room.players[playerID] == nil {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "UNO supports 2 to 6 players"}})
+			return
+		}
+		if (room.gameType == "bluff" || room.gameType == "blackjack") && len(room.players) >= roomCapacity(room.gameType) && room.players[playerID] == nil {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Room is full"}})
 			return
 		}
 
@@ -869,9 +904,14 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			"gameType":   room.gameType,
 			"unoStackingEnabled": room.unoStackingEnabled,
 			"unoMultiSkipEnabled": room.unoMultiSkipEnabled,
+			"twoDecks": room.twoDecks,
 		}})
 
 	case "start-game":
+		if roomCapacity(room.gameType) == 0 {
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Invalid game type"}})
+			return
+		}
 		if playerID != room.hostID {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Only the host can start the game"}})
 			return
@@ -884,7 +924,9 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			(room.communeState != nil && room.communeState.Phase != game.CommunePhaseFinished) ||
 			(room.tnState != nil && room.tnState.Phase != game.TN_PhaseGameOver) ||
 			(room.heartsState != nil && room.heartsState.Phase != game.HT_PhaseGameOver) ||
-			(room.unoState != nil && room.unoState.Phase != game.UNOPhaseGameOver)
+			(room.unoState != nil && room.unoState.Phase != game.UNOPhaseGameOver) ||
+			(room.bluffState != nil && room.bluffState.Phase != game.BluffPhaseGameOver) ||
+			(room.blackjackState != nil && room.blackjackState.Phase != game.BlackjackPhaseGameOver)
 		if gameAlreadyActive {
 			return
 		}
@@ -897,6 +939,8 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		room.tnState = nil
 		room.heartsState = nil
 		room.unoState = nil
+		room.bluffState = nil
+		room.blackjackState = nil
 		if len(room.players) < 2 {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Need at least 2 players to start"}})
 			return
@@ -1356,6 +1400,9 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 
 	case "kick-player":
 		if playerID != room.hostID {
+			return
+		}
+		if room.hasStartedGame() {
 			return
 		}
 		gameInProgress := false

@@ -45,6 +45,14 @@ func TestLeaveFinishedRoomPreservesResultsForEveryGame(t *testing.T) {
 			room.unoState = &game.UNOState{Phase: game.UNOPhaseGameOver, WinnerID: "winner"}
 			return room.unoState
 		},
+		"bluff": func(room *Room) interface{} {
+			room.bluffState = &game.BluffState{Phase: game.BluffPhaseGameOver, WinnerName: "winner"}
+			return room.bluffState
+		},
+		"blackjack": func(room *Room) interface{} {
+			room.blackjackState = &game.BlackjackState{Phase: game.BlackjackPhaseGameOver, Round: 3}
+			return room.blackjackState
+		},
 	}
 	for gameType, initialize := range testCases {
 		t.Run(gameType, func(t *testing.T) {

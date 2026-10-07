@@ -5,6 +5,10 @@ import "coup-server/game"
 func (room *Room) leaveGameRoom(playerID string) error {
 	if room.players[playerID] != nil {
 		switch room.gameType {
+		case "bluff", "blackjack":
+			if err := room.exitAdditionalPlayer(playerID); err != nil {
+				return err
+			}
 		case "poker":
 			if room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseGameOver {
 				game.PokerVoluntaryExit(room.pokerState, playerID)
@@ -73,6 +77,7 @@ func (room *Room) leaveGameRoom(playerID string) error {
 	room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
 		"players": room.playerList(), "hostId": room.hostID, "gameActive": room.hasStartedGame(),
 		"gameType": room.gameType, "unoStackingEnabled": room.unoStackingEnabled,
+		"twoDecks": room.twoDecks,
 	}})
 	return nil
 }

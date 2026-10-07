@@ -94,7 +94,7 @@ func TestRoomVisibilityHostOnlyAndPrivateByDefault(t *testing.T) {
 }
 
 func TestPublicRoomCapacityForEveryGame(t *testing.T) {
-	for gameType, capacity := range map[string]int{"coup": 6, "uno": 6, "poker": 8, "ludo": 4, "twentynine": 4, "hearts": 4, "commune": 10, "nquestions": 10} {
+	for gameType, capacity := range map[string]int{"coup": 6, "uno": 6, "bluff": 6, "blackjack": 4, "poker": 8, "ludo": 4, "twentynine": 4, "hearts": 4, "commune": 10, "nquestions": 10} {
 		t.Run(gameType, func(t *testing.T) {
 			room := discoveryRoom("ABCDE", gameType, true, capacity-1)
 			if roomCapacity(gameType) != capacity || !room.availablePublicRoom() {
@@ -118,6 +118,8 @@ func TestStartedRoomsAreHiddenForEveryGame(t *testing.T) {
 		"twentynine": func(room *Room) { room.tnState = &game.TwentyNineState{} },
 		"hearts":     func(room *Room) { room.heartsState = &game.HeartsState{} },
 		"uno":        func(room *Room) { room.unoState = &game.UNOState{} },
+		"bluff":      func(room *Room) { room.bluffState = &game.BluffState{} },
+		"blackjack":  func(room *Room) { room.blackjackState = &game.BlackjackState{} },
 	}
 	for gameType, start := range states {
 		t.Run(gameType, func(t *testing.T) {

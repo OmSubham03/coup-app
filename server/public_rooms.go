@@ -17,11 +17,11 @@ type publicRoomSummary struct {
 
 func roomCapacity(gameType string) int {
 	switch gameType {
-	case "coup", "uno":
+	case "coup", "uno", "bluff":
 		return 6
 	case "poker":
 		return 8
-	case "ludo", "twentynine", "hearts":
+	case "ludo", "twentynine", "hearts", "blackjack":
 		return 4
 	case "commune", "nquestions":
 		return 10
@@ -33,7 +33,7 @@ func roomCapacity(gameType string) int {
 func (room *Room) hasStartedGame() bool {
 	return room.gameState != nil || room.pokerState != nil || room.ludoState != nil ||
 		room.nqState != nil || room.communeState != nil || room.tnState != nil ||
-		room.heartsState != nil || room.unoState != nil
+		room.heartsState != nil || room.unoState != nil || room.bluffState != nil || room.blackjackState != nil
 }
 
 func (room *Room) availablePublicRoom() bool {
@@ -56,6 +56,7 @@ func (room *Room) setPublicVisibility(playerID string, public bool) error {
 func (room *Room) visibilityMessage() OutMessage {
 	return OutMessage{Type: "room-visibility", Payload: map[string]interface{}{
 		"public": room.isPublic, "hostId": room.hostID,
+		"twoDecks":           room.twoDecks,
 		"unoStackingEnabled": room.unoStackingEnabled, "unoMultiSkipEnabled": room.unoMultiSkipEnabled,
 	}}
 }

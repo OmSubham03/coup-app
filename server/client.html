@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="/css/twentynine.css">
 <link rel="stylesheet" href="/css/hearts.css">
 <link rel="stylesheet" href="/css/uno.css">
+<link rel="stylesheet" href="/css/additional-games.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -118,6 +119,18 @@
         </div>
         <div class="game-card-arrow">›</div>
       </div>
+    </div>
+    <div class="game-list additional-game-list">
+      <button type="button" class="game-card game-card-bluff" onclick="openGameMenu('bluff')">
+        <span class="game-card-icon" aria-hidden="true">&#9824;</span>
+        <span class="game-card-info"><span class="game-card-title">BLUFF</span><span class="game-card-desc">2-6 players</span></span>
+        <span class="game-card-arrow" aria-hidden="true">&#8250;</span>
+      </button>
+      <button type="button" class="game-card game-card-blackjack" onclick="openGameMenu('blackjack')">
+        <span class="game-card-icon" aria-hidden="true">21</span>
+        <span class="game-card-info"><span class="game-card-title">BLACKJACK</span><span class="game-card-desc">1-4 players</span></span>
+        <span class="game-card-arrow" aria-hidden="true">&#8250;</span>
+      </button>
     </div>
     <footer class="site-footer">
       <span>© Hobbystudio 2026</span>
@@ -292,6 +305,33 @@
     </div>
   </div>
 
+  <div id="menu-bluff" class="additional-menu" style="display:none">
+    <div class="additional-menu-toolbar">
+      <button type="button" class="btn btn-outline btn-sm" onclick="backToGameList()" title="Back" aria-label="Back to games">&#8592;</button>
+      <button type="button" class="btn btn-blue btn-sm" onclick="toggleBluffRules()">Rules</button>
+    </div>
+    <h1 class="bluff-title">BLUFF</h1><p class="subtitle">2-6 players</p>
+    <h2 class="section-title">Create Game</h2>
+    <label class="additional-deck-option"><input type="checkbox" id="bluff-two-decks">Use two decks</label>
+    <button type="button" class="btn btn-blue" onclick="createBluffGame()">Create Bluff Game</button>
+    <h2 class="section-title">Join Game</h2>
+    <input id="bluff-join-code" aria-label="Room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('bluff-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinBluffWithCode()">
+    <button type="button" class="btn btn-amber" id="bluff-join-btn" disabled onclick="joinBluffWithCode()">Join Game</button>
+  </div>
+  <div id="menu-blackjack" class="additional-menu" style="display:none">
+    <div class="additional-menu-toolbar">
+      <button type="button" class="btn btn-outline btn-sm" onclick="backToGameList()" title="Back" aria-label="Back to games">&#8592;</button>
+      <button type="button" class="btn btn-green btn-sm" onclick="toggleBlackjackRules()">Rules</button>
+    </div>
+    <h1 class="blackjack-title">BLACKJACK</h1><p class="subtitle">1-4 players</p>
+    <h2 class="section-title">Create Game</h2>
+    <label class="additional-deck-option"><input type="checkbox" id="blackjack-two-decks">Use two decks</label>
+    <button type="button" class="btn btn-green" onclick="createBlackjackGame()">Create Blackjack Table</button>
+    <h2 class="section-title">Join Game</h2>
+    <input id="blackjack-join-code" aria-label="Room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('blackjack-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinBlackjackWithCode()">
+    <button type="button" class="btn btn-amber" id="blackjack-join-btn" disabled onclick="joinBlackjackWithCode()">Join Game</button>
+  </div>
+
   <!-- Commune Menu -->
   <div id="menu-commune" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -371,6 +411,7 @@
       </div>
     </div>
     <div id="lobby-uno-config" style="display:none" class="lobby-uno-config"></div>
+    <div id="lobby-additional-config" class="additional-lobby-config" style="display:none"></div>
     <p class="section-title">Players (<span id="player-count">0</span>/<span id="player-capacity">6</span>)</p>
     <div id="lobby-players"></div>
     <button class="btn btn-green" id="start-btn" style="display:none" onclick="ws.send(JSON.stringify({type:'start-game'}))">Start Game</button>
@@ -383,6 +424,63 @@
       <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
     </div>
     <button class="btn btn-outline" style="margin-top:12px" onclick="disconnect();showScreen('menu')">Leave Lobby</button>
+  </div>
+
+  <div id="bluff-active" class="additional-active" style="display:none">
+    <div class="header-bar">
+      <div><h2 class="bluff-title">BLUFF</h2><div class="phase-text" id="bluff-phase-display" role="status"></div></div>
+      <button type="button" class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
+    </div>
+    <div class="additional-table-meta"><span id="bluff-deck-display"></span><span id="bluff-turn-display"></span><strong id="bluff-spectator"></strong></div>
+    <div class="tab-bar">
+      <button type="button" class="tab active" id="blufftab-game" onclick="switchAdditionalTab('bluff','game')">Game</button>
+      <button type="button" class="tab" id="blufftab-chat" onclick="switchAdditionalTab('bluff','chat')">Chat</button>
+    </div>
+    <div id="bluff-game-tab">
+      <div class="additional-table-summary"><span>Required rank <strong id="bluff-required-rank"></strong></span><span>Pile <strong id="bluff-pile-count"></strong> cards</span></div>
+      <p id="bluff-pending-actor" class="additional-status"></p>
+      <div id="bluff-players"></div>
+      <section id="bluff-hand-section"><h2>Your Hand</h2><div id="bluff-hand" class="additional-cards"></div></section>
+      <p id="bluff-selection-count" class="additional-status" role="status"></p>
+      <div class="additional-actions">
+        <button type="button" class="btn btn-blue" id="bluff-play-btn" disabled onclick="bluffPlay()">Claim</button>
+        <button type="button" class="btn btn-red" id="bluff-challenge-btn" disabled onclick="bluffChallenge()">Challenge</button>
+        <button type="button" class="btn btn-green" id="bluff-accept-btn" disabled onclick="bluffAccept()">Accept</button>
+      </div>
+      <p id="bluff-last-action" class="additional-status" role="status"></p>
+      <button type="button" class="btn btn-outline" id="bluff-return-btn" hidden onclick="send('return-to-lobby')">Return to Lobby</button>
+    </div>
+    <div id="bluff-chat-tab" style="display:none"><div class="chat-panel">
+      <div class="chat-messages" id="bluff-chat-messages" role="log" aria-label="Bluff chat"></div>
+      <div class="chat-input-row"><input id="bluff-chat-input" aria-label="Chat message" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()"><button type="button" class="btn btn-blue btn-sm" onclick="sendChat()">Send</button></div>
+    </div></div>
+  </div>
+  <div id="blackjack-active" class="additional-active" style="display:none">
+    <div class="header-bar">
+      <div><h2 class="blackjack-title">BLACKJACK</h2><div class="phase-text" id="blackjack-phase-display" role="status"></div></div>
+      <button type="button" class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
+    </div>
+    <div class="additional-table-meta"><span id="blackjack-deck-display"></span><span id="blackjack-turn-display"></span><strong id="blackjack-spectator"></strong></div>
+    <div class="tab-bar">
+      <button type="button" class="tab active" id="blackjacktab-game" onclick="switchAdditionalTab('blackjack','game')">Table</button>
+      <button type="button" class="tab" id="blackjacktab-chat" onclick="switchAdditionalTab('blackjack','chat')">Chat</button>
+    </div>
+    <div id="blackjack-game-tab">
+      <section class="additional-dealer"><h2>Dealer</h2><div id="blackjack-dealer-cards" class="additional-cards"></div><p id="blackjack-dealer-total" class="additional-status"></p></section>
+      <div id="blackjack-players"></div>
+      <div class="additional-actions">
+        <button type="button" class="btn btn-green" id="blackjack-hit-btn" disabled onclick="blackjackAction('hit')">Hit</button>
+        <button type="button" class="btn btn-blue" id="blackjack-stand-btn" disabled onclick="blackjackAction('stand')">Stand</button>
+        <button type="button" class="btn btn-amber" id="blackjack-double-btn" disabled onclick="blackjackAction('double')">Double</button>
+      </div>
+      <p id="blackjack-last-action" class="additional-status" role="status"></p>
+      <button type="button" class="btn btn-green" id="blackjack-next-round-btn" hidden disabled onclick="blackjackAction('next-round')">Next Round</button>
+      <button type="button" class="btn btn-outline" id="blackjack-return-btn" hidden onclick="send('return-to-lobby')">Return to Lobby</button>
+    </div>
+    <div id="blackjack-chat-tab" style="display:none"><div class="chat-panel">
+      <div class="chat-messages" id="blackjack-chat-messages" role="log" aria-label="Blackjack chat"></div>
+      <div class="chat-input-row"><input id="blackjack-chat-input" aria-label="Chat message" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()"><button type="button" class="btn btn-green btn-sm" onclick="sendChat()">Send</button></div>
+    </div></div>
   </div>
 
   <!-- Active game (Coup) -->
@@ -700,10 +798,28 @@
     <button type="button" onclick="copySettingsRoomCode()">Copy</button>
   </div>
   <label class="game-settings-row"><span>Microphone</span><input id="settings-microphone" type="checkbox" role="switch" onchange="toggleMic()"></label>
+  <p id="game-settings-decks" class="game-settings-status" hidden></p>
   <label class="game-settings-row"><span>Speaker</span><input id="settings-speaker" type="checkbox" role="switch" onchange="toggleSpeaker()"></label>
   <button class="game-settings-command" type="button" onclick="openSettingsRules()">Rules</button>
   <button class="game-settings-command game-settings-exit" type="button" onclick="exitGame()">Exit Game</button>
   <p id="game-settings-status" class="game-settings-status" role="status"></p>
+</dialog>
+
+<dialog id="bluff-rules-dialog" class="additional-rules-dialog" aria-labelledby="bluff-rules-title">
+  <div class="game-settings-heading"><h2 id="bluff-rules-title">Bluff Rules</h2><button type="button" class="game-settings-close" onclick="toggleBluffRules()" aria-label="Close Bluff rules">&times;</button></div>
+  <p>2-6 players. One shuffled 52-card deck, or two decks (104 cards), are dealt across all players. Only your hand is visible.</p>
+  <p>Ranks advance A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, then A again. On your turn, play 1-4 cards face down and claim the required rank. Your cards do not have to match the claim.</p>
+  <p>Any active player except the actor may challenge. Only the next active player may accept. A challenge checks the most recent play: if every card matches the required rank, the challenger takes the entire pile; otherwise, the actor takes it. Acceptance leaves the pile in place.</p>
+  <p>After either resolution, the rank advances and the next active player takes a turn. An empty hand wins only after its claim is accepted or a challenge proves it truthful. A caught bluff must pick up the pile and continue.</p>
+  <p>Leaving returns your remaining cards to the pile. Fewer than two active players ends the game without awarding a winner.</p>
+</dialog>
+<dialog id="blackjack-rules-dialog" class="additional-rules-dialog" aria-labelledby="blackjack-rules-title">
+  <div class="game-settings-heading"><h2 id="blackjack-rules-title">Blackjack Rules</h2><button type="button" class="game-settings-close" onclick="toggleBlackjackRules()" aria-label="Close Blackjack rules">&times;</button></div>
+  <p>1-4 players. Play chips only: everyone starts with 1000 chips. Each round posts a fixed 50-chip bet and uses a fresh shuffled one-deck or two-deck shoe.</p>
+  <p>Aces count as 1 or 11; face cards count as 10. Hit draws a card; stand ends your turn. Reaching 21 ends your turn automatically; exceeding 21 loses the bet. Double is available only on your initial two cards with a 50-chip bet and enough chips: add 50, draw exactly one card, and stand.</p>
+  <p>Player hands are public. Only the dealer's first card is visible during play. The dealer reveals the hole card at settlement, draws below 17, and stands on all 17s, including soft 17.</p>
+  <p>A two-card natural blackjack pays 3:2, unless the dealer also has blackjack, which pushes. Dealer blackjack beats other hands. Other wins pay 1:1; ties return the bet; busts lose. There is no splitting or insurance.</p>
+  <p>After settlement, only the host who is still an active player may start the next round. Players unable to cover the next 50-chip bet become inactive. The session ends when no active player can cover it, or everyone leaves. Leaving forfeits any outstanding bet.</p>
 </dialog>
 
 <div class="name-popup-overlay" id="name-popup-overlay">
@@ -1024,7 +1140,7 @@
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 10;
+let totalScripts = 12;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
@@ -1052,6 +1168,8 @@ function checkScriptsLoaded() {
 <script src="/js/twentynine.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/hearts.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/uno.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/bluff.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/blackjack.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

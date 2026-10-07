@@ -1,0 +1,54 @@
+.additional-game-list { margin-top: 12px; }
+.additional-game-list .game-card { width: 100%; color: #edf2f7; font: inherit; text-align: left; }
+.additional-game-list .game-card-info > span { display: block; }
+.game-card-bluff { background: #212e3e; border-color: #647c95; }
+.game-card-blackjack { background: #10352a; border-color: #35896a; }
+.bluff-title { color: #b7d3ef; }
+.blackjack-title { color: #83dfb1; }
+.additional-menu h1 { font-size: 36px; letter-spacing: 0; overflow-wrap: anywhere; }
+.additional-active .btn { border-radius: 8px; }
+.additional-menu-toolbar { display: flex; justify-content: space-between; gap: 12px; }
+.additional-menu-toolbar .btn { width: auto; }
+.additional-deck-option { display: flex; align-items: center; gap: 12px; padding: 12px 0 20px; color: #e2e8f0; }
+.additional-deck-option input { width: 20px; height: 20px; margin: 0; accent-color: #4ca381; }
+.additional-menu input[id$="join-code"] { text-transform: uppercase; font-size: 28px; letter-spacing: 6px; font-weight: 800; color: #f59e0b; }
+.additional-lobby-config { text-align: center; padding: 12px; color: #dce8ef; border-block: 1px solid #475569; margin-bottom: 12px; }
+.additional-active { --additional-accent: #b7d3ef; }
+#blackjack-active { --additional-accent: #83dfb1; }
+.additional-active h2 { color: var(--additional-accent); font-size: 20px; margin: 12px 0; letter-spacing: 0; }
+.additional-active .header-bar h2 { margin: 0 0 4px; }
+.additional-active .phase-text { color: #bdc9d8; }
+.additional-active .tab.active { background: #35536f; }
+#blackjack-active .tab.active { background: #246347; }
+.additional-table-meta, .additional-table-summary, .additional-player-stats { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 12px; color: #d0dce8; }
+.additional-table-meta > *, .additional-player-row > * { min-width: 0; overflow-wrap: anywhere; }
+.additional-table-summary { padding: 16px 0; border-block: 1px solid #475569; }
+.additional-table-summary strong { color: #f6dc8d; font-size: 22px; }
+.additional-status { color: #c6d2df; line-height: 1.5; margin: 12px 0; overflow-wrap: anywhere; }
+.additional-player-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 8px; border-bottom: 1px solid #3d4e61; }
+.additional-player-row.current, .additional-player-hand.current { border-left: 3px solid var(--additional-accent); }
+.additional-player-hand { padding: 8px 0 12px; border-bottom: 1px solid #3d4e61; }
+.additional-player-stats { margin: 12px 8px 0; font-size: 14px; }
+.additional-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; }
+.additional-card { flex: 0 0 58px; width: 58px; height: 84px; border: 2px solid #9eadbd; border-radius: 6px; padding: 6px; background: #f6f8fa; color: #17202d; display: flex; flex-direction: column; align-items: center; justify-content: space-between; font-family: Georgia, serif; font-weight: 700; }
+button.additional-card { cursor: pointer; touch-action: manipulation; }
+.additional-card-red { color: #b41d39; }
+.additional-card-rank { align-self: flex-start; font-size: 19px; line-height: 1; }
+.additional-card-suit { font-size: 30px; line-height: 1; }
+.additional-card-back { background: #25394f url('/textures/card-back.svg') center / cover; color: #fff; justify-content: center; }
+.additional-card-back span { padding: 4px 10px; background: #17202d; border-radius: 4px; }
+.additional-card.selected { border-color: #f8cb60; outline: 2px solid #f8cb60; outline-offset: 1px; }
+.additional-card:disabled { cursor: default; }
+.additional-card:focus-visible, .additional-active button:focus-visible, .additional-menu button:focus-visible, .additional-game-list button:focus-visible { outline: 3px solid #f8cb60; outline-offset: 3px; }
+.additional-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.additional-actions .btn { font-size: 14px; padding: 12px 6px; min-height: 44px; overflow-wrap: anywhere; }
+.additional-active [hidden] { display: none !important; }
+.additional-rules-dialog { width: min(600px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 20px; border: 1px solid #647c95; border-radius: 8px; background: #182534; color: #e2e8f0; }
+.additional-rules-dialog::backdrop { background: rgba(0,0,0,.8); }
+.additional-rules-dialog h2 { color: #dce8ef; }
+.additional-rules-dialog p { font-size: 14px; line-height: 1.6; margin: 12px 0; }
+@media (max-width: 400px) {
+  .additional-card { flex-basis: 50px; width: 50px; height: 74px; }
+  .additional-player-row { align-items: flex-start; }
+  .additional-player-row span { flex-shrink: 0; font-size: 13px; }
+}

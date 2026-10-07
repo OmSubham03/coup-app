@@ -21,10 +21,65 @@ let unoRoomStackingEnabled = false;
 let unoRoomMultiSkipEnabled = false;
 let savedSessionReconnectPending = false;
 let roomIsPublic = false;
+let additionalRoomTwoDecks = false;
 let publicJoinPending = false;
 let publicRoomTimer = null;
 let publicRoomRequest = null;
-const GAME_CAPACITIES = { coup: 6, poker: 8, ludo: 4, nquestions: 10, commune: 10, twentynine: 4, hearts: 4, uno: 6 };
+const GAME_CAPACITIES = { coup: 6, poker: 8, ludo: 4, nquestions: 10, commune: 10, twentynine: 4, hearts: 4, uno: 6, bluff: 6, blackjack: 4 };
+
+function hideAllActiveGames() {
+  ['game', 'poker', 'ludo', 'nq', 'commune', 'tn', 'ht', 'uno', 'bluff', 'blackjack'].forEach(prefix => {
+    document.getElementById(prefix + '-active').style.display = 'none';
+  });
+}
+
+function updateAdditionalRoomSettings(payload) {
+  if ('twoDecks' in (payload || {})) additionalRoomTwoDecks = !!payload.twoDecks;
+  const label = document.getElementById('lobby-additional-config');
+  label.style.display = ['bluff', 'blackjack'].includes(currentGameType) ? '' : 'none';
+  label.textContent = additionalRoomTwoDecks ? 'Two decks (104 cards)' : 'One deck (52 cards)';
+}
+
+async function createAdditionalGame(type) {
+  if (wsConnecting) return;
+  currentGameType = type;
+  additionalRoomTwoDecks = document.getElementById(type + '-two-decks').checked;
+  try {
+    const response = await fetch(HTTP + SERVER + '/api/generate-code');
+    if (!response.ok) throw new Error('Cannot generate room code');
+    roomCode = (await response.json()).code;
+    connectWS('create');
+  } catch (error) { alert('Cannot connect to server: ' + error.message); }
+}
+
+function createBluffGame() { return createAdditionalGame('bluff'); }
+function createBlackjackGame() { return createAdditionalGame('blackjack'); }
+function joinAdditionalWithCode(type) {
+  if (wsConnecting) return;
+  const code = document.getElementById(type + '-join-code').value.trim().toUpperCase();
+  if (!code) return;
+  currentGameType = type;
+  roomCode = code;
+  document.getElementById(type + '-join-btn').disabled = true;
+  connectWS();
+}
+function joinBluffWithCode() { joinAdditionalWithCode('bluff'); }
+function joinBlackjackWithCode() { joinAdditionalWithCode('blackjack'); }
+
+function switchAdditionalTab(type, tab) {
+  ['game', 'chat'].forEach(name => {
+    document.getElementById(type + '-' + name + '-tab').style.display = name === tab ? '' : 'none';
+    document.getElementById(type + 'tab-' + name).classList.toggle('active', name === tab);
+  });
+  if (tab === 'chat') document.getElementById(type + 'tab-chat').classList.remove('chat-unread');
+}
+
+function toggleAdditionalRules(type) {
+  const dialog = document.getElementById(type + '-rules-dialog');
+  if (dialog.open) dialog.close(); else dialog.showModal();
+}
+function toggleBluffRules() { toggleAdditionalRules('bluff'); }
+function toggleBlackjackRules() { toggleAdditionalRules('blackjack'); }
 
 function stopPublicRoomDiscovery() {
   if (publicRoomTimer) clearInterval(publicRoomTimer);
@@ -131,10 +186,20 @@ function openGameMenu(type) {
   document.getElementById('menu-twentynine').style.display = type === 'twentynine' ? '' : 'none';
   document.getElementById('menu-hearts').style.display = type === 'hearts' ? '' : 'none';
   document.getElementById('menu-uno').style.display = type === 'uno' ? '' : 'none';
+  document.getElementById('menu-bluff').style.display = type === 'bluff' ? '' : 'none';
+  document.getElementById('menu-blackjack').style.display = type === 'blackjack' ? '' : 'none';
   document.getElementById('join-variant-row').style.display = type === 'coup' ? '' : 'none';
+  updateGameHeadings(type);
+  startPublicRoomDiscovery(type);
+}
+
+function updateGameHeadings(type) {
   const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: '20 QUESTIONS', commune: 'COMMUNE', twentynine: '29', hearts: 'HEARTS', uno: 'UNO' };
   const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title', commune: '', twentynine: '', hearts: '', uno: 'uno-title' };
   const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Correct Guess in 20 turns', commune: 'Bluff poker hands. Call the liar.', twentynine: 'Trick-taking trump card game.', hearts: 'Avoid penalty cards. Shoot the moon.', uno: 'Match colors and numbers. Play your hand first.' };
+  Object.assign(gameNames, { bluff: 'BLUFF', blackjack: 'BLACKJACK' });
+  Object.assign(gameClasses, { bluff: 'bluff-title', blackjack: 'blackjack-title' });
+  Object.assign(gameSubs, { bluff: '2-6 players', blackjack: '1-4 players' });
   ['join-game-title', 'entry-game-title', 'lobby-game-title'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.textContent = gameNames[type] || type.toUpperCase(); el.className = (gameClasses[type] || '') + ' '; el.style.fontSize = '36px'; }
@@ -143,7 +208,6 @@ function openGameMenu(type) {
     const el = document.getElementById(id);
     if (el) { el.textContent = gameSubs[type] || ''; }
   });
-  startPublicRoomDiscovery(type);
 }
 
 function backToGameList() {
@@ -157,6 +221,8 @@ function backToGameList() {
   document.getElementById('menu-twentynine').style.display = 'none';
   document.getElementById('menu-hearts').style.display = 'none';
   document.getElementById('menu-uno').style.display = 'none';
+  document.getElementById('menu-bluff').style.display = 'none';
+  document.getElementById('menu-blackjack').style.display = 'none';
 }
 
 function showScreen(name) {
@@ -424,6 +490,7 @@ function connectWS(action, pokerConfig, nqConfig, unoStacking, publicRoom = fals
   stopPublicRoomDiscovery();
   publicJoinPending = publicRoom;
   roomIsPublic = false;
+  isSpectating = false;
   intentionalDisconnect = false;
   wsConnecting = true;
   showConnectingState();
@@ -433,6 +500,7 @@ function connectWS(action, pokerConfig, nqConfig, unoStacking, publicRoom = fals
   sessionStorage.setItem('coup_variant', variant);
   sessionStorage.setItem('coup_gameType', currentGameType);
   const params = new URLSearchParams({ room: roomCode, playerId, variant, gameType: currentGameType });
+  if (action === 'create' && ['bluff', 'blackjack'].includes(currentGameType)) params.set('twoDecks', String(additionalRoomTwoDecks));
   if (action === 'create' && currentGameType === 'uno') params.set('unoStacking', unoStacking ? 'true' : 'false');
   if (action === 'create' && currentGameType === 'uno') params.set('unoMultiSkip', unoRoomMultiSkipEnabled ? 'true' : 'false');
   if (action) params.set('action', action);
@@ -440,6 +508,7 @@ function connectWS(action, pokerConfig, nqConfig, unoStacking, publicRoom = fals
 
   ws.onopen = () => {
     wsConnecting = false;
+    hideAllActiveGames();
     hideConnectingState();
     // Reset join button states
     resetJoinButtons();
@@ -513,7 +582,9 @@ function resetJoinButtons() {
     { id: 'commune-join-btn', text: 'Join Game' },
     { id: 'tn-join-btn', text: 'Join Game' },
     { id: 'ht-join-btn', text: 'Join Game' },
-    { id: 'uno-join-btn', text: 'Join Game' }
+    { id: 'uno-join-btn', text: 'Join Game' },
+    { id: 'bluff-join-btn', text: 'Join Game' },
+    { id: 'blackjack-join-btn', text: 'Join Game' }
   ];
   buttons.forEach(({ id, text }) => {
     const btn = document.getElementById(id);
@@ -528,6 +599,7 @@ function resetJoinButtons() {
 function handleWSMessage(e) {
   try {
     const msg = JSON.parse(e.data);
+    if (['game-started', 'state', 'spectate-state', 'poker-state', 'poker-spectate', 'ludo-state', 'ludo-spectate', 'nq-state', 'nq-spectate', 'commune-state', 'commune-spectate', 'tn-state', 'tn-spectate', 'ht-state', 'ht-spectate', 'uno-state', 'uno-spectate', 'bluff-state', 'blackjack-state'].includes(msg.type)) hideAllActiveGames();
     switch(msg.type) {
       case 'room-left':
         finishGameExit();
@@ -538,6 +610,9 @@ function handleWSMessage(e) {
         unoRoomStackingEnabled = !!msg.payload?.unoStackingEnabled;
         unoRoomMultiSkipEnabled = !!msg.payload?.unoMultiSkipEnabled;
         updateRoomVisibilityControl();
+        updateAdditionalRoomSettings(msg.payload);
+        if (bluffState && currentGameType === 'bluff') renderBluffGame();
+        if (blackjackState && currentGameType === 'blackjack') renderBlackjackGame();
         break;
       case 'redirect':
         // Player is already in another active game
@@ -562,9 +637,19 @@ function handleWSMessage(e) {
         hostId = msg.payload?.hostId;
         gameActive = !!msg.payload?.gameActive;
         if (msg.payload?.gameType) currentGameType = msg.payload.gameType;
+        updateAdditionalRoomSettings(msg.payload);
         if ('unoStackingEnabled' in (msg.payload || {})) unoRoomStackingEnabled = !!msg.payload.unoStackingEnabled;
         if ('unoMultiSkipEnabled' in (msg.payload || {})) unoRoomMultiSkipEnabled = !!msg.payload.unoMultiSkipEnabled;
         renderLobby(msg.payload?.players || []);
+        if (blackjackState && currentGameType === 'blackjack') renderBlackjackGame();
+        break;
+      case 'bluff-state':
+        currentGameType = 'bluff';
+        handleBluffStateUpdate(msg.payload);
+        break;
+      case 'blackjack-state':
+        currentGameType = 'blackjack';
+        handleBlackjackStateUpdate(msg.payload);
         break;
       case 'game-started':
         gameState = msg.payload?.gameState;
@@ -685,6 +770,11 @@ function handleWSMessage(e) {
           tnState = null;
           htState = null;
           unoState = null;
+          bluffState = null;
+          blackjackState = null;
+          bluffSelectedCards.clear();
+          gameActive = false;
+          closeAdditionalDialogs();
           isSpectating = false;
           document.getElementById('game-active').style.display = 'none';
           document.getElementById('poker-active').style.display = 'none';
@@ -739,7 +829,7 @@ function handleWSMessage(e) {
           document.getElementById('conn-banner').textContent = 'Game session ended.';
           document.getElementById('conn-banner').classList.add('show');
           setTimeout(() => { disconnect(); showScreen('menu'); backToGameList(); }, 1500);
-        } else if (gameState || pokerState || unoState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
+        } else if (gameState || pokerState || unoState || bluffState || blackjackState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
         break;
     }
   } catch(err) {
@@ -800,6 +890,10 @@ document.addEventListener('visibilitychange', () => {
 
 function disconnect() {
   closeGameSettings();
+  closeAdditionalDialogs();
+  hideAllActiveGames();
+  gameActive = false;
+  additionalRoomTwoDecks = false;
   stopPublicRoomDiscovery();
   publicJoinPending = false;
   roomIsPublic = false;
@@ -821,12 +915,26 @@ function disconnect() {
   tnState = null;
   htState = null;
   unoState = null;
+  bluffState = null;
+  blackjackState = null;
+  bluffSelectedCards.clear();
   isSpectating = false;
   chatMessages = [];
+  renderChatMessages();
+}
+
+function closeAdditionalDialogs() {
+  ['bluff', 'blackjack'].forEach(type => {
+    document.getElementById(type + '-rules-dialog').close();
+    switchAdditionalTab(type, 'game');
+  });
 }
 
 function openGameSettings() {
   document.getElementById('game-settings-room-code').textContent = roomCode || 'Unavailable';
+  const deckSetting = document.getElementById('game-settings-decks');
+  deckSetting.hidden = !['bluff', 'blackjack'].includes(currentGameType);
+  deckSetting.textContent = additionalRoomTwoDecks ? 'Two decks (104 cards)' : 'One deck (52 cards)';
   document.getElementById('game-settings-status').textContent = '';
   updateVoiceUI();
   const dialog = document.getElementById('game-settings-dialog');
@@ -850,18 +958,18 @@ async function copySettingsRoomCode() {
 function openSettingsRules() {
   const rules = { coup: toggleRules, poker: togglePokerRules, ludo: toggleLudoRules,
     nquestions: toggleNQRules, commune: toggleCommuneRules, twentynine: toggleTNRules,
-    hearts: toggleHTRules, uno: toggleUNORules };
+    hearts: toggleHTRules, uno: toggleUNORules, bluff: toggleBluffRules, blackjack: toggleBlackjackRules };
   closeGameSettings();
   rules[currentGameType]?.();
 }
 
 function exitGame() {
   const states = { coup: gameState, poker: pokerState, ludo: ludoState,
-    nquestions: nqState, commune: communeState, twentynine: tnState, hearts: htState, uno: unoState };
+    nquestions: nqState, commune: communeState, twentynine: tnState, hearts: htState, uno: unoState, bluff: bluffState, blackjack: blackjackState };
   const state = states[currentGameType];
   const finished = !state || ['game_over', 'finished'].includes(state.phase);
   const warnings = { poker: 'You will forfeit your chips.', ludo: 'Your tokens will be removed.',
-    twentynine: 'Your team will forfeit.', commune: 'You will be eliminated.' };
+    twentynine: 'Your team will forfeit.', commune: 'You will be eliminated.', blackjack: 'Any outstanding bet will be forfeited.' };
   if (!isSpectating && !finished && !confirm('Exit game? ' + (warnings[currentGameType] || 'You will forfeit your place in this game.'))) return;
   closeGameSettings();
   if (ws?.readyState === WebSocket.OPEN) {
@@ -891,6 +999,11 @@ function requestSpectate() {
 }
 
 function stopSpectating() {
+  hideAllActiveGames();
+  closeAdditionalDialogs();
+  bluffState = null;
+  blackjackState = null;
+  bluffSelectedCards.clear();
   isSpectating = false;
   gameState = null;
   pokerState = null;
@@ -931,11 +1044,13 @@ function send(type, payload) {
 }
 
 function renderLobby(players) {
+  updateGameHeadings(currentGameType);
   document.getElementById('player-count').textContent = players.length;
   const isHost = hostId === playerId;
   const maxPlayers = GAME_CAPACITIES[currentGameType] || 6;
   document.getElementById('player-capacity').textContent = maxPlayers;
   updateRoomVisibilityControl();
+  updateAdditionalRoomSettings();
   document.getElementById('lobby-poker-config').style.display = currentGameType === 'poker' ? '' : 'none';
   document.getElementById('lobby-ludo-config').style.display = currentGameType === 'ludo' ? '' : 'none';
   document.getElementById('lobby-uno-config').style.display = currentGameType === 'uno' ? '' : 'none';
@@ -954,7 +1069,7 @@ function renderLobby(players) {
   }
   document.getElementById('lobby-players').innerHTML = html;
   document.getElementById('start-btn').style.display = isHost ? '' : 'none';
-  const minPlayers = (currentGameType === 'twentynine' || currentGameType === 'hearts') ? 4 : 2;
+  const minPlayers = currentGameType === 'blackjack' ? 1 : (currentGameType === 'twentynine' || currentGameType === 'hearts') ? 4 : 2;
   document.getElementById('start-btn').disabled = players.length < minPlayers || ((currentGameType === 'twentynine' || currentGameType === 'hearts') && players.length !== 4);
   document.getElementById('lobby-wait').style.display = isHost ? 'none' : '';
   document.getElementById('lobby-spectate').style.display = gameActive ? '' : 'none';
@@ -973,7 +1088,8 @@ function sendChat() {
   const isTN = currentGameType === 'twentynine' && tnState;
   const isHT = currentGameType === 'hearts' && htState;
   const isUNO = currentGameType === 'uno' && unoState;
-  const input = document.getElementById(isUNO ? 'uno-chat-input' : (isHT ? 'ht-chat-input' : (isTN ? 'tn-chat-input' : (isCommune ? 'commune-chat-input' : (isNQ ? 'nq-chat-input' : (isLudo ? 'ludo-chat-input' : (isPoker ? 'poker-chat-input' : 'chat-input')))))));
+  const additional = ['bluff', 'blackjack'].includes(currentGameType);
+  const input = document.getElementById(additional ? currentGameType + '-chat-input' : isUNO ? 'uno-chat-input' : (isHT ? 'ht-chat-input' : (isTN ? 'tn-chat-input' : (isCommune ? 'commune-chat-input' : (isNQ ? 'nq-chat-input' : (isLudo ? 'ludo-chat-input' : (isPoker ? 'poker-chat-input' : 'chat-input')))))));
   const text = input.value.trim();
   if (!text) return;
   send('chat', { message: text });
@@ -993,8 +1109,9 @@ function appendChatMessage(data) {
   const isTN = currentGameType === 'twentynine' && tnState;
   const isHT = currentGameType === 'hearts' && htState;
   const isUNO = currentGameType === 'uno' && unoState;
-  const chatPanel = document.getElementById(isUNO ? 'uno-chat-tab' : (isHT ? 'ht-chat-tab' : (isTN ? 'tn-chat-tab' : (isCommune ? 'commune-chat-tab' : (isNQ ? 'nq-chat-tab' : (isLudo ? 'ludo-chat-tab' : (isPoker ? 'poker-chat-tab' : 'chat-tab')))))));
-  const chatTab = document.getElementById(isUNO ? 'unotab-chat' : (isHT ? 'httab-chat' : (isTN ? 'tntab-chat' : (isCommune ? 'cmtab-chat' : (isNQ ? 'nqtab-chat' : (isLudo ? 'ltab-chat' : (isPoker ? 'ptab-chat' : 'tab-chat')))))));
+  const additional = ['bluff', 'blackjack'].includes(currentGameType);
+  const chatPanel = document.getElementById(additional ? currentGameType + '-chat-tab' : isUNO ? 'uno-chat-tab' : (isHT ? 'ht-chat-tab' : (isTN ? 'tn-chat-tab' : (isCommune ? 'commune-chat-tab' : (isNQ ? 'nq-chat-tab' : (isLudo ? 'ludo-chat-tab' : (isPoker ? 'poker-chat-tab' : 'chat-tab')))))));
+  const chatTab = document.getElementById(additional ? currentGameType + 'tab-chat' : isUNO ? 'unotab-chat' : (isHT ? 'httab-chat' : (isTN ? 'tntab-chat' : (isCommune ? 'cmtab-chat' : (isNQ ? 'nqtab-chat' : (isLudo ? 'ltab-chat' : (isPoker ? 'ptab-chat' : 'tab-chat')))))));
   const notOnChat = !chatPanel || chatPanel.style.display === 'none';
   if (notOnChat && chatTab) {
     chatTab.classList.add('chat-unread');
@@ -1006,7 +1123,7 @@ function appendChatMessage(data) {
 }
 
 function renderChatMessages() {
-  const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages', 'commune-chat-messages', 'tn-chat-messages', 'ht-chat-messages', 'uno-chat-messages'];
+  const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages', 'commune-chat-messages', 'tn-chat-messages', 'ht-chat-messages', 'uno-chat-messages', 'bluff-chat-messages', 'blackjack-chat-messages'];
   for (const id of panels) {
     const el = document.getElementById(id);
     if (!el) continue;
