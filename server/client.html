@@ -119,16 +119,14 @@
         </div>
         <div class="game-card-arrow">›</div>
       </div>
-    </div>
-    <div class="game-list additional-game-list">
       <button type="button" class="game-card game-card-bluff" onclick="openGameMenu('bluff')">
         <span class="game-card-icon" aria-hidden="true">&#9824;</span>
-        <span class="game-card-info"><span class="game-card-title">BLUFF</span><span class="game-card-desc">2-6 players</span></span>
+        <span class="game-card-info"><span class="game-card-title">BLUFF</span><span class="game-card-desc">Claim a rank. Call the bluff. · 2-6 players</span></span>
         <span class="game-card-arrow" aria-hidden="true">&#8250;</span>
       </button>
       <button type="button" class="game-card game-card-blackjack" onclick="openGameMenu('blackjack')">
         <span class="game-card-icon" aria-hidden="true">21</span>
-        <span class="game-card-info"><span class="game-card-title">BLACKJACK</span><span class="game-card-desc">1-4 players</span></span>
+        <span class="game-card-info"><span class="game-card-title">BLACKJACK</span><span class="game-card-desc">Beat the dealer. Aim for 21. · 1-4 players</span></span>
         <span class="game-card-arrow" aria-hidden="true">&#8250;</span>
       </button>
     </div>
@@ -466,6 +464,7 @@
       <button type="button" class="tab" id="blackjacktab-chat" onclick="switchAdditionalTab('blackjack','chat')">Chat</button>
     </div>
     <div id="blackjack-game-tab">
+      <section id="blackjack-round-results" class="blackjack-round-results" role="status" aria-live="polite" hidden></section>
       <section class="additional-dealer"><h2>Dealer</h2><div id="blackjack-dealer-cards" class="additional-cards"></div><p id="blackjack-dealer-total" class="additional-status"></p></section>
       <div id="blackjack-players"></div>
       <div class="additional-actions">
