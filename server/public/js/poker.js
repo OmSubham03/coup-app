@@ -4,6 +4,10 @@ const SUIT_SYMBOLS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '�
 const SUIT_COLORS = { hearts: 'red', diamonds: 'red', clubs: 'black', spades: 'black' };
 const RANK_DISPLAY = { 2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A' };
 let prevCommunityCardCount = 0;
+let pokerDealHandKey = '';
+let pokerDealStartedAt = 0;
+let pokerDealDuration = 0;
+let pokerDealTimer = null;
 
 function switchPokerTab(tab) {
   document.getElementById('ptab-game').className = 'tab' + (tab === 'game' ? ' active' : '');
@@ -17,6 +21,21 @@ function switchPokerTab(tab) {
 
 function renderPokerGame() {
   if (!pokerState) return;
+  const handKey = [pokerState.id || (typeof roomCode === 'string' ? roomCode : ''), pokerState.handNumber].join(':');
+  if (handKey !== pokerDealHandKey) {
+    pokerDealHandKey = handKey;
+    prevCommunityCardCount = 0;
+    clearTimeout(pokerDealTimer);
+    const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    pokerDealStartedAt = Date.now();
+    pokerDealDuration = pokerState.phase === 'preflop' && !reducedMotion
+      ? pokerState.players.filter(player => player.isActive && !player.folded).length * 160 + 450 : 0;
+    if (pokerDealDuration) pokerDealTimer = setTimeout(() => {
+      if (pokerDealHandKey !== handKey) return;
+      pokerDealDuration = 0;
+      if (pokerState) renderPokerGame();
+    }, pokerDealDuration);
+  }
   document.getElementById('lobby').style.display = 'none';
   document.getElementById('name-entry').style.display = 'none';
   document.getElementById('game-active').style.display = 'none';
@@ -29,6 +48,25 @@ function renderPokerGame() {
   renderPokerTable();
   renderPokerActions();
   renderPokerLog();
+  animatePokerDeal();
+}
+
+function animatePokerDeal() {
+  const elapsed = Date.now() - pokerDealStartedAt;
+  if (!pokerDealDuration || elapsed >= pokerDealDuration || pokerState.phase !== 'preflop') return;
+  const board = document.querySelector('.poker-board');
+  if (!board) return;
+  const bounds = board.getBoundingClientRect();
+  const hands = [...board.querySelectorAll('.poker-seat-cards')].filter(hand => hand.children.length > 0);
+  hands.forEach((hand, seatIndex) => [...hand.children].forEach((card, cardIndex) => {
+    const position = card.getBoundingClientRect();
+    card.style.setProperty('--deal-x', bounds.left + bounds.width / 2 - position.left - position.width / 2 + 'px');
+    card.style.setProperty('--deal-y', bounds.top + bounds.height / 2 - position.top - position.height / 2 + 'px');
+    card.style.setProperty('--deal-delay', ((cardIndex * hands.length + seatIndex) * 80 - elapsed) + 'ms');
+    card.classList.add('poker-card-dealing');
+  }));
+  document.querySelectorAll('#poker-action-area button, #poker-action-area input').forEach(control => control.disabled = true);
+  document.getElementById('poker-phase-display').textContent = 'Dealing';
 }
 
 function renderPokerCard(card) {
