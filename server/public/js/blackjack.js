@@ -83,11 +83,17 @@ function renderBlackjackGame() {
   document.getElementById('blackjack-turn-display').textContent = state.phase === 'playing' ? (current?.name || 'Dealer') + "'s turn" : '';
   document.getElementById('blackjack-dealer-cards').innerHTML = blackjackAnimatedCards(state.dealerCards, 'dealer', initialDeal, 0, state.players.length + 1);
   document.getElementById('blackjack-dealer-total').textContent = blackjackTotalLabel(state.dealerCards);
+  const turnActions = document.getElementById('blackjack-turn-actions');
+  document.getElementById('blackjack-game-tab').append(turnActions);
   document.getElementById('blackjack-players').innerHTML = state.players.map((player, playerIndex) =>
     '<section class="additional-player-hand' + (player.id === current?.id && state.phase === 'playing' ? ' current' : '') + '"><div class="additional-player-row"><strong>' + esc(player.name) +
     (player.id === playerId ? ' (You)' : '') + '</strong><span>' + player.cards.length + ' cards</span></div><div class="additional-cards">' + blackjackAnimatedCards(player.cards, player.id, initialDeal, playerIndex + 1, state.players.length + 1) +
     '</div><div class="additional-player-stats"><span>' + blackjackTotalLabel(player.cards) + '</span><span>Chips: ' + player.chips + '</span><span>Bet: ' + player.bet +
     '</span><strong>' + (player.id === playerId && !isSpectating ? esc(blackjackResult(player, state)) : '') + '</strong></div></section>').join('');
+  const localIndex = state.players.findIndex(player => player.id === playerId);
+  const localHand = [...document.querySelectorAll('#blackjack-players .additional-player-hand')][localIndex];
+  if (localHand) localHand.after(turnActions);
+  turnActions.hidden = !canBlackjackAct('hit');
   ['hit', 'stand', 'double', 'next-round'].forEach(action => {
     document.getElementById('blackjack-' + action + '-btn').disabled = !canBlackjackAct(action);
   });

@@ -31,6 +31,8 @@
 .additional-player-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 8px; border-bottom: 1px solid #3d4e61; }
 .additional-player-row.current, .additional-player-hand.current { border-left: 3px solid var(--additional-accent); }
 .additional-player-hand { padding: 8px 0 12px; border-bottom: 1px solid #3d4e61; }
+#blackjack-active .additional-player-hand { padding: 12px; margin-bottom: 10px; border: 1px solid transparent; border-radius: 8px; }
+#blackjack-active .additional-player-hand.current { border: 1px solid #83dfb1; background: rgba(131, 223, 177, .1); }
 .additional-player-stats { margin: 12px 8px 0; font-size: 14px; }
 .additional-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; }
 .additional-card { flex: 0 0 58px; width: 58px; height: 84px; border: 2px solid #9eadbd; border-radius: 6px; padding: 6px; background: #f6f8fa; color: #17202d; display: flex; flex-direction: column; align-items: center; justify-content: space-between; font-family: Georgia, serif; font-weight: 700; }

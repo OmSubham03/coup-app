@@ -106,6 +106,26 @@ function blackjackFixture(phase = 'playing') {
     players: [{ id: 'test-player', name: 'Tester', active: true, status: 'active', cards: [card(1), card(6)], chips: 950, bet: 50 }] };
 }
 
+test('Blackjack action buttons are hidden outside the local turn', () => {
+  const app = harness();
+  const state = blackjackFixture();
+  state.players.push({ ...state.players[0], id: 'other', name: 'Other' });
+  app.message('blackjack-state', state);
+  assert.equal(app.elements.get('blackjack-turn-actions').hidden, false);
+  state.currentPlayerIdx = 1;
+  app.message('blackjack-state', state);
+  assert.equal(app.elements.get('blackjack-turn-actions').hidden, true);
+  state.currentPlayerIdx = 0;
+  app.message('blackjack-state', state);
+  assert.equal(app.elements.get('blackjack-turn-actions').hidden, false);
+  state.players[0].status = 'stood';
+  app.message('blackjack-state', state);
+  assert.equal(app.elements.get('blackjack-turn-actions').hidden, true);
+  state.phase = 'round_over';
+  app.message('blackjack-state', state);
+  assert.equal(app.elements.get('blackjack-turn-actions').hidden, true);
+});
+
 test('HTML readiness count, unique IDs, callbacks, assets, and default deck options', () => {
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
   assert.equal(new Set(ids).size, ids.length);
