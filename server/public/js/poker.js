@@ -40,7 +40,7 @@ function renderPokerCard(card) {
 
 function renderPokerTable() {
   const ps = pokerState;
-  let html = '<div class="poker-table">';
+  let html = '<div class="poker-board" data-player-count="' + ps.players.length + '"><div class="poker-felt"></div><div class="poker-board-center">';
 
   // Pot display
   let totalPot = 0;
@@ -82,28 +82,32 @@ function renderPokerTable() {
   html += '</div>';
 
   // Players
-  for (let i = 0; i < ps.players.length; i++) {
+  const myIndex = ps.players.findIndex(player => player.id === playerId);
+  const anchor = myIndex >= 0 ? myIndex : 0;
+  const seats = pokerSeatPositions(ps.players.length);
+  for (let seatIndex = 0; seatIndex < ps.players.length; seatIndex++) {
+    const i = (anchor + seatIndex) % ps.players.length;
     const p = ps.players[i];
     const isMe = p.id === playerId;
     const isCurrent = i === ps.currentPlayerIndex;
     const isDealer = i === ps.dealerIndex;
-    let cls = 'poker-player';
+    let cls = 'poker-seat poker-seat-' + seats[seatIndex].side;
     if (isMe) cls += ' mine';
     if (isCurrent && !p.folded) cls += ' current';
     if (p.folded) cls += ' folded';
     if (isDealer) cls += ' dealer';
 
-    html += '<div class="' + cls + '">';
-    html += '<div class="player-header"><div>';
-    html += '<span class="player-name">' + esc(p.name) + '</span>';
-    if (isMe) html += '<span class="badge" style="background:#22c55e">You</span>';
-    if (p.allIn) html += ' <span style="color:#d4a017;font-size:12px;font-weight:700">ALL IN</span>';
-    if (p.folded) html += ' <span style="color:#ef4444;font-size:12px">Folded</span>';
-    if (isCurrent && !p.folded && !p.allIn && ps.phase !== 'showdown' && ps.phase !== 'game_over') html += ' <span style="color:#d4a017;font-size:12px">◄ Turn</span>';
-    html += '</div><span class="poker-chips">💰 ' + p.chips + '</span></div>';
+    const initials = p.name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
+    const status = p.folded ? 'Folded' : p.allIn ? 'All in' : !p.isActive ? 'Sitting out' :
+      isCurrent && ps.phase !== 'showdown' && ps.phase !== 'game_over' ? 'Turn' : '';
+    html += '<div class="' + cls + '" style="--seat-y:' + seats[seatIndex].percent + '%">';
+    html += '<div class="poker-seat-avatar poker-avatar-' + (seatIndex % 4) + '">' + esc(initials) + '</div>';
+    html += '<div class="poker-seat-name" title="' + esc(p.name) + '">' + esc(p.name) + (isMe ? ' (You)' : '') + '</div>';
+    html += '<div class="poker-seat-chips">' + p.chips + ' chips</div>';
+    html += '<div class="poker-seat-status">' + status + (isDealer ? (status ? ' · ' : '') + 'Dealer' : '') + '</div>';
 
     // Hole cards
-    html += '<div style="display:flex;gap:6px;align-items:center">';
+    html += '<div class="poker-seat-cards">';
     if (p.holeCards && p.holeCards.length > 0) {
       for (const c of p.holeCards) {
         html += renderPokerCard(c);
@@ -112,10 +116,8 @@ function renderPokerTable() {
       html += '<div class="poker-card-back"></div><div class="poker-card-back"></div>';
     }
 
-    if (p.currentBet > 0) {
-      html += '<span class="poker-bet-info" style="margin-left:8px">Bet: ' + p.currentBet + '</span>';
-    }
     html += '</div>';
+    html += '<div class="poker-seat-bet">' + (p.currentBet > 0 ? 'Bet: ' + p.currentBet : '') + '</div>';
 
     // Show hand result at showdown
     if (p.hand && (ps.phase === 'showdown' || ps.phase === 'game_over')) {
@@ -125,7 +127,17 @@ function renderPokerTable() {
     html += '</div>';
   }
 
-  document.getElementById('poker-table-area').innerHTML = html;
+  document.getElementById('poker-table-area').innerHTML = html + '</div>';
+}
+
+function pokerSeatPositions(count) {
+  return Array.from({ length: count }, (_, index) => {
+    if (index < 2) return { side: index === 0 ? 'bottom' : 'top', percent: 50 };
+    const side = index % 2 === 0 ? 'left' : 'right';
+    const sideCount = side === 'left' ? Math.ceil((count - 2) / 2) : Math.floor((count - 2) / 2);
+    const slot = Math.floor((index - 2) / 2);
+    return { side, percent: sideCount === 1 ? 50 : 26 + slot * 48 / (sideCount - 1) };
+  });
 }
 
 let raiseAmount = 0;
