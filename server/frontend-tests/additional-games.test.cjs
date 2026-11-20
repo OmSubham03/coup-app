@@ -138,6 +138,83 @@ test('HTML readiness count, unique IDs, callbacks, assets, and default deck opti
   assert.ok(fs.existsSync(path.join(serverRoot, 'public/textures/card-back.svg')));
 });
 
+test('Homepage themes persist and do not replace game screen styles', () => {
+  const app = harness();
+  const menu = app.elements.get('screen-menu');
+  const toggle = app.elements.get('home-theme-toggle');
+  assert.equal(menu.dataset.homeTheme, 'light');
+  assert.equal(toggle['aria-pressed'], 'false');
+  app.run('toggleHomeTheme()');
+  assert.equal(menu.dataset.homeTheme, 'dark');
+  assert.equal(toggle['aria-pressed'], 'true');
+  assert.equal(app.run('localStorage.getItem("timecrusher_home_theme")'), 'dark');
+  app.run('applyHomeTheme("light"); initHomeTheme()');
+  assert.equal(menu.dataset.homeTheme, 'dark');
+  app.run('startPublicRoomDiscovery = () => {}');
+  for (const type of ['coup', 'uno', 'poker', 'ludo', 'nquestions', 'commune', 'twentynine', 'hearts', 'bluff', 'blackjack']) {
+    app.run(`openGameMenu('${type}')`);
+    assert.equal(menu.classList.contains('home-active'), false);
+    assert.equal(app.elements.get('menu-' + type).style.display, '');
+    app.run('backToGameList()');
+    assert.equal(menu.classList.contains('home-active'), true);
+    assert.equal(menu.dataset.homeTheme, 'dark');
+  }
+  app.run('toggleHomeTheme()');
+  assert.equal(menu.dataset.homeTheme, 'light');
+  app.run('localStorage.getItem = () => { throw new Error("Storage blocked"); }; initHomeTheme()');
+  assert.match(app.elements.get('home-search-status').textContent, /could not be loaded/);
+  app.run('localStorage.setItem = () => { throw new Error("Storage blocked"); }; toggleHomeTheme()');
+  assert.equal(menu.dataset.homeTheme, 'dark');
+  assert.match(app.elements.get('home-search-status').textContent, /could not save/);
+  assert.equal(app.errors.length, 2);
+});
+
+test('Homepage categories and case-insensitive search intersect and reset empty results', () => {
+  const app = harness();
+  const cards = [...html.matchAll(/<button type="button" class="game-card [^"]*" data-home-category="([^"]+)" onclick="openGameMenu\('([^']+)'\)"/g)].map(match => ({
+    dataset: { homeCategory: match[1] }, textContent: match[2], hidden: false
+  }));
+  const filters = ['all', 'cards', 'board', 'party'].map(filter => ({
+    dataset: { homeFilter: filter }, setAttribute(name, value) { this[name] = value; }
+  }));
+  assert.equal(cards.length, 10);
+  cards.find(card => card.textContent === 'twentynine').dataset.homeKeywords = '29 twenty nine twentynine';
+  const originalQuery = app.document.querySelectorAll;
+  app.document.querySelectorAll = selector => selector === '[data-home-filter]' ? filters : selector === '#home-game-list .game-card' ? cards : originalQuery(selector);
+  const visible = () => cards.filter(card => !card.hidden).map(card => card.textContent);
+  app.run('setHomeFilter("board")');
+  assert.deepEqual(visible(), ['ludo']);
+  assert.equal(filters[2]['aria-pressed'], 'true');
+  assert.equal(app.elements.get('home-search-status').textContent, '1 game found.');
+  app.elements.get('home-search').value = '  POKER  ';
+  app.run('filterHomeGames()');
+  assert.deepEqual(visible(), []);
+  assert.equal(app.elements.get('home-empty').hidden, false);
+  app.run('setHomeFilter("cards")');
+  assert.deepEqual(visible(), ['poker']);
+  app.run('resetHomeGames()');
+  assert.equal(visible().length, 10);
+  assert.equal(app.elements.get('home-search').value, '');
+  assert.equal(app.elements.get('home-empty').hidden, true);
+  app.run('setHomeFilter("party")');
+  assert.equal(visible().length, 5);
+  app.run('resetHomeGames()');
+  app.elements.get('home-search').value = '29';
+  app.run('filterHomeGames()');
+  assert.deepEqual(visible(), ['twentynine']);
+  assert.deepEqual(app.errors, []);
+});
+
+test('Homepage SVG illustrations are local and every referenced symbol exists', () => {
+  const art = fs.readFileSync(path.join(serverRoot, 'public/icons/game-art.svg'), 'utf8');
+  const references = [...html.matchAll(/href="\/icons\/game-art\.svg#([^"]+)"/g)];
+  assert.equal(references.length, 11);
+  for (const [, id] of references) assert.ok(art.includes('id="' + id + '"'), 'Missing SVG symbol: ' + id);
+  for (const [, id] of art.matchAll(/href="#([^"]+)"/g)) assert.ok(art.includes('id="' + id + '"'), 'Missing nested SVG symbol: ' + id);
+  assert.doesNotMatch(art, /color="url\(/, 'SVG currentColor must be a color, not a paint-server URL');
+  assert.ok(html.includes('href="/css/home.css"'));
+});
+
 test('Bluff selects any rank, caps selection at four, and sends owned IDs', () => {
   const app = harness();
   app.message('bluff-state', bluffFixture());

@@ -51,7 +51,7 @@ coup-app-2/
 ```bash
 cd server
 go mod download
-go run main.go
+go run .
 ```
 
 The server starts on port **8080** and provides:
@@ -59,6 +59,18 @@ The server starts on port **8080** and provides:
 - `GET /api/generate-code` — Generate room codes
 - `GET /api/variant-config?variant=standard` — Get variant config
 - `GET /health` — Health check
+
+### Web game hub
+
+Open `http://localhost:8080`. The responsive TimeCrusher homepage includes all ten
+games, category filters, game search, and a white / dark-blue theme switch.
+The theme preference is saved in browser local storage. Homepage styles are
+scoped separately so each game retains its existing table and room styling.
+Illustrations are original local SVG assets; the homepage does not require
+third-party fonts or image services.
+
+Run the web frontend regression tests with `node --test frontend-tests` from
+`server`.
 
 ### 2. Configure Server Address
 

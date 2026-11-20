@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="/css/hearts.css">
 <link rel="stylesheet" href="/css/uno.css">
 <link rel="stylesheet" href="/css/additional-games.css">
+<link rel="stylesheet" href="/css/home.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -38,101 +39,117 @@
 <div class="container" style="display:none">
 
 <!-- MENU SCREEN -->
-<div id="screen-menu" class="screen active">
+<div id="screen-menu" class="screen active home-active" data-home-theme="light">
 
   <!-- Game List -->
   <div id="game-list-view">
     <header class="home-header">
-      <div class="home-brand">
+      <a class="home-brand" href="#game-list-view" aria-label="TimeCrusher home">
         <img src="/icons/timecrusher-mark.svg" width="36" height="36" alt="">
-        <h1>Timecrushers</h1>
-      </div>
+        <h1>timecrusher<span>.</span></h1>
+      </a>
+      <nav class="home-nav" aria-label="Main navigation">
+        <a href="#home-games">The games</a>
+        <a href="#home-how">How to play</a>
+      </nav>
       <div class="home-account">
         <div class="home-online" title="Players inside all game rooms" role="status">
-          <strong id="room-player-total">--</strong><span>online</span>
+          <span class="home-online-dot" aria-hidden="true"></span><strong id="room-player-total">--</strong><span>in rooms</span>
         </div>
+        <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
         <button type="button" id="home-profile-button" class="home-profile-button" onclick="showNamePopup()" title="Profile" aria-label="Edit profile"><span id="home-profile-initials" aria-hidden="true">?</span></button>
       </div>
     </header>
-    <div class="game-list">
-      <div class="game-card game-card-coup" onclick="openGameMenu('coup')">
-        <div class="game-card-icon">🎭</div>
-        <div class="game-card-info">
-          <div class="game-card-title">COUP</div>
-          <div class="game-card-desc">Bluff. Deceive. Survive. · 2-6 players</div>
+    <main>
+      <section class="home-hero" aria-labelledby="home-hero-title">
+        <div class="home-hero-copy">
+          <p class="home-eyebrow"><span aria-hidden="true">&#10022;</span> LESS SCROLLING. MORE PLAYING.</p>
+          <h2 id="home-hero-title">Good friends.<br>Great games.<br><span>Time well crushed.</span></h2>
+          <p class="home-hero-description">Turn a little free time into a lot of good times.<br class="home-desktop-break"> Your favorite games. Your favorite people. All right here.</p>
+          <a class="home-primary" href="#home-games">Find your next game <span aria-hidden="true">&#8599;</span></a>
+          <div class="home-hero-notes"><span><i aria-hidden="true">&#10003;</i> Free to play</span><span><i aria-hidden="true">&#10003;</i> No downloads</span><span><i aria-hidden="true">&#10003;</i> Just good company</span></div>
         </div>
-        <div class="game-card-arrow">›</div>
-      </div>
-      <div class="game-card game-card-poker" onclick="openGameMenu('poker')">
-        <div class="game-card-icon">🃏</div>
-        <div class="game-card-info">
-          <div class="game-card-title">POKER</div>
-          <div class="game-card-desc">Texas Hold'em. All In. · 2-8 players</div>
+        <div class="home-hero-art" aria-hidden="true">
+          <span class="home-art-orbit"></span>
+          <svg viewBox="0 0 640 430"><use href="/icons/game-art.svg#hero"></use></svg>
+          <span class="home-art-sticker">BRING YOUR<br><b>game face.</b><span>&#10022;</span></span>
+          <span class="home-art-caption"><span>&#10022;</span> A little friendly competition never hurt.</span>
         </div>
-        <div class="game-card-arrow">›</div>
-      </div>
-      <div class="game-card game-card-ludo" onclick="openGameMenu('ludo')">
-        <div class="game-card-icon">🎲</div>
-        <div class="game-card-info">
-          <div class="game-card-title">LUDO</div>
-          <div class="game-card-desc">Roll. Race. Win. · 2-4 players</div>
+      </section>
+
+      <section class="home-library" id="home-games" aria-labelledby="home-games-title">
+        <div class="home-section-heading">
+          <div><p class="home-eyebrow">THE GOOD-TIME COLLECTION</p><h2 id="home-games-title">Pick a game. Make a night.</h2></div>
+          <span class="home-game-count">10 games. Endless rematches.</span>
         </div>
-        <div class="game-card-arrow">›</div>
-      </div>
-      <div class="game-card game-card-nq" onclick="openGameMenu('nquestions')">
-        <div class="game-card-icon">❓</div>
-        <div class="game-card-info">
-          <div class="game-card-title">20 QUESTIONS</div>
-          <div class="game-card-desc">Correct Guess in 20 turns · 2-10 players</div>
+        <div class="home-discovery">
+          <div class="home-filters" role="group" aria-label="Filter games">
+            <button type="button" data-home-filter="all" aria-pressed="true" onclick="setHomeFilter('all')">All games <span>10</span></button>
+            <button type="button" data-home-filter="cards" aria-pressed="false" onclick="setHomeFilter('cards')">Cards &amp; bluffing</button>
+            <button type="button" data-home-filter="board" aria-pressed="false" onclick="setHomeFilter('board')">Board games</button>
+            <button type="button" data-home-filter="party" aria-pressed="false" onclick="setHomeFilter('party')">Party games</button>
+          </div>
+          <label class="home-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="home-search" type="search" placeholder="Find a game..." aria-label="Search games" oninput="filterHomeGames()"></label>
         </div>
-        <div class="game-card-arrow">›</div>
-      </div>
-      <div class="game-card game-card-commune" onclick="openGameMenu('commune')">
-        <div class="game-card-icon">🫱</div>
-        <div class="game-card-info">
-          <div class="game-card-title">COMMUNE</div>
-          <div class="game-card-desc">Bluff poker hands. Call the liar. · 2-10 players</div>
+        <p id="home-search-status" class="home-sr-only" role="status" aria-live="polite"></p>
+        <div class="game-list" id="home-game-list">
+          <button type="button" class="game-card home-featured game-card-coup" data-home-category="cards party" onclick="openGameMenu('coup')">
+            <span class="home-featured-tag">TRUST NO ONE. PLAY EVERYONE.</span>
+            <svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#coup"></use></svg>
+            <span class="game-card-info"><span class="game-card-title">Coup</span><span class="game-card-desc">A poker face is your best weapon.</span><span class="home-card-meta">Bluff &amp; strategy <span>&middot;</span> 2-6 players</span></span>
+            <span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card home-featured game-card-uno" data-home-category="cards party" onclick="openGameMenu('uno')">
+            <span class="home-featured-tag">FRIENDSHIPS MAY BE TESTED.</span>
+            <svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#uno"></use></svg>
+            <span class="game-card-info"><span class="game-card-title">UNO</span><span class="game-card-desc">One card away from sweet victory.</span><span class="home-card-meta">Match &amp; outplay <span>&middot;</span> 2-6 players</span></span>
+            <span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-poker" data-home-category="cards" onclick="openGameMenu('poker')">
+            <span class="home-card-scene"><span class="home-card-badge">THE CLASSICS</span><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#poker"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Poker</span><span class="game-card-desc">Big bluffs. Bigger pots.</span><span class="home-card-meta">Texas Hold'em <span>&middot;</span> 2-8 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-ludo" data-home-category="board" onclick="openGameMenu('ludo')">
+            <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#ludo"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Ludo</span><span class="game-card-desc">A lucky roll changes everything.</span><span class="home-card-meta">Roll &amp; race <span>&middot;</span> 2-4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-nq" data-home-category="party" onclick="openGameMenu('nquestions')">
+            <span class="home-card-scene"><span class="home-card-badge">BRAIN TEASER</span><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#questions"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">20 Questions</span><span class="game-card-desc">One secret. Twenty chances.</span><span class="home-card-meta">Guess together <span>&middot;</span> 2-10 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-commune" data-home-category="cards party" onclick="openGameMenu('commune')">
+            <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#commune"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Commune</span><span class="game-card-desc">Read the room. Call the liar.</span><span class="home-card-meta">Bluff poker hands <span>&middot;</span> 2-10 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-tn" data-home-category="cards" onclick="openGameMenu('twentynine')" data-home-keywords="29 twenty nine twentynine">
+            <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#twentynine"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Twenty-Nine</span><span class="game-card-desc">Find your trump. Trust your partner.</span><span class="home-card-meta">Tricks &amp; teamwork <span>&middot;</span> 4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-hearts" data-home-category="cards" onclick="openGameMenu('hearts')">
+            <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#hearts"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Hearts</span><span class="game-card-desc">A little heartbreak is part of the game.</span><span class="home-card-meta">Dodge the points <span>&middot;</span> 4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-bluff" data-home-category="cards party" onclick="openGameMenu('bluff')">
+            <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#bluff"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Bluff</span><span class="game-card-desc">Convincing lies. Satisfying callouts.</span><span class="home-card-meta">Play your poker face <span>&middot;</span> 2-6 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-blackjack" data-home-category="cards" onclick="openGameMenu('blackjack')">
+            <span class="home-card-scene"><span class="home-card-badge">GO SOLO OR TOGETHER</span><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#blackjack"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Blackjack</span><span class="game-card-desc">Feeling lucky? Make it twenty-one.</span><span class="home-card-meta">Beat the dealer <span>&middot;</span> 1-4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
         </div>
-        <div class="game-card-arrow">›</div>
-      </div>
-      <div class="game-card game-card-tn" onclick="openGameMenu('twentynine')">
-        <div class="game-card-icon">🂡</div>
-        <div class="game-card-info">
-          <div class="game-card-title">29</div>
-          <div class="game-card-desc">Trick-taking trump game. · 4 players</div>
-        </div>
-        <div class="game-card-arrow">›</div>
-      </div>
-      <div class="game-card game-card-hearts" onclick="openGameMenu('hearts')">
-        <div class="game-card-icon">❤️</div>
-        <div class="game-card-info">
-          <div class="game-card-title">HEARTS</div>
-          <div class="game-card-desc">Avoid penalty cards. Shoot the moon. · 4 players</div>
-        </div>
-        <div class="game-card-arrow">›</div>
-      </div>
-      <div class="game-card game-card-uno" onclick="openGameMenu('uno')">
-        <div class="game-card-icon game-card-uno-mark" aria-label="UNO logo"><span>UNO</span></div>
-        <div class="game-card-info">
-          <div class="game-card-title">UNO</div>
-          <div class="game-card-desc">Match colors and numbers. First to 500 points wins. · 2-6 players</div>
-        </div>
-        <div class="game-card-arrow">›</div>
-      </div>
-      <button type="button" class="game-card game-card-bluff" onclick="openGameMenu('bluff')">
-        <span class="game-card-icon" aria-hidden="true">&#9824;</span>
-        <span class="game-card-info"><span class="game-card-title">BLUFF</span><span class="game-card-desc">Claim a rank. Call the bluff. · 2-6 players</span></span>
-        <span class="game-card-arrow" aria-hidden="true">&#8250;</span>
-      </button>
-      <button type="button" class="game-card game-card-blackjack" onclick="openGameMenu('blackjack')">
-        <span class="game-card-icon" aria-hidden="true">21</span>
-        <span class="game-card-info"><span class="game-card-title">BLACKJACK</span><span class="game-card-desc">Beat the dealer. Aim for 21. · 1-4 players</span></span>
-        <span class="game-card-arrow" aria-hidden="true">&#8250;</span>
-      </button>
-    </div>
+        <div id="home-empty" class="home-empty" hidden><h3>No games found. No fun lost.</h3><p>Try another name or explore the whole collection.</p><button type="button" onclick="resetHomeGames()">Show all games <span aria-hidden="true">&#8594;</span></button></div>
+      </section>
+
+      <section class="home-how" id="home-how" aria-labelledby="home-how-title">
+        <div class="home-how-intro"><p class="home-eyebrow">NO BIG SETUP. JUST SHOW UP.</p><h2 id="home-how-title">Game night,<br>minus the logistics.</h2></div>
+        <ol><li><span>01</span><div><h3>Pick your game</h3><p>An old favorite or a new obsession.</p></div></li><li><span>02</span><div><h3>Gather your people</h3><p>Create a room and share the code.</p></div></li><li><span>03</span><div><h3>Let the good times roll</h3><p>Or join a public room and meet your match.</p></div></li></ol>
+      </section>
+      <div class="home-signoff"><span aria-hidden="true">&#10022;</span> A little less doomscroll. A little more <em>one more round.</em><span aria-hidden="true">&#10022;</span></div>
+    </main>
     <footer class="site-footer">
-      <span>© Hobbystudio 2026</span>
-      <a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Hobby Studio — Indie Game Studio</a>
+      <span>Time well spent. <b>timecrusher.</b></span>
+      <span>© Hobbystudio 2026 <a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio <span aria-hidden="true">&#8599;</span></a></span>
     </footer>
   </div>
 
@@ -826,7 +843,7 @@
     <h2>👤 What's your name?</h2>
     <p>This will be your display name in games</p>
     <div style="display:flex;align-items:center;gap:4px;margin-bottom:12px">
-      <input id="popup-name-input" placeholder="Enter your name" maxlength="18" style="margin-bottom:0;flex:1" onkeydown="if(event.key==='Enter')saveNamePopup()">
+      <input id="popup-name-input" placeholder="Enter your name" aria-label="Display name" maxlength="18" style="margin-bottom:0;flex:1" onkeydown="if(event.key==='Enter')saveNamePopup()">
       <span id="popup-tag-display" style="color:#64748b;font-weight:800;font-size:20px;white-space:nowrap"></span>
     </div>
     <button class="btn btn-purple" onclick="saveNamePopup()">Save</button>

@@ -177,6 +177,7 @@ function setRoomVisibility(publicRoom) {
 
 function openGameMenu(type) {
   currentGameType = type;
+  document.getElementById('screen-menu').classList.remove('home-active');
   document.getElementById('game-list-view').style.display = 'none';
   document.getElementById('menu-coup').style.display = type === 'coup' ? '' : 'none';
   document.getElementById('menu-poker').style.display = type === 'poker' ? '' : 'none';
@@ -212,6 +213,7 @@ function updateGameHeadings(type) {
 
 function backToGameList() {
   stopPublicRoomDiscovery();
+  document.getElementById('screen-menu').classList.add('home-active');
   document.getElementById('game-list-view').style.display = '';
   document.getElementById('menu-coup').style.display = 'none';
   document.getElementById('menu-poker').style.display = 'none';
@@ -1149,6 +1151,66 @@ function showChatToast(name, message) {
   chatToastTimer = setTimeout(() => { toast.classList.remove('show'); }, 4000);
 }
 
+// ========== HOME ==========
+
+let homeFilter = 'all';
+
+function applyHomeTheme(theme) {
+  const dark = theme === 'dark';
+  document.getElementById('screen-menu').dataset.homeTheme = dark ? 'dark' : 'light';
+  const toggle = document.getElementById('home-theme-toggle');
+  toggle.setAttribute('aria-pressed', String(dark));
+  toggle.title = dark ? 'Switch to white theme' : 'Switch to dark blue theme';
+}
+
+function toggleHomeTheme() {
+  const theme = document.getElementById('screen-menu').dataset.homeTheme === 'dark' ? 'light' : 'dark';
+  applyHomeTheme(theme);
+  try {
+    localStorage.setItem('timecrusher_home_theme', theme);
+  } catch (error) {
+    console.error('Unable to save homepage theme:', error);
+    document.getElementById('home-search-status').textContent = 'Theme changed, but your browser could not save it for your next visit.';
+  }
+}
+
+function initHomeTheme() {
+  let theme = 'light';
+  try {
+    theme = localStorage.getItem('timecrusher_home_theme');
+  } catch (error) {
+    console.error('Unable to load homepage theme:', error);
+    document.getElementById('home-search-status').textContent = 'Your saved theme could not be loaded. The white theme is available.';
+  }
+  applyHomeTheme(theme);
+}
+
+function setHomeFilter(filter) {
+  homeFilter = filter;
+  document.querySelectorAll('[data-home-filter]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.homeFilter === filter));
+  });
+  filterHomeGames();
+}
+
+function filterHomeGames() {
+  const query = document.getElementById('home-search').value.trim().toLowerCase();
+  let count = 0;
+  document.querySelectorAll('#home-game-list .game-card').forEach(card => {
+    const categoryMatches = homeFilter === 'all' || card.dataset.homeCategory.split(' ').includes(homeFilter);
+    const searchText = card.textContent + ' ' + (card.dataset.homeKeywords || '');
+    card.hidden = !categoryMatches || !searchText.toLowerCase().includes(query);
+    if (!card.hidden) count++;
+  });
+  document.getElementById('home-empty').hidden = count !== 0;
+  document.getElementById('home-search-status').textContent = count + (count === 1 ? ' game found.' : ' games found.');
+}
+
+function resetHomeGames() {
+  document.getElementById('home-search').value = '';
+  setHomeFilter('all');
+}
+
 // ========== PROFILE ==========
 
 function getPlayerTag() {
@@ -1207,6 +1269,7 @@ function saveNamePopup() {
 
 // ========== INIT ==========
 (function() {
+  initHomeTheme();
   loadRoomPlayerCount();
   updateProfileBar();
   const saved = localStorage.getItem('coup_name');
