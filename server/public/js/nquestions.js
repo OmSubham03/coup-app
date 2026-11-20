@@ -20,6 +20,8 @@ function renderNQGame() {
   const isGiver = me && me.isGiver;
   const giver = nqState.players.find(p => p.isGiver);
   const giverName = giver ? giver.name : '???';
+  document.getElementById('nq-avatar-roster').innerHTML = nqState.players.map(p =>
+    `<span>${playerBadge(p)}${esc(p.name)}</span>`).join('');
 
   // Phase display
   const phaseEl = document.getElementById('nq-phase-display');

@@ -66,9 +66,8 @@ function renderUNOTable() {
   html += '<div class="uno-opponents-row">';
   unoState.players.forEach((player, index) => {
     if (index === myIdx) return;
-    const initials = unoEsc(player.name.split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase());
     const active = index === unoState.currentPlayerIdx;
-    html += `<div class="uno-opponent${active ? ' active' : ''}"><div class="uno-avatar uno-avatar-${UNO_COLORS[index % UNO_COLORS.length]}">${initials}</div>`;
+    html += `<div class="uno-opponent${active ? ' active' : ''}"><div class="uno-avatar uno-avatar-${UNO_COLORS[index % UNO_COLORS.length]}" aria-hidden="true">${avatarFace(player)}</div>`;
     html += `<div class="uno-opponent-name">${unoEsc(player.name)}</div><div class="uno-opponent-meta">${player.cards.length} cards · ${player.score} pts</div>`;
     if (unoState.uncalledUnoPlayerId === player.id && !isSpectating) {
       html += `<button class="uno-catch-btn" onclick="unoCatch('${unoEsc(player.id)}')">Catch UNO</button>`;
@@ -89,7 +88,7 @@ function renderUNOTable() {
 
   if (myIdx >= 0) {
     const me = unoState.players[myIdx];
-    html += `<div class="uno-my-hand-header"><div class="uno-avatar uno-avatar-self">${unoEsc(me.name.split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase())}</div><div><b>${unoEsc(me.name)}${me.id === playerId ? ' · You' : ''}</b><span>${me.cards.length} cards · ${me.score} points</span></div></div>`;
+    html += `<div class="uno-my-hand-header"><div class="uno-avatar uno-avatar-self" aria-hidden="true">${avatarFace(me)}</div><div><b>${unoEsc(me.name)}${me.id === playerId ? ' · You' : ''}</b><span>${me.cards.length} cards · ${me.score} points</span></div></div>`;
     html += '<div class="uno-hand" aria-label="Your hand">';
     me.cards.forEach(card => {
       const playable = myTurn && unoIsPlayable(card, me);

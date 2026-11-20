@@ -54,7 +54,14 @@ func (room *Room) setPublicVisibility(playerID string, public bool) error {
 }
 
 func (room *Room) visibilityMessage() OutMessage {
+	avatars := make(map[string]string)
+	for id, player := range room.players {
+		if player.Avatar != "" {
+			avatars[id] = player.Avatar
+		}
+	}
 	return OutMessage{Type: "room-visibility", Payload: map[string]interface{}{
+		"avatars": avatars,
 		"public": room.isPublic, "hostId": room.hostID,
 		"twoDecks":           room.twoDecks,
 		"unoStackingEnabled": room.unoStackingEnabled, "unoMultiSkipEnabled": room.unoMultiSkipEnabled,

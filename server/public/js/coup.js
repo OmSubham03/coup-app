@@ -35,7 +35,7 @@ function renderPlayers() {
     html += '<div class="' + cls + '">';
     html += '<div class="player-header"><div>';
     if (isCurrent) html += '👑 ';
-    html += '<span class="player-name">' + esc(p.name) + '</span>';
+    html += '<span class="player-name">' + playerBadge(p) + esc(p.name) + '</span>';
     if (isMe) html += '<span class="badge">You</span>';
     if (isCurrent) html += ' <span style="color:#3b82f6;font-size:12px">Current Turn</span>';
     html += '</div><span class="coins">💰 ' + p.coins + '</span></div>';

@@ -608,6 +608,7 @@ function handleWSMessage(e) {
         finishGameExit();
         break;
       case 'room-visibility':
+        roomAvatars = new Map(Object.entries(msg.payload?.avatars || {}));
         roomIsPublic = !!msg.payload?.public;
         hostId = msg.payload?.hostId;
         unoRoomStackingEnabled = !!msg.payload?.unoStackingEnabled;
@@ -892,6 +893,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function disconnect() {
+  roomAvatars.clear();
   closeGameSettings();
   closeAdditionalDialogs();
   hideAllActiveGames();
@@ -1046,6 +1048,7 @@ function submitName() {
 }
 
 function send(type, payload) {
+  if (type === 'join') payload = { ...payload, avatar: savedAvatar() };
   if (ws?.readyState === 1) ws.send(JSON.stringify({ type, payload }));
 }
 
@@ -1066,7 +1069,7 @@ function renderLobby(players) {
   document.getElementById('lobby-uno-config').textContent = unoHouseRules.length ? 'House rules: ' + unoHouseRules.join(' · ') : 'Standard rules · no draw-card stacking';
   let html = '';
   for (const p of players) {
-    html += '<div class="player-list-item"><span>' + esc(p.name) +
+    html += '<div class="player-list-item"><span>' + playerBadge(p) + esc(p.name) +
       (p.id === hostId ? ' 👑' : '') +
       (p.id === playerId ? ' <span class="badge">You</span>' : '') +
       '</span>' +
@@ -1104,7 +1107,7 @@ function sendChat() {
 }
 
 function appendChatMessage(data) {
-  chatMessages.push(data);
+  chatMessages.push({...data, face: avatarFace({id: data.senderId, name: data.senderName})});
   if (chatMessages.length > 200) chatMessages.shift();
   renderChatMessages();
 
@@ -1130,17 +1133,20 @@ function appendChatMessage(data) {
 
 function renderChatMessages() {
   const panels = ['chat-messages', 'poker-chat-messages', 'ludo-chat-messages', 'nq-chat-messages', 'commune-chat-messages', 'tn-chat-messages', 'ht-chat-messages', 'uno-chat-messages', 'bluff-chat-messages', 'blackjack-chat-messages'];
+  const html = chatMessages.map(m => {
+    const mine = m.senderId === playerId;
+    const time = new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    return `<div class="chat-row${mine ? ' outgoing' : ''}">
+      <span class="chat-face" aria-hidden="true">${m.face}</span>
+      <div class="chat-bubble"><div class="chat-meta"><strong>${esc(m.senderName)}</strong>${mine ? '<small>You</small>' : ''}<time>${time}</time></div>
+      <div class="chat-copy">${esc(m.message)}</div></div></div>`;
+  }).join('');
   for (const id of panels) {
     const el = document.getElementById(id);
     if (!el) continue;
-    let html = '';
-    for (const m of chatMessages) {
-      const isMe = m.senderId === playerId;
-      const time = new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-      html += '<div class="chat-msg"><span class="chat-msg-name' + (isMe ? ' me' : '') + '">' + esc(m.senderName) + '</span><span class="chat-msg-text">' + esc(m.message) + '</span><span class="chat-msg-time">' + time + '</span></div>';
-    }
+    const atBottom = !el.clientHeight || el.scrollHeight - el.scrollTop - el.clientHeight < 24;
     el.innerHTML = html;
-    el.scrollTop = el.scrollHeight;
+    if (atBottom) el.scrollTop = el.scrollHeight;
   }
 }
 
@@ -1165,16 +1171,24 @@ function applyHomeTheme(theme) {
   const toggle = document.getElementById('home-theme-toggle');
   toggle.setAttribute('aria-pressed', String(dark));
   toggle.title = dark ? 'Switch to white theme' : 'Switch to dark blue theme';
+  document.getElementById('lobby-dark-theme').checked = dark;
+  document.getElementById('settings-dark-theme').checked = dark;
 }
 
 function toggleHomeTheme() {
-  const theme = document.getElementById('screen-menu').dataset.homeTheme === 'dark' ? 'light' : 'dark';
+  setPlayerTheme(document.getElementById('screen-menu').dataset.homeTheme !== 'dark');
+}
+
+function setPlayerTheme(dark) {
+  const theme = dark ? 'dark' : 'light';
   applyHomeTheme(theme);
   try {
     localStorage.setItem('timecrusher_home_theme', theme);
   } catch (error) {
-    console.error('Unable to save homepage theme:', error);
-    document.getElementById('home-search-status').textContent = 'Theme changed, but your browser could not save it for your next visit.';
+    console.error('Unable to save theme:', error);
+    for (const id of ['home-search-status', 'game-settings-status', 'invite-status']) {
+      document.getElementById(id).textContent = 'Theme changed, but your browser could not save it for your next visit.';
+    }
   }
 }
 
@@ -1233,8 +1247,7 @@ function getFullName(name) {
 function updateProfileBar() {
   const name = localStorage.getItem('coup_name');
   const button = document.getElementById('home-profile-button');
-  const initials = name ? name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase() : '?';
-  document.getElementById('home-profile-initials').textContent = initials;
+  document.getElementById('home-profile-initials').textContent = avatarPresets.get(savedAvatar()) || avatarInitials(name);
   button.title = name ? getFullName(name) : 'Profile';
   button.setAttribute('aria-label', name ? 'Edit profile: ' + getFullName(name) : 'Edit profile');
 }
@@ -1258,6 +1271,7 @@ function showNamePopup() {
   const popup = document.getElementById('name-popup-overlay');
   const input = document.getElementById('popup-name-input');
   input.value = localStorage.getItem('coup_name') || '';
+  renderAvatarPicker();
   document.getElementById('popup-tag-display').textContent = '#' + getPlayerTag();
   popup.classList.add('active');
   input.focus();
@@ -1267,6 +1281,9 @@ function saveNamePopup() {
   const name = document.getElementById('popup-name-input').value.trim();
   if (!name) return;
   localStorage.setItem('coup_name', name);
+  const avatar = document.querySelector('input[name="profile-avatar"]:checked').value;
+  if (avatarPresets.has(avatar)) localStorage.setItem('tc_avatar', avatar);
+  else localStorage.removeItem('tc_avatar');
   updateProfileBar();
   document.getElementById('name-popup-overlay').classList.remove('active');
 }

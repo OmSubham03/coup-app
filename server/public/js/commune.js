@@ -102,9 +102,8 @@ function renderCommunePlaying(tableArea, actionArea, me) {
     const isCur = i === communeState.currentPlayerIdx;
     const cls = !p.isAlive ? 'cm-p-dead' : isCur ? 'cm-p-active' : '';
     const cardCount = p.cards ? p.cards.length : 0;
-    const initials = p.name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
     playersHtml += `<div class="cm-player ${cls}">
-      <div class="cm-avatar cm-avatar-${i % 6}">${esc(initials)}</div>
+      <div class="cm-avatar cm-avatar-${i % 6}" aria-hidden="true">${avatarFace(p)}</div>
       <div class="cm-p-name">${esc(p.name)}</div>
       <div class="cm-p-info">${cardCount} card${cardCount !== 1 ? 's' : ''}</div>
     </div>`;
@@ -122,8 +121,7 @@ function renderCommunePlaying(tableArea, actionArea, me) {
   let cardsHtml = '';
   if (me && me.cards) {
     const myPlayerIndex = communeState.players.findIndex(player => player.id === playerId);
-    const myInitials = me.name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
-    cardsHtml = `<div class="cm-my-hand"><div class="cm-my-hand-header"><div class="cm-avatar cm-avatar-${myPlayerIndex % 6}">${esc(myInitials)}</div><div class="cm-my-hand-player"><b>${esc(me.name)} · You</b><span>${me.cards.length} cards</span></div></div><div class="cm-cards">`;
+    cardsHtml = `<div class="cm-my-hand"><div class="cm-my-hand-header"><div class="cm-avatar cm-avatar-${myPlayerIndex % 6}" aria-hidden="true">${avatarFace(me)}</div><div class="cm-my-hand-player"><b>${esc(me.name)} · You</b><span>${me.cards.length} cards</span></div></div><div class="cm-cards">`;
     for (const c of me.cards) cardsHtml += cmCard(c);
     cardsHtml += '</div></div>';
   }

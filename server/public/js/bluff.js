@@ -83,7 +83,7 @@ function renderBluffGame() {
   document.getElementById('bluff-pile-count').textContent = (state.pile || []).length;
   document.getElementById('bluff-pending-actor').textContent = actor ? actor.name + (actor.cards.length === 0 ? ' - empty hand, awaiting resolution' : ' - claim pending') : 'No pending claim';
   document.getElementById('bluff-players').innerHTML = state.players.map(player =>
-    '<div class="additional-player-row' + (player.id === current?.id && state.phase !== 'game_over' ? ' current' : '') + '"><strong>' + esc(player.name) +
+    '<div class="additional-player-row' + (player.id === current?.id && state.phase !== 'game_over' ? ' current' : '') + '"><strong>' + playerBadge(player) + esc(player.name) +
     (player.id === playerId ? ' (You)' : '') + '</strong><span>' + player.cards.length + ' cards' + (!player.active ? ' - inactive' : '') + '</span></div>').join('');
   document.getElementById('bluff-hand').innerHTML = !isSpectating && mine ? mine.cards.filter(card => card.id && card.rank).map(card =>
     additionalCardHTML(card, true, bluffSelectedCards.has(card.id), !canBluffPlay())).join('') : '';

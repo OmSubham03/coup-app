@@ -88,7 +88,7 @@ function harness() {
   context.localStorage.setItem('coup_name', 'Tester');
   function run(code) { return vm.runInContext(code, context); }
   run('let ludoState = null, nqState = null, communeState = null, tnState = null, htState = null, unoState = null; function updateVoiceUI() {} function renderGame() { document.getElementById("game-active").style.display = ""; }');
-  for (const name of ['common', 'bluff', 'blackjack']) run(fs.readFileSync(path.join(serverRoot, 'public/js', name + '.js'), 'utf8'));
+  for (const name of ['avatars', 'common', 'bluff', 'blackjack']) run(fs.readFileSync(path.join(serverRoot, 'public/js', name + '.js'), 'utf8'));
   run('ws = new WebSocket("test"); hostId = playerId;');
   const message = (type, payload) => run('handleWSMessage({data:' + JSON.stringify(JSON.stringify({ type, payload })) + '})');
   return { run, message, elements, sent, errors, document };
@@ -131,11 +131,26 @@ test('HTML readiness count, unique IDs, callbacks, assets, and default deck opti
   assert.equal(new Set(ids).size, ids.length);
   const scripts = [...html.matchAll(/<script src="([^"]+)" defer onload="checkScriptsLoaded\(\)"><\/script>/g)];
   assert.equal(scripts.length, Number(html.match(/let totalScripts = (\d+)/)[1]));
-  assert.equal(scripts.length, 12);
+  assert.equal(scripts.length, 13);
   for (const script of scripts) assert.ok(fs.existsSync(path.join(serverRoot, 'public', script[1])));
   for (const match of html.matchAll(/\bon(?:click|input|keydown|change|load)="([^"]*)"/g)) new Function('event', match[1]);
   for (const type of ['bluff', 'blackjack']) assert.ok(!new RegExp('id="' + type + '-two-decks"[^>]*checked').test(html));
   assert.ok(fs.existsSync(path.join(serverRoot, 'public/textures/card-back.svg')));
+});
+
+test('Avatar presets, initials, storage and remote identities remain independent of display names', () => {
+  const app = harness();
+  assert.equal(app.run('avatarPresets.size'), 9);
+  assert.equal(app.run("avatarInitials('  Alex Jones#1234')"), 'AJ');
+  app.run("localStorage.setItem('tc_avatar','owl'); updateProfileBar(); send('join', {playerName:'Tester#0001'})");
+  assert.equal(app.elements.get('home-profile-initials').textContent, '🦉');
+  assert.deepEqual(app.sent.at(-1), {type:'join',payload:{playerName:'Tester#0001',avatar:'owl'}});
+  app.message('room-visibility', {avatars:{other:'fox'}});
+  assert.equal(app.run("avatarFace({id:'other',name:'Alex Jones#1234'})"), '🦊');
+  app.message('room-visibility', {});
+  assert.equal(app.run("avatarFace({id:'other',name:'Alex Jones#1234'})"), 'AJ');
+  app.run("localStorage.removeItem('tc_avatar'); updateProfileBar()");
+  assert.equal(app.elements.get('home-profile-initials').textContent, 'T');
 });
 
 test('Homepage themes persist and do not replace game screen styles', () => {
@@ -147,6 +162,14 @@ test('Homepage themes persist and do not replace game screen styles', () => {
   app.run('toggleHomeTheme()');
   assert.equal(menu.dataset.homeTheme, 'dark');
   assert.equal(toggle['aria-pressed'], 'true');
+  for (const id of ['settings-dark-theme', 'lobby-dark-theme']) {
+    assert.equal(app.elements.get(id).checked, true);
+    assert.match(html, new RegExp(`id="${id}"[^>]+onchange="setPlayerTheme\\(this.checked\\)"`));
+  }
+  app.run('setPlayerTheme(false)');
+  assert.equal(app.elements.get('lobby-dark-theme').checked, false);
+  assert.equal(toggle['aria-pressed'], 'false');
+  app.run('setPlayerTheme(true)');
   assert.equal(app.run('localStorage.getItem("timecrusher_home_theme")'), 'dark');
   app.run('applyHomeTheme("light"); initHomeTheme()');
   assert.equal(menu.dataset.homeTheme, 'dark');
@@ -313,6 +336,19 @@ test('Blackjack next round requires active host, terminal inactive member can re
   assert.equal(app.elements.get('blackjack-hit-btn').disabled, true);
   assert.equal(app.elements.get('blackjack-spectator').textContent, 'Spectating');
   assert.deepEqual(app.errors, []);
+});
+
+test('All ten chats distinguish own and incoming bubbles with persistent sender faces', () => {
+  const app = harness();
+  app.message('room-visibility', {avatars:{other:'fox'}});
+  app.message('chat', {senderId:'other',senderName:'Alex',message:'Good hand!',timestamp:Date.now()});
+  app.message('room-visibility', {});
+  app.message('chat', {senderId:app.run('playerId'),senderName:'River Song#0001',message:'Thanks!',timestamp:Date.now()});
+  for (const prefix of ['', 'poker-', 'ludo-', 'nq-', 'commune-', 'tn-', 'ht-', 'uno-', 'bluff-', 'blackjack-']) {
+    const html = app.elements.get(prefix + 'chat-messages').innerHTML;
+    assert.match(html, /class="chat-row">[\s\S]*🦊[\s\S]*Good hand!/);
+    assert.match(html, /class="chat-row outgoing">[\s\S]*>RS<[\s\S]*>You<[\s\S]*Thanks!/);
+  }
 });
 
 test('Lobby limits, room deck metadata, chat routing, settings, null reset, and exit cleanup', () => {

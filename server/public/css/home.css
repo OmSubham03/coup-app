@@ -210,6 +210,10 @@ body:has(#screen-menu.active.home-active) .name-popup :is(input, button):focus-v
   .home-signoff em { font-size: 13px; }
   #game-list-view .site-footer { justify-content: center; gap: 10px; }
 }
+@media (max-width: 640px) {
+  .home-hero { grid-template-columns: 1fr; }
+  .home-hero-art { display: none; }
+}
 @media (max-width: 480px) {
   .container:has(#screen-menu.active.home-active) { padding-inline: 18px; }
   #game-list-view .home-brand { gap: 6px; }
@@ -226,8 +230,6 @@ body:has(#screen-menu.active.home-active) .name-popup :is(input, button):focus-v
   .home-hero-description { font-size: 12px; max-width: 320px; }
   .home-primary { margin-top: 19px; font-size: 12px; padding: 13px 17px; }
   .home-hero-notes { max-width: none; font-size: 9px; gap: 12px; margin-top: 20px; }
-  .home-hero-art { position: absolute; width: clamp(96px, 28vw, 124px); right: -2px; bottom: 57px; margin: 0; pointer-events: none; }
-  .home-hero-art > svg { width: 100%; margin-left: 0; }
   .home-art-sticker { display: none; }
   .home-library { padding-top: 23px; }
   .home-eyebrow { font-size: 8px; letter-spacing: 1.5px; }

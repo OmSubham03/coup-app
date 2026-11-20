@@ -420,6 +420,7 @@
       <h2>Room code</h2>
       <div class="room-code-row"><strong id="lobby-code"></strong><button class="room-copy" type="button" onclick="copyRoomCode(document.getElementById('invite-status'))">Copy code</button></div>
       <p class="room-hint" id="invite-status" role="status">Share this code so friends can join your table.</p>
+      <label class="room-public-switch lobby-theme-row"><span>Dark blue theme</span><input id="lobby-dark-theme" type="checkbox" role="switch" onchange="setPlayerTheme(this.checked)"></label>
     <div class="lobby-visibility">
       <label class="room-public-switch" title="Show this lobby in available rooms">
         <span>Public room</span>
@@ -620,6 +621,7 @@
     </div>
 
     <div id="nq-game-tab">
+      <div id="nq-avatar-roster" aria-label="Players"></div>
       <div id="nq-table-area"></div>
       <div id="nq-action-area"></div>
     </div>
@@ -836,6 +838,7 @@
     <div><span>Room code</span><strong id="game-settings-room-code"></strong></div>
     <button type="button" onclick="copySettingsRoomCode()">Copy</button>
   </div>
+  <label class="game-settings-row room-public-switch"><span>Dark blue theme</span><input id="settings-dark-theme" type="checkbox" role="switch" onchange="setPlayerTheme(this.checked)"></label>
   <label class="game-settings-row"><span>Microphone</span><input id="settings-microphone" type="checkbox" role="switch" onchange="toggleMic()"></label>
   <p id="game-settings-decks" class="game-settings-status" hidden></p>
   <label class="game-settings-row"><span>Speaker</span><input id="settings-speaker" type="checkbox" role="switch" onchange="toggleSpeaker()"></label>
@@ -863,13 +866,14 @@
 
 <div class="name-popup-overlay" id="name-popup-overlay">
   <div class="name-popup">
-    <h2>👤 What's your name?</h2>
-    <p>This will be your display name in games</p>
+    <h2>Your player profile</h2>
+    <p>Choose how you appear to other players.</p>
     <div style="display:flex;align-items:center;gap:4px;margin-bottom:12px">
-      <input id="popup-name-input" placeholder="Enter your name" aria-label="Display name" maxlength="18" style="margin-bottom:0;flex:1" onkeydown="if(event.key==='Enter')saveNamePopup()">
+      <input id="popup-name-input" placeholder="Enter your name" aria-label="Display name" maxlength="18" style="margin-bottom:0;flex:1" oninput="previewAvatarInitials()" onkeydown="if(event.key==='Enter')saveNamePopup()">
       <span id="popup-tag-display" style="color:#64748b;font-weight:800;font-size:20px;white-space:nowrap"></span>
     </div>
-    <button class="btn btn-purple" onclick="saveNamePopup()">Save</button>
+    <fieldset class="avatar-picker"><legend>Player avatar</legend><div id="avatar-options"></div></fieldset>
+    <button class="btn btn-purple" onclick="saveNamePopup()">Save profile</button>
   </div>
 </div>
 
@@ -1179,7 +1183,7 @@
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 12;
+let totalScripts = 13;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
@@ -1197,6 +1201,7 @@ function checkScriptsLoaded() {
   }
 }
 </script>
+<script src="/js/avatars.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/common.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/voice.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/coup.js" defer onload="checkScriptsLoaded()"></script>

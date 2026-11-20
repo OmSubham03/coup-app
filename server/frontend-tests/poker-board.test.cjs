@@ -7,6 +7,7 @@ const vm = require('node:vm');
 function renderer() {
   const board = { innerHTML: '' };
   const context = vm.createContext({ playerId: 'me', esc: value => String(value), document: { getElementById: () => board } });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/js/avatars.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/js/poker.js'), 'utf8'), context);
   return { context, board };
 }

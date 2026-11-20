@@ -83,7 +83,6 @@ h1.coup-title { color: #4f46e5; }
 #game-active .waiting, #game-active .spectate-banner { background: #1b1029; border-color: #49305e; color: #d0c2df; }
 #game-active .card-select { cursor: pointer; }
 #game-active .victory { width: min(100%, 560px); margin: 12px auto; border: 1px solid #49305e; border-radius: 12px; background: #1b1029; }
-#game-active .chat-input-row input { background: #1b1029; border-color: #795394; }
 
 @media (max-width: 520px) {
 	#game-active { margin-right: -16px; margin-left: -16px; padding: 12px 10px 22px; }

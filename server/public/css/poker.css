@@ -66,7 +66,7 @@ h1.poker-title { color: #f59e0b; }
 .poker-amount { display: flex; align-items: center; justify-content: space-between; gap: 3px; color: var(--home-ink); }
 .poker-step { min-width: 36px; }
 .raise-slider { width: 100%; grid-column: 1/-1; height: 18px; padding: 0; margin: 0; accent-color: var(--home-green); }
-#poker-active :is(.waiting,.chat-input-row input) { background: var(--home-soft); color: var(--home-ink); border-color: var(--home-border); }
+#poker-active .waiting { background: var(--home-soft); color: var(--home-ink); border-color: var(--home-border); }
 #poker-active .waiting { margin: 0; }
 #poker-active :is(.log-entry,.chat-msg-text,.score-name) { color: var(--home-ink); border-color: var(--home-border); }
 #poker-active :is(.log-turn,.chat-msg-name) { color: var(--home-green); background: var(--home-soft); }

@@ -169,7 +169,7 @@ function renderHTScoreBar(myIdx) {
     const s = p.totalScore;
     const cls = s < 30 ? 'low' : (s < 70 ? 'mid' : 'high');
     html += `<div class="ht-score-item">
-      <div class="ht-score-name${i === myIdx ? ' me' : ''}">${htEsc(p.name)}</div>
+      <div class="ht-score-name${i === myIdx ? ' me' : ''}">${playerBadge(p)}${htEsc(p.name)}</div>
       <div class="ht-score-val ${cls}">${s}<span class="ht-score-label">Total</span></div>
       <div class="ht-hand-pts">Hand +${p.handPoints}</div>
     </div>`;

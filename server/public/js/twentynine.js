@@ -243,7 +243,7 @@ function renderTNBiddingBoard(myIdx) {
     const isBidder = tnState.bidderPlayerId === p.id && tnState.currentBid > 0;
     html += `<div style="margin:4px 0;padding:6px;border-radius:8px;${isActive ? 'background:rgba(251,191,36,0.1);border:1px solid #fbbf24' : ''}" >
       <span class="tn-player-name${isActive ? ' active' : ''}${isBidder ? ' bidder' : ''}">
-        ${tnEsc(p.name)}${i === myIdx ? ' (You)' : ''}${p.team === tnState.players[myIdx]?.team ? ' 🤝' : ''}
+        ${playerBadge(p)}${tnEsc(p.name)}${i === myIdx ? ' (You)' : ''}${p.team === tnState.players[myIdx]?.team ? ' 🤝' : ''}
         ${isBidder ? ` — Bid: ${tnState.currentBid}` : ''}
       </span>
     </div>`;
@@ -348,7 +348,7 @@ function renderTNPlayingBoard(myIdx) {
 
     html += `<div class="tn-player-spot ${posClasses[s]}">`;
     html += `<div class="tn-player-name${isActive ? ' active' : ''}${isBidder ? ' bidder' : ''}${p.team === tnState.players[myIdx >= 0 ? myIdx : 0].team ? ' partner' : ''}">`;
-    html += `${tnEsc(p.name)}(${tnState.teamHands[p.team]})`;
+    html += `${playerBadge(p)}${tnEsc(p.name)}(${tnState.teamHands[p.team]})`;
     html += '</div>';
     html += `<div class="tn-folded-cards${isVertical ? ' vertical' : ''}">`;
     for (let ci = 0; ci < cardCount; ci++) {

@@ -200,9 +200,6 @@
 #commune-table-area .cm-stand-title, #commune-table-area .cm-stand-row { color: var(--cm-steel-muted); border-color: var(--cm-steel-border); }
 #commune-active .cm-log-entry { color: #d0d6dc; border-color: var(--cm-steel-border); }
 #commune-active .cm-log-time { color: var(--cm-steel-muted); }
-#commune-active .chat-input-row input { background: var(--cm-steel-panel); border-color: #66717c; }
-#commune-active .chat-msg-name { color: #d3dce5; }
-#commune-active .chat-msg-time { color: var(--cm-steel-muted); }
 #commune-active .cm-type-btn:focus-visible, #commune-active .cm-rank-btn:focus-visible { outline: 2px solid #f0f2f4; outline-offset: 2px; }
 
 @media (max-width: 520px) {

@@ -176,7 +176,6 @@
 .uno-waiting { color: #aab3c0; }
 .uno-result { border-color: #263c5c; background: #132642; }
 .uno-result h2 { color: #edf0f5; }
-#uno-active .chat-input-row input { background: #132642; border-color: #405d83; }
 
 @media (max-width: 520px) {
   #uno-active { margin-right: -14px; margin-left: -14px; padding-right: 10px; padding-left: 10px; }

@@ -350,7 +350,7 @@ function renderLudoBoard() {
     // Player name label inside yard
     const yardPlayer = ls.players.find(p => p.colorIndex === ci);
     if (yardPlayer) {
-      html += '<div class="ludo-yard-name">' + esc(yardPlayer.name) + '</div>';
+      html += '<div class="ludo-yard-name">' + playerBadge(yardPlayer) + esc(yardPlayer.name) + '</div>';
     }
     // Find player with this color index
     const player = yardPlayer;

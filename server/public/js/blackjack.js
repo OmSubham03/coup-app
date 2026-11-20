@@ -86,7 +86,7 @@ function renderBlackjackGame() {
   const turnActions = document.getElementById('blackjack-turn-actions');
   document.getElementById('blackjack-game-tab').append(turnActions);
   document.getElementById('blackjack-players').innerHTML = state.players.map((player, playerIndex) =>
-    '<section class="additional-player-hand' + (player.id === current?.id && state.phase === 'playing' ? ' current' : '') + '"><div class="additional-player-row"><strong>' + esc(player.name) +
+    '<section class="additional-player-hand' + (player.id === current?.id && state.phase === 'playing' ? ' current' : '') + '"><div class="additional-player-row"><strong>' + playerBadge(player) + esc(player.name) +
     (player.id === playerId ? ' (You)' : '') + '</strong><span>' + player.cards.length + ' cards</span></div><div class="additional-cards">' + blackjackAnimatedCards(player.cards, player.id, initialDeal, playerIndex + 1, state.players.length + 1) +
     '</div><div class="additional-player-stats"><span>' + blackjackTotalLabel(player.cards) + '</span><span>Chips: ' + player.chips + '</span><span>Bet: ' + player.bet +
     '</span><strong>' + (player.id === playerId && !isSpectating ? esc(blackjackResult(player, state)) : '') + '</strong></div></section>').join('');

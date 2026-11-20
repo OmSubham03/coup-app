@@ -65,6 +65,7 @@ type NQConfig struct {
 type PlayerConn struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+	Avatar string `json:"avatar,omitempty"`
 }
 
 
@@ -850,6 +851,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 	case "join":
 		var payload struct {
 			PlayerName string `json:"playerName"`
+			Avatar     string `json:"avatar"`
 			PublicRoom bool `json:"publicRoom"`
 		}
 		json.Unmarshal(msg.Payload, &payload)
@@ -889,11 +891,16 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			}
 		}
 
+		switch payload.Avatar {
+		case "", "fox", "panda", "owl", "tiger", "koala", "frog", "penguin", "octopus", "unicorn":
+		default:
+			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Unknown profile avatar"}})
+			return
+		}
 		if len(room.players) == 0 && room.hostID == "" {
 			room.hostID = playerID
 		}
-
-		room.players[playerID] = &PlayerConn{ID: playerID, Name: name}
+		room.players[playerID] = &PlayerConn{ID: playerID, Name: name, Avatar: payload.Avatar}
 		room.broadcastVisibility()
 		log.Printf("[JOIN] room=%s player=%s name=%q (total players: %d)", room.code, playerID[:8], name, len(room.players))
 

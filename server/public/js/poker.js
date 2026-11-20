@@ -143,7 +143,6 @@ function renderPokerTable() {
     if (p.folded) cls += ' folded';
     if (isDealer) cls += ' dealer';
 
-    const initials = p.name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
     const status = p.folded ? 'Folded' : p.allIn ? 'All in' : !p.isActive ? 'Sitting out' :
       isCurrent && ps.phase !== 'showdown' && ps.phase !== 'game_over' ? 'Turn' : '';
     let cards = '';
@@ -159,7 +158,7 @@ function renderPokerTable() {
     const details = [status, isDealer ? 'Dealer' : ''].filter(Boolean).join(' · ');
     const betChip = p.currentBet > 0
       ? `<span class="poker-wager" role="img" aria-label="Bet: ${p.currentBet} chips"><b>${p.currentBet}</b></span>` : '';
-    rail += `<div class="${cls}"><span class="poker-avatar tone-${i % 4}">${esc(initials)}</span>
+    rail += `<div class="${cls}"><span class="poker-avatar tone-${i % 4}" aria-hidden="true">${avatarFace(p)}</span>
       <strong class="poker-seat-name">${esc(p.name)}${isMe ? ' (You)' : ''}</strong><span>${p.chips} chips</span>
       <small>${details}</small>${!isMe && p.holeCards?.length ? '<div class="poker-seat-cards">' + cards + '</div>' : ''}
       ${!isMe && result ? '<small>' + result + '</small>' : ''}<div class="poker-wager-slot">${betChip}</div></div>`;

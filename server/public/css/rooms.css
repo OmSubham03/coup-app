@@ -63,6 +63,19 @@
   .room-setup, .room-lobby { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .room-banner { min-height: 116px; padding: 18px; }
   .room-banner svg { height: 100px; }
+  .room-setup .room-banner > svg, .room-setup .room-banner::before { display: none; }
   .room-kicker { font-size: 9px; }
   .room-controls { flex-wrap: wrap; }
 }
+.lobby-theme-row { padding-block: 12px; }
+#lobby .lobby-theme-row { justify-content: space-between; color: var(--home-ink); }
+#game-settings-dialog { background: var(--home-surface); color: var(--home-ink); border-color: var(--home-border); }
+#game-settings-dialog :is(h2,.game-settings-row) { color: var(--home-ink); }
+#game-settings-dialog :is(.game-settings-row,.game-settings-code-row) { border-color: var(--home-border); }
+#game-settings-dialog :is(.game-settings-code-row span,.game-settings-status) { color: var(--home-muted); }
+#game-settings-dialog .game-settings-code-row strong { color: var(--home-green); }
+#game-settings-dialog :is(.game-settings-close,.game-settings-code-row button,.game-settings-command:not(.game-settings-exit)) { background: var(--home-soft); color: var(--home-ink); border-color: var(--home-border); }
+#game-settings-dialog .room-public-switch input { width:42px; height:24px; }
+#screen-game .tab-bar .tab { color: var(--home-muted); background: var(--home-surface); border-color: var(--home-border); }
+#screen-game .tab-bar .tab.active { color: #203824; background: var(--home-accent); }
+#screen-game .header-bar .game-settings-open { color: var(--home-ink); background: var(--home-surface); border-color: var(--home-border); }

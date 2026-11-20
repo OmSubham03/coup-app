@@ -72,6 +72,19 @@ and personal cards above the betting controls. Other games keep their own stylin
 Illustrations are original local SVG assets; the homepage does not require
 third-party fonts or image services.
 
+At widths of 640px or less, the homepage hero and room setup banners hide
+their decorative illustrations. Game cards keep their artwork.
+
+Switch between white and dark blue on the homepage, in the waiting lobby,
+or under **Settings** during any game. This preference is saved in your
+browser and does not change the theme for other players.
+
+Open your profile on the homepage to choose one of nine animal avatars or
+select **Initials**. Your choice is saved in this browser and shared with
+other players in the waiting lobby and all ten web games.
+The in-game Chat tab uses the same avatar or initials. Your messages appear
+on the right with a **You** label; other players' messages appear on the left.
+
 Run the web frontend regression tests with `node --test frontend-tests` from
 `server`.
 
