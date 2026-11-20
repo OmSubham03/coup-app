@@ -65,7 +65,8 @@ The server starts on port **8080** and provides:
 Open `http://localhost:8080`. The responsive TimeCrusher homepage includes all ten
 games, category filters, game search, and a white / dark-blue theme switch.
 The theme preference is saved in browser local storage. Homepage styles are
-scoped separately so each game retains its existing table and room styling.
+shared by the game hub, room setup, and waiting lobby. The lobby includes a
+copyable invite code and player roster. Active game tables retain their own styling.
 Illustrations are original local SVG assets; the homepage does not require
 third-party fonts or image services.
 

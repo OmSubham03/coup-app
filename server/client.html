@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="/css/uno.css">
 <link rel="stylesheet" href="/css/additional-games.css">
 <link rel="stylesheet" href="/css/home.css">
+<link rel="stylesheet" href="/css/rooms.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -154,39 +155,40 @@
   </div>
 
   <!-- Coup Menu -->
-  <div id="menu-coup" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
-      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="toggleRules()">Rules</button>
+  <div id="menu-coup" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <button class="btn btn-sm" onclick="toggleRules()">Rules</button>
     </div>
-    <h1 class="coup-title">COUP</h1>
-    <p class="subtitle">Bluff. Deceive. Survive.</p>
-    <div style="margin-bottom:24px">
-      <p class="section-title">Create Game</p>
+    <header class="room-banner room-banner-coup">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Coup</h1><p>Bluff. Deceive. Survive.</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#coup"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
       <button class="btn btn-indigo" onclick="createGame('standard')">Standard — Classic with Ambassador</button>
       <button class="btn btn-emerald" onclick="createGame('inquisitor')">Inquisitor — With Inquisitor variant</button>
-    </div>
-    <div>
-      <p class="section-title">Join Game</p>
-      <input id="coup-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('coup-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinCoupWithCode()">
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="coup-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" oninput="document.getElementById('coup-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinCoupWithCode()">
       <div id="coup-join-variant-row" class="variant-row">
         <div class="variant-btn active-std" id="coup-join-var-standard" onclick="setCoupJoinVariant('standard')">Standard</div>
         <div class="variant-btn" id="coup-join-var-inquisitor" onclick="setCoupJoinVariant('inquisitor')">Inquisitor</div>
       </div>
       <button class="btn btn-amber" id="coup-join-btn" disabled onclick="joinCoupWithCode()">Join Game</button>
-    </div>
+    </section>
   </div>
 
   <!-- Poker Menu -->
-  <div id="menu-poker" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
-      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="togglePokerRules()">Rules</button>
+  <div id="menu-poker" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <button class="btn btn-sm" onclick="togglePokerRules()">Rules</button>
     </div>
-    <h1 class="poker-title">POKER</h1>
-    <p class="subtitle">Texas Hold'em. All In.</p>
-    <div style="margin-bottom:24px">
-      <p class="section-title">Create Game</p>
+    <header class="room-banner room-banner-poker">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Poker</h1><p>Texas Hold'em. All In.</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#poker"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
       <div class="poker-config">
         <label>Buy-in (chips)</label>
         <input id="poker-buyin" type="number" value="1000" min="100" step="100" placeholder="1000" style="margin-bottom:8px">
@@ -200,107 +202,107 @@
         </div>
       </div>
       <button class="btn btn-amber" onclick="createPokerGame()">Create Poker Table</button>
-    </div>
-    <div>
-      <p class="section-title">Join Game</p>
-      <input id="poker-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('poker-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinPokerWithCode()">
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="poker-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" oninput="document.getElementById('poker-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinPokerWithCode()">
       <button class="btn btn-blue" id="poker-join-btn" disabled onclick="joinPokerWithCode()">Join Game</button>
-    </div>
+    </section>
   </div>
 
   <!-- 20 QUESTIONS Menu -->
-  <div id="menu-nquestions" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
-      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="toggleNQRules()">Rules</button>
+  <div id="menu-nquestions" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <button class="btn btn-sm" onclick="toggleNQRules()">Rules</button>
     </div>
-    <h1 class="nq-title">20 QUESTIONS</h1>
-    <p class="subtitle">Correct Guess in 20 turns</p>
-    <div style="margin-bottom:24px">
+    <header class="room-banner room-banner-nquestions">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>20 Questions</h1><p>Correct Guess in 20 turns</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#questions"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
       <p class="section-title">Number of Questions</p>
       <div class="nq-n-picker">
         <button onclick="nqAdjustN(-1)">−</button>
         <div class="nq-n-display" id="nq-n-display">20</div>
         <button onclick="nqAdjustN(1)">+</button>
       </div>
-      <p class="section-title">Create Game</p>
-      <button class="btn" style="background:#7c3aed" onclick="createNQGame()">Create Game</button>
-    </div>
-    <div>
-      <p class="section-title">Join Game</p>
-      <input id="nq-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('nq-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinNQWithCode()">
+      <button class="btn" onclick="createNQGame()">Create Game</button>
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="nq-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" oninput="document.getElementById('nq-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinNQWithCode()">
       <button class="btn btn-blue" id="nq-join-btn" disabled onclick="joinNQWithCode()">Join Game</button>
-    </div>
+    </section>
   </div>
 
   <!-- Ludo Menu -->
-  <div id="menu-ludo" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
-      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="toggleLudoRules()">Rules</button>
+  <div id="menu-ludo" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <button class="btn btn-sm" onclick="toggleLudoRules()">Rules</button>
     </div>
-    <h1 class="ludo-title">LUDO</h1>
-    <p class="subtitle">Roll. Race. Win.</p>
-    <div style="margin-bottom:24px">
-      <p class="section-title">Create Game</p>
-      <button class="btn" style="background:#ef4444" onclick="createLudoGame()">Create Ludo Game</button>
-    </div>
-    <div>
-      <p class="section-title">Join Game</p>
-      <input id="ludo-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('ludo-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinLudoWithCode()">
+    <header class="room-banner room-banner-ludo">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Ludo</h1><p>Roll. Race. Win.</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#ludo"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
+      <button class="btn" onclick="createLudoGame()">Create Ludo Game</button>
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="ludo-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" oninput="document.getElementById('ludo-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinLudoWithCode()">
       <button class="btn btn-blue" id="ludo-join-btn" disabled onclick="joinLudoWithCode()">Join Game</button>
-    </div>
+    </section>
   </div>
 
   <!-- 29 Menu -->
-  <div id="menu-twentynine" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
-      <button class="btn btn-sm" style="width:auto;margin:0;background:#22c55e;color:#fff" onclick="toggleTNRules()">Rules</button>
+  <div id="menu-twentynine" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <button class="btn btn-sm" onclick="toggleTNRules()">Rules</button>
     </div>
-    <h1 style="color:#22c55e;font-weight:900;letter-spacing:4px">29</h1>
-    <p class="subtitle">Trick-taking trump card game. 4 players.</p>
-    <div style="margin-bottom:24px">
-      <p class="section-title">Create Game</p>
-      <button class="btn" style="background:#22c55e;color:#fff" onclick="createTNGame()">Create 29 Game</button>
-    </div>
-    <div>
-      <p class="section-title">Join Game</p>
-      <input id="tn-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('tn-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinTNWithCode()">
+    <header class="room-banner room-banner-twentynine">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Twenty-Nine</h1><p>Trick-taking trump card game. 4 players.</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#twentynine"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
+      <button class="btn" onclick="createTNGame()">Create 29 Game</button>
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="tn-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" oninput="document.getElementById('tn-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinTNWithCode()">
       <button class="btn btn-amber" id="tn-join-btn" disabled onclick="joinTNWithCode()">Join Game</button>
-    </div>
+    </section>
   </div>
 
 
   <!-- Hearts Menu -->
-  <div id="menu-hearts" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
-      <button class="btn btn-sm" style="width:auto;margin:0;background:#dc2626;color:#fff" onclick="toggleHTRules()">Rules</button>
+  <div id="menu-hearts" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <button class="btn btn-sm" onclick="toggleHTRules()">Rules</button>
     </div>
-    <h1 style="color:#dc2626;font-weight:900;letter-spacing:4px">HEARTS</h1>
-    <p class="subtitle">Avoid penalty cards. Shoot the moon.</p>
-    <div style="margin-bottom:24px">
-      <p class="section-title">Create Game</p>
-      <button class="btn" style="background:#dc2626;color:#fff" onclick="createHTGame()">Create Hearts Game</button>
-    </div>
-    <div>
-      <p class="section-title">Join Game</p>
-      <input id="ht-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('ht-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinHTWithCode()">
+    <header class="room-banner room-banner-hearts">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Hearts</h1><p>Avoid penalty cards. Shoot the moon.</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#hearts"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
+      <button class="btn" onclick="createHTGame()">Create Hearts Game</button>
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="ht-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" oninput="document.getElementById('ht-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinHTWithCode()">
       <button class="btn btn-amber" id="ht-join-btn" disabled onclick="joinHTWithCode()">Join Game</button>
-    </div>
+    </section>
   </div>
 
   <!-- UNO Menu -->
-  <div id="menu-uno" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
-      <button class="btn btn-sm" style="width:auto;margin:0;background:#2563eb;color:#fff" onclick="toggleUNORules()">Rules</button>
+  <div id="menu-uno" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <button class="btn btn-sm" onclick="toggleUNORules()">Rules</button>
     </div>
-    <h1 class="uno-title">UNO</h1>
-    <p class="subtitle">Match colors and numbers. Play your hand first.</p>
-    <div style="margin-bottom:24px">
-      <p class="section-title">Create Game</p>
+    <header class="room-banner room-banner-uno">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>UNO</h1><p>Match colors and numbers. Play your hand first.</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#uno"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
       <div class="uno-create-options">
         <div class="uno-checkbox-row">
           <label for="uno-stacking-enabled"><input type="checkbox" id="uno-stacking-enabled"><b>Enable draw-card stacking</b></label>
@@ -311,64 +313,75 @@
           <button type="button" class="uno-rule-info" onclick="openUNOHouseRule('multiSkip')" title="Multi Skip house rule" aria-label="About Multi Skip" aria-haspopup="dialog">i</button>
         </div>
       </div>
-      <button class="btn" style="background:#ef3340;color:#fff" onclick="createUNOGame()">Create UNO Game</button>
-    </div>
-    <div>
-      <p class="section-title">Join Game</p>
-      <input id="uno-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('uno-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinUNOWithCode()">
+      <button class="btn" onclick="createUNOGame()">Create UNO Game</button>
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="uno-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" oninput="document.getElementById('uno-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinUNOWithCode()">
       <button class="btn btn-amber" id="uno-join-btn" disabled onclick="joinUNOWithCode()">Join Game</button>
-    </div>
+    </section>
   </div>
 
-  <div id="menu-bluff" class="additional-menu" style="display:none">
-    <div class="additional-menu-toolbar">
-      <button type="button" class="btn btn-outline btn-sm" onclick="backToGameList()" title="Back" aria-label="Back to games">&#8592;</button>
+  <div id="menu-bluff" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button type="button" class="btn btn-outline btn-sm" onclick="backToGameList()" title="Back" aria-label="Back to games">&larr; All games</button>
       <button type="button" class="btn btn-blue btn-sm" onclick="toggleBluffRules()">Rules</button>
     </div>
-    <h1 class="bluff-title">BLUFF</h1><p class="subtitle">2-6 players</p>
-    <h2 class="section-title">Create Game</h2>
+    <header class="room-banner room-banner-bluff">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Bluff</h1><p>2-6 players</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#bluff"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
     <label class="additional-deck-option"><input type="checkbox" id="bluff-two-decks">Use two decks</label>
     <button type="button" class="btn btn-blue" onclick="createBluffGame()">Create Bluff Game</button>
-    <h2 class="section-title">Join Game</h2>
-    <input id="bluff-join-code" aria-label="Room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('bluff-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinBluffWithCode()">
+
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+    <input id="bluff-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('bluff-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinBluffWithCode()">
     <button type="button" class="btn btn-amber" id="bluff-join-btn" disabled onclick="joinBluffWithCode()">Join Game</button>
+    </section>
   </div>
-  <div id="menu-blackjack" class="additional-menu" style="display:none">
-    <div class="additional-menu-toolbar">
-      <button type="button" class="btn btn-outline btn-sm" onclick="backToGameList()" title="Back" aria-label="Back to games">&#8592;</button>
+  <div id="menu-blackjack" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button type="button" class="btn btn-outline btn-sm" onclick="backToGameList()" title="Back" aria-label="Back to games">&larr; All games</button>
       <button type="button" class="btn btn-green btn-sm" onclick="toggleBlackjackRules()">Rules</button>
     </div>
-    <h1 class="blackjack-title">BLACKJACK</h1><p class="subtitle">1-4 players</p>
-    <h2 class="section-title">Create Game</h2>
+    <header class="room-banner room-banner-blackjack">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Blackjack</h1><p>1-4 players</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#blackjack"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
     <label class="additional-deck-option"><input type="checkbox" id="blackjack-two-decks">Use two decks</label>
     <button type="button" class="btn btn-green" onclick="createBlackjackGame()">Create Blackjack Table</button>
-    <h2 class="section-title">Join Game</h2>
-    <input id="blackjack-join-code" aria-label="Room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('blackjack-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinBlackjackWithCode()">
+
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+    <input id="blackjack-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('blackjack-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinBlackjackWithCode()">
     <button type="button" class="btn btn-amber" id="blackjack-join-btn" disabled onclick="joinBlackjackWithCode()">Join Game</button>
+    </section>
   </div>
 
   <!-- Commune Menu -->
-  <div id="menu-commune" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" style="width:auto;margin:0" onclick="backToGameList()">← Back</button>
-      <button class="btn btn-sm" style="width:auto;margin:0;background:#3b82f6;color:#fff" onclick="toggleCommuneRules()">Rules</button>
+  <div id="menu-commune" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <button class="btn btn-sm" onclick="toggleCommuneRules()">Rules</button>
     </div>
-    <h1 style="color:#3b82f6;font-weight:900;letter-spacing:4px">COMMUNE</h1>
-    <p class="subtitle">Bluff poker hands. Call the liar.</p>
-    <div style="margin-bottom:24px">
-      <p class="section-title">Create Game</p>
-      <button class="btn" style="background:#3b82f6;color:#fff" onclick="createCommuneGame()">Create Commune Game</button>
-    </div>
-    <div>
-      <p class="section-title">Join Game</p>
-      <input id="commune-join-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;font-size:28px;letter-spacing:6px;font-weight:800;color:#f59e0b" oninput="document.getElementById('commune-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinCommuneWithCode()">
+    <header class="room-banner room-banner-commune">
+      <div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Commune</h1><p>Bluff poker hands. Call the liar.</p></div>
+      <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#commune"></use></svg>
+    </header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Host a table and invite your friends.</p>
+      <button class="btn" onclick="createCommuneGame()">Create Commune Game</button>
+    </section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="commune-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" oninput="document.getElementById('commune-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinCommuneWithCode()">
       <button class="btn btn-amber" id="commune-join-btn" disabled onclick="joinCommuneWithCode()">Join Game</button>
-    </div>
+    </section>
   </div>
 </div>
 
 <!-- JOIN SCREEN -->
-<div id="screen-join" class="screen">
+<div id="screen-join" class="screen room-stage room-entry">
   <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="showScreen('menu')">← Back</button>
   <h1 id="join-game-title" class="coup-title" style="font-size:36px">COUP</h1>
   <p class="subtitle" id="join-game-subtitle">Bluff. Deceive. Survive.</p>
@@ -384,7 +397,7 @@
 <!-- GAME SCREEN -->
 <div id="screen-game" class="screen">
   <!-- Name entry -->
-  <div id="name-entry">
+  <div id="name-entry" class="room-stage room-entry">
     <button class="btn btn-outline btn-sm" style="width:auto;margin-bottom:16px" onclick="disconnect();showScreen('menu')">← Back</button>
     <h1 id="entry-game-title" class="coup-title" style="font-size:36px">COUP</h1>
     <p class="subtitle" id="entry-game-subtitle">Bluff. Deceive. Survive.</p>
@@ -396,27 +409,37 @@
   </div>
 
   <!-- Lobby -->
-  <div id="lobby" style="display:none">
+  <div id="lobby" class="room-stage room-lobby" style="display:none">
+    <header class="room-banner">
+      <div><p class="room-kicker">TIMECRUSHER / WAITING ROOM</p><h1 id="lobby-game-title">COUP</h1>
+      <p id="lobby-game-subtitle">Bluff. Deceive. Survive.</p></div>
+      <svg viewBox="0 0 640 430" aria-hidden="true"><use href="/icons/game-art.svg#hero"></use></svg>
+    </header>
+    <section class="room-panel room-invite">
+      <p class="room-kicker">INVITE YOUR FRIENDS</p>
+      <h2>Room code</h2>
+      <div class="room-code-row"><strong id="lobby-code"></strong><button class="room-copy" type="button" onclick="copyRoomCode(document.getElementById('invite-status'))">Copy code</button></div>
+      <p class="room-hint" id="invite-status" role="status">Share this code so friends can join your table.</p>
     <div class="lobby-visibility">
       <label class="room-public-switch" title="Show this lobby in available rooms">
         <span>Public room</span>
         <input id="room-public-toggle" type="checkbox" role="switch" disabled onchange="setRoomVisibility(this.checked)">
       </label>
     </div>
-    <h1 id="lobby-game-title" class="coup-title" style="font-size:36px">COUP</h1>
-    <p class="subtitle" id="lobby-game-subtitle">Bluff. Deceive. Survive.</p>
-    <div class="code-display" id="lobby-code"></div>
-    <p class="subtitle">Share this code with friends</p>
+    </section>
+    <section class="room-panel room-roster">
+      <p class="room-kicker">AT THE TABLE</p>
+      <h2>Players <span class="room-count"><span id="player-count">0</span>/<span id="player-capacity">6</span></span></h2>
+      <div id="lobby-players"></div>
     <div id="lobby-poker-config" style="display:none">
-      <div style="background:#0a1e0a;border:1px solid #1a3a1a;border-radius:10px;padding:12px 16px;margin-bottom:12px;text-align:center">
-        <span style="color:#d4a017;font-weight:700">Buy-in: <span id="lobby-buyin">1000</span></span>
-        <span style="margin:0 12px;color:#334155">|</span>
-        <span style="color:#22c55e;font-weight:700">Blinds: <span id="lobby-blinds">10/20</span></span>
+      <div class="room-settings">
+        Buy-in: <strong id="lobby-buyin">1000</strong> &middot;
+        Blinds: <strong id="lobby-blinds">10/20</strong>
       </div>
     </div>
     <div id="lobby-ludo-config" style="display:none">
-      <div style="background:#1a0a0a;border:1px solid #3a1a1a;border-radius:10px;padding:12px 16px;margin-bottom:12px;text-align:center">
-        <p style="color:#94a3b8;font-size:13px;margin-bottom:8px">Pick your color</p>
+      <div class="room-settings">
+        <p>Pick your color</p>
         <div class="ludo-color-picker" id="lobby-ludo-colors">
           <div class="ludo-color-option ludo-color-red selected" onclick="lobbySelectLudoColor('red')" data-color="red"></div>
           <div class="ludo-color-option ludo-color-green" onclick="lobbySelectLudoColor('green')" data-color="green"></div>
@@ -427,18 +450,17 @@
     </div>
     <div id="lobby-uno-config" style="display:none" class="lobby-uno-config"></div>
     <div id="lobby-additional-config" class="additional-lobby-config" style="display:none"></div>
-    <p class="section-title">Players (<span id="player-count">0</span>/<span id="player-capacity">6</span>)</p>
-    <div id="lobby-players"></div>
     <button class="btn btn-green" id="start-btn" style="display:none" onclick="ws.send(JSON.stringify({type:'start-game'}))">Start Game</button>
     <p id="lobby-wait" class="waiting" style="display:none">Waiting for host to start...</p>
     <div id="lobby-spectate" style="display:none;margin-top:12px">
       <button class="btn btn-cyan" onclick="requestSpectate()">👁 Spectate Game</button>
     </div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">
+    </section>
+    <div class="room-toolbar room-controls"><div class="room-audio"><span>Room audio</span>
       <button class="voice-mic-btn" onclick="toggleMic()" title="Unmute Microphone">🎤</button>
       <button class="voice-speaker-btn active" onclick="toggleSpeaker()" title="Mute Speaker">🔊</button>
     </div>
-    <button class="btn btn-outline" style="margin-top:12px" onclick="disconnect();showScreen('menu')">Leave Lobby</button>
+    <button class="btn btn-outline" onclick="disconnect();showScreen('menu')">Leave lobby</button></div>
   </div>
 
   <div id="bluff-active" class="additional-active" style="display:none">

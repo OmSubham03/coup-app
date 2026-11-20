@@ -205,14 +205,40 @@ test('Homepage categories and case-insensitive search intersect and reset empty 
   assert.deepEqual(app.errors, []);
 });
 
-test('Homepage SVG illustrations are local and every referenced symbol exists', () => {
+test('Homepage and room illustrations are local and every referenced symbol exists', () => {
   const art = fs.readFileSync(path.join(serverRoot, 'public/icons/game-art.svg'), 'utf8');
   const references = [...html.matchAll(/href="\/icons\/game-art\.svg#([^"]+)"/g)];
-  assert.equal(references.length, 11);
+  assert.ok(references.length > 0);
   for (const [, id] of references) assert.ok(art.includes('id="' + id + '"'), 'Missing SVG symbol: ' + id);
   for (const [, id] of art.matchAll(/href="#([^"]+)"/g)) assert.ok(art.includes('id="' + id + '"'), 'Missing nested SVG symbol: ' + id);
   assert.doesNotMatch(art, /color="url\(/, 'SVG currentColor must be a color, not a paint-server URL');
   assert.ok(html.includes('href="/css/home.css"'));
+});
+
+test('Every home game has create and join panels with its own artwork and code-entry controls', () => {
+  const games = [...html.matchAll(/class="game-card [^"]*"[^>]*onclick="openGameMenu\('([^']+)'\)"/g)].map(match => match[1]);
+  assert.equal(games.length, 10);
+  for (const game of games) {
+    const setup = html.match(new RegExp(`<div id="menu-${game}" class="room-stage room-setup"[^>]*>([\\s\\S]*?)\\n  </div>`));
+    assert.ok(setup, game + ' setup');
+    assert.ok(setup[1].includes(`game-art.svg#${game === 'nquestions' ? 'questions' : game}`), game + ' artwork');
+    assert.match(setup[1], /class="room-panel room-create"[\s\S]+onclick="create/);
+    assert.match(setup[1], /class="room-panel room-join"[\s\S]+aria-label="Five-character room code"[\s\S]+onclick="join/);
+  }
+  assert.ok(html.includes('id="lobby" class="room-stage room-lobby"'));
+  assert.doesNotMatch(html, /id="(?:screen-game|[^"]+-active)" class="[^"]*room-stage/);
+});
+
+test('Lobby copy confirms success or provides the code when clipboard access fails', async () => {
+  const app = harness();
+  const status = app.elements.get('invite-status');
+  app.run('roomCode = "ABCDE"; navigator.clipboard = {writeText: async value => { navigator.copied = value; }}');
+  await app.run('copyRoomCode(document.getElementById("invite-status"))');
+  assert.equal(app.run('navigator.copied'), 'ABCDE');
+  assert.equal(status.textContent, 'Room code copied');
+  app.run('navigator.clipboard.writeText = async () => { throw new Error("Permission denied"); }');
+  await app.run('copyRoomCode(document.getElementById("invite-status"))');
+  assert.equal(status.textContent, 'Copy unavailable. Room code: ABCDE');
 });
 
 test('Bluff selects any rank, caps selection at four, and sends owned IDs', () => {

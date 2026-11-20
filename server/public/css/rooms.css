@@ -1,0 +1,68 @@
+/* The backdrop belongs to the visible pre-game panel, not the shared game screen. */
+.room-stage { color: var(--home-ink); }
+.room-stage::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--home-bg); pointer-events: none; }
+.room-setup, .room-lobby { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; padding-bottom: 32px; }
+.room-stage :is(button,input,[tabindex]):focus-visible { outline: 3px solid var(--home-green); outline-offset: 3px; }
+.room-stage .btn { font-family: inherit; margin-bottom: 0; font-size: 15px; border-radius: 10px; }
+.room-stage .btn:disabled { opacity: 1; background: var(--home-soft); color: var(--home-muted); border: 1px dashed var(--home-border); }
+.room-toolbar, .room-banner, .room-setup .available-rooms { grid-column: 1 / -1; }
+.room-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.room-toolbar .btn, .room-copy, .room-entry > .btn-outline { background: var(--home-surface); color: var(--home-ink); border: 1px solid var(--home-border); width: auto; min-height: 42px; padding: 9px 16px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.room-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; position: relative; overflow: hidden; isolation: isolate; min-height: 145px; padding: 24px clamp(18px, 4vw, 36px); background: #d6e8d9; color: #233832; border-radius: 20px; }
+.room-banner::before { content: ''; position: absolute; z-index: -1; right: -25px; width: 220px; aspect-ratio: 1; background: #ffffff3d; border-radius: 50%; box-shadow: 0 0 0 25px #ffffff20; }
+.room-banner svg { flex: 0 1 27%; width: 27%; height: 134px; min-width: 0; margin-block: -18px; }
+.room-banner > div { min-width: 0; }
+.room-banner-coup, .room-banner-commune { background: #e7ddf8; }
+.room-banner-uno, .room-banner-bluff { background: #fbdccf; }
+.room-banner-ludo { background: #f7e9ad; }
+.room-banner-nquestions { background: #dbe3ff; }
+.room-banner-twentynine { background: #cde7e8; }
+.room-banner-hearts { background: #f7dce0; }
+.room-kicker { font-size: 10px; line-height: 1.5; letter-spacing: 1.5px; font-weight: 800; }
+.room-banner h1, .room-entry h1 { margin: 7px 0 5px; text-align: left; color: inherit; font-size: clamp(30px, 5vw, 44px); letter-spacing: -1.6px; line-height: 1.1; text-shadow: none; background: none; -webkit-text-fill-color: currentColor; }
+.room-banner p:last-child { font-size: 14px; }
+.room-panel, .room-setup .available-rooms, .room-entry { min-width: 0; border: 1px solid var(--home-border); border-radius: 16px; padding: clamp(16px, 3vw, 25px); background: var(--home-surface); }
+.room-panel { align-self: stretch; }
+.room-panel h2, .room-entry h2, .room-setup .available-rooms h2 { margin: 0 0 8px; color: var(--home-ink); font-size: 22px; font-weight: 750; line-height: 1.25; text-transform: none; letter-spacing: -.6px; }
+.room-hint, .room-entry .subtitle { color: var(--home-muted); line-height: 1.6; font-size: 14px; }
+.room-hint { margin-bottom: 18px; }
+.room-create, .room-join { display: flex; flex-direction: column; }
+.room-create .section-title { color: var(--home-muted); }
+.room-create > .btn, .room-lobby #start-btn:not(:disabled), .room-entry > .btn-amber { background: var(--home-accent); color: #203824; }
+.room-create > .btn + .btn { margin-top: 8px; background: var(--home-soft); color: var(--home-ink); }
+.room-join > .btn:not(:disabled) { background: var(--home-ink); color: var(--home-bg); }
+.room-create > .btn:first-of-type, .room-join > .btn { margin-top: auto; }
+.room-stage input:not([type=checkbox]) { min-width: 0; color: var(--home-ink); background: var(--home-soft); border: 1px solid var(--home-border); font-size: 17px; }
+.room-stage input[id$="join-code"] { text-transform: uppercase; letter-spacing: 3px; font-weight: 750; }
+.room-stage input::placeholder { color: var(--home-muted); opacity: 1; }
+.room-stage :is(.additional-deck-option,.room-public-switch,.uno-checkbox-row label,.poker-config label,.variant-btn,.available-room-name) { color: var(--home-ink); }
+.room-stage :is(.additional-deck-option input,.uno-checkbox-row input) { accent-color: var(--home-green); }
+.room-stage :is(.uno-checkbox-row,.poker-config,.available-room,.variant-btn,.nq-n-picker button,.uno-rule-info) { color: var(--home-ink); background: var(--home-soft); border-color: var(--home-border); }
+.room-stage :is(.active-std,.active-inq,.toggle-switch.active) { background: #315d43; color: white; border-color: #315d43; }
+.room-stage .nq-n-display { color: var(--home-green); }
+.room-stage .available-rooms { margin: 0; }
+.room-stage .available-rooms-list { color: var(--home-muted); font-size: 14px; }
+.room-stage :is(.available-rooms-status,.available-room-count,.available-room-variant) { color: var(--home-muted); }
+.room-stage .available-room:hover { border-color: var(--home-green); }
+.room-panel .room-kicker { margin-bottom: 8px; color: var(--home-green); }
+.room-code-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-block: 16px 10px; padding: 12px; border: 1px dashed var(--home-green); border-radius: 12px; background: var(--home-soft); }
+.room-code-row strong { font-family: ui-monospace, monospace; font-size: clamp(24px, 3vw, 32px); letter-spacing: 3px; }
+.room-copy { font-size: 13px; padding-inline: 12px; }
+.room-lobby .lobby-visibility { justify-content: flex-start; margin: 0; padding-top: 14px; border-top: 1px solid var(--home-border); }
+.room-count, .room-lobby .badge { display: inline-block; vertical-align: middle; border-radius: 6px; padding: 3px 7px; color: var(--home-green); background: var(--home-soft); font-size: 12px; letter-spacing: .3px; }
+.room-lobby .player-list-item { color: var(--home-ink); background: var(--home-soft); border-color: var(--home-border); overflow-wrap: anywhere; gap: 8px; }
+.room-lobby #lobby-players { margin-block: 16px; }
+.room-lobby :is(.room-settings,.lobby-uno-config,.additional-lobby-config,.waiting), .room-entry .code-display { border: 1px solid var(--home-border); border-radius: 10px; background: var(--home-soft); padding: 12px; margin-bottom: 12px; color: var(--home-ink); font-size: 14px; text-align: center; }
+.room-settings p { margin-bottom: 10px; }
+.room-lobby .ludo-color-option.selected { outline: 2px solid var(--home-green); }
+.room-audio { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; }
+.room-entry { max-width: 490px; margin: 0 auto; }
+.room-entry .subtitle { text-align: left; }
+.room-entry .code-display { font: bold 26px ui-monospace, monospace; }
+@media (max-width: 640px) {
+  .room-setup, .room-lobby { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .room-banner { min-height: 116px; padding: 18px; }
+  .room-banner svg { height: 100px; }
+  .room-kicker { font-size: 9px; }
+  .room-controls { flex-wrap: wrap; }
+}

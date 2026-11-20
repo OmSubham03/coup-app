@@ -489,6 +489,7 @@ const MAX_RECONNECT_ATTEMPTS = 15;
 let wsConnecting = false;
 
 function connectWS(action, pokerConfig, nqConfig, unoStacking, publicRoom = false) {
+  document.getElementById('invite-status').textContent = 'Share this code so friends can join your table.';
   stopPublicRoomDiscovery();
   publicJoinPending = publicRoom;
   roomIsPublic = false;
@@ -947,8 +948,11 @@ function closeGameSettings() {
   document.getElementById('game-settings-dialog').close();
 }
 
-async function copySettingsRoomCode() {
-  const status = document.getElementById('game-settings-status');
+function copySettingsRoomCode() {
+  return copyRoomCode(document.getElementById('game-settings-status'));
+}
+
+async function copyRoomCode(status) {
   try {
     await navigator.clipboard.writeText(roomCode);
     status.textContent = 'Room code copied';
