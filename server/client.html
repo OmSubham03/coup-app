@@ -564,19 +564,20 @@
   <div id="poker-active" style="display:none">
     <div class="header-bar">
       <div>
-        <span style="color:#22c55e;font-weight:900;font-size:24px">POKER</span>
+        <p class="poker-eyebrow">TIMECRUSHER / CARD ROOM</p>
+        <h2>Texas Hold’em</h2>
         <div class="phase-text" id="poker-phase-display"></div>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
-        <span style="color:#94a3b8;font-size:12px" id="poker-hand-display"></span>
+        <span id="poker-hand-display"></span>
         <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
 
     <div class="tab-bar">
       <button class="tab active" id="ptab-game" onclick="switchPokerTab('game')">Table</button>
-      <button class="tab" id="ptab-log" onclick="switchPokerTab('log')">📜 Log</button>
-      <button class="tab" id="ptab-chat" onclick="switchPokerTab('chat')">💬 Chat</button>
+      <button class="tab" id="ptab-log" onclick="switchPokerTab('log')">Hand log</button>
+      <button class="tab" id="ptab-chat" onclick="switchPokerTab('chat')">Chat</button>
     </div>
 
     <div id="poker-game-tab">

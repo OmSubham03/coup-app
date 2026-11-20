@@ -66,7 +66,9 @@ Open `http://localhost:8080`. The responsive TimeCrusher homepage includes all t
 games, category filters, game search, and a white / dark-blue theme switch.
 The theme preference is saved in browser local storage. Homepage styles are
 shared by the game hub, room setup, and waiting lobby. The lobby includes a
-copyable invite code and player roster. Active game tables retain their own styling.
+copyable invite code and player roster. Texas Hold'em also follows the saved
+theme, with a scrollable player row, bet chips aligned beneath each seat on a straight table rail, five community-card slots on green felt,
+and personal cards above the betting controls. Other games keep their own styling.
 Illustrations are original local SVG assets; the homepage does not require
 third-party fonts or image services.
 

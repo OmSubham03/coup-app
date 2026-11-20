@@ -73,12 +73,24 @@ function renderPokerCard(card) {
   const color = SUIT_COLORS[card.suit];
   const rank = RANK_DISPLAY[card.rank] || card.rank;
   const suit = SUIT_SYMBOLS[card.suit] || '?';
-  return '<div class="poker-card ' + color + '"><div>' + rank + '</div><div style="font-size:20px">' + suit + '</div></div>';
+  return `<div class="poker-card ${color}" role="img" aria-label="${rank} of ${card.suit}"><b>${rank}</b><span>${suit}</span><b aria-hidden="true">${rank}</b></div>`;
+}
+
+const pokerStatIcons = {
+  blinds: '<path d="M4 9a8 8 0 0 1 13-4l2 2m0-4v4h-4M20 15a8 8 0 0 1-13 4l-2-2m0 4v-4h4"/><circle cx="12" cy="12" r="3"/>',
+  bank: '<path d="m3 8 9-5 9 5H3Zm1 12h16M6 17v-6m6 6v-6m6 6v-6"/>',
+  chart: '<path d="M4 4v16h17M8 16v-4m5 4V7m5 9v-6"/>',
+  chip: '<circle cx="12" cy="12" r="10" fill="#534968" stroke="#ffd160" stroke-width="4" stroke-dasharray="7 5"/><path d="m7 10 2-3h6l2 3-5 7z" fill="#fff9dc" stroke="none"/>',
+  coins: '<g fill="#ffd45c" stroke="#856321" stroke-width="1"><path d="M3 13v4c0 5 18 5 18 0v-4z"/><path d="M3 9v4c0 5 18 5 18 0V9z"/><ellipse cx="12" cy="9" rx="9" ry="4"/></g>'
+};
+
+function pokerStatIcon(name) {
+  return `<svg class="poker-stat-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${pokerStatIcons[name]}</svg>`;
 }
 
 function renderPokerTable() {
   const ps = pokerState;
-  let html = '<div class="poker-board" data-player-count="' + ps.players.length + '"><div class="poker-felt"></div><div class="poker-board-center">';
+  let html = '<section class="poker-felt" aria-label="Community board"><div class="poker-summary">';
 
   // Pot display
   let totalPot = 0;
@@ -86,9 +98,9 @@ function renderPokerTable() {
     for (const pot of ps.pots) totalPot += pot.amount;
   }
   for (const p of ps.players) totalPot += p.currentBet || 0;
-  if (totalPot > 0) {
-    html += '<div class="poker-pot">Pot: ' + totalPot + '</div>';
-  }
+  html += `<div><span>${pokerStatIcon('blinds')}Blinds</span><strong>${ps.smallBlind}${ps.bigBlind ? ' / ' + ps.bigBlind : ''}</strong></div>
+    <div><span>${pokerStatIcon('bank')}Pot</span><strong>${totalPot}${pokerStatIcon('chip')}</strong></div>
+    <div><span>${pokerStatIcon('chart')}Table bet</span><strong>${ps.currentBet}${pokerStatIcon('coins')}</strong></div></div>`;
 
   // Community cards
   const cc = ps.communityCards || [];
@@ -107,7 +119,7 @@ function renderPokerTable() {
         html += renderPokerCard(cc[i]);
       }
     } else {
-      html += '<div class="poker-card-placeholder"></div>';
+      html += '<div class="poker-card-placeholder" aria-label="Undealt card"></div>';
     }
   }
   html += '</div>';
@@ -117,19 +129,15 @@ function renderPokerTable() {
     html += '<div class="poker-last-action">' + esc(ps.lastAction) + '</div>';
   }
 
-  html += '</div>';
-
-  // Players
-  const myIndex = ps.players.findIndex(player => player.id === playerId);
-  const anchor = myIndex >= 0 ? myIndex : 0;
-  const seats = pokerSeatPositions(ps.players.length);
-  for (let seatIndex = 0; seatIndex < ps.players.length; seatIndex++) {
-    const i = (anchor + seatIndex) % ps.players.length;
+  html += '</section>';
+  let rail = '';
+  let personal = '';
+  for (let i = 0; i < ps.players.length; i++) {
     const p = ps.players[i];
     const isMe = p.id === playerId;
     const isCurrent = i === ps.currentPlayerIndex;
     const isDealer = i === ps.dealerIndex;
-    let cls = 'poker-seat poker-seat-' + seats[seatIndex].side;
+    let cls = 'poker-seat';
     if (isMe) cls += ' mine';
     if (isCurrent && !p.folded) cls += ' current';
     if (p.folded) cls += ' folded';
@@ -138,44 +146,29 @@ function renderPokerTable() {
     const initials = p.name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
     const status = p.folded ? 'Folded' : p.allIn ? 'All in' : !p.isActive ? 'Sitting out' :
       isCurrent && ps.phase !== 'showdown' && ps.phase !== 'game_over' ? 'Turn' : '';
-    html += '<div class="' + cls + '" style="--seat-y:' + seats[seatIndex].percent + '%">';
-    html += '<div class="poker-seat-avatar poker-avatar-' + (seatIndex % 4) + '">' + esc(initials) + '</div>';
-    html += '<div class="poker-seat-name" title="' + esc(p.name) + '">' + esc(p.name) + (isMe ? ' (You)' : '') + '</div>';
-    html += '<div class="poker-seat-chips">' + p.chips + ' chips</div>';
-    html += '<div class="poker-seat-status">' + status + (isDealer ? (status ? ' · ' : '') + 'Dealer' : '') + '</div>';
-
-    // Hole cards
-    html += '<div class="poker-seat-cards">';
+    let cards = '';
     if (p.holeCards && p.holeCards.length > 0) {
       for (const c of p.holeCards) {
-        html += renderPokerCard(c);
+        cards += renderPokerCard(c);
       }
     } else if (p.isActive && !p.folded) {
-      html += '<div class="poker-card-back"></div><div class="poker-card-back"></div>';
+      cards = '<div class="poker-card-back"></div><div class="poker-card-back"></div>';
     }
 
-    html += '</div>';
-    html += '<div class="poker-seat-bet">' + (p.currentBet > 0 ? 'Bet: ' + p.currentBet : '') + '</div>';
-
-    // Show hand result at showdown
-    if (p.hand && (ps.phase === 'showdown' || ps.phase === 'game_over')) {
-      html += '<div class="poker-hand-result">' + esc(p.hand.rankName) + '</div>';
-    }
-
-    html += '</div>';
+    const result = p.hand && ['showdown','game_over'].includes(ps.phase) ? esc(p.hand.rankName) : '';
+    const details = [status, isDealer ? 'Dealer' : ''].filter(Boolean).join(' · ');
+    const betChip = p.currentBet > 0
+      ? `<span class="poker-wager" role="img" aria-label="Bet: ${p.currentBet} chips"><b>${p.currentBet}</b></span>` : '';
+    rail += `<div class="${cls}"><span class="poker-avatar tone-${i % 4}">${esc(initials)}</span>
+      <strong class="poker-seat-name">${esc(p.name)}${isMe ? ' (You)' : ''}</strong><span>${p.chips} chips</span>
+      <small>${details}</small>${!isMe && p.holeCards?.length ? '<div class="poker-seat-cards">' + cards + '</div>' : ''}
+      ${!isMe && result ? '<small>' + result + '</small>' : ''}<div class="poker-wager-slot">${betChip}</div></div>`;
+    if (isMe) personal = `<section class="poker-personal"><div><p class="poker-eyebrow">YOUR HAND</p>
+      <strong>${status === 'Turn' ? 'Your turn' : status || 'At the table'}</strong>
+      <p>${p.chips} chips${result ? ' · ' + result : ''}</p></div><div class="poker-seat-cards">${cards}</div></section>`;
   }
 
-  document.getElementById('poker-table-area').innerHTML = html + '</div>';
-}
-
-function pokerSeatPositions(count) {
-  return Array.from({ length: count }, (_, index) => {
-    if (index < 2) return { side: index === 0 ? 'bottom' : 'top', percent: 50 };
-    const side = index % 2 === 0 ? 'left' : 'right';
-    const sideCount = side === 'left' ? Math.ceil((count - 2) / 2) : Math.floor((count - 2) / 2);
-    const slot = Math.floor((index - 2) / 2);
-    return { side, percent: sideCount === 1 ? 50 : 26 + slot * 48 / (sideCount - 1) };
-  });
+  document.getElementById('poker-table-area').innerHTML = `<div class="poker-board"><section class="poker-rail" aria-label="Players at the table">${rail}</section>${html}${personal}</div>`;
 }
 
 let raiseAmount = 0;
@@ -211,7 +204,7 @@ function renderPokerActions() {
         const gainClass = s.netGain > 0 ? 'score-positive' : (s.netGain < 0 ? 'score-negative' : 'score-zero');
         const prefix = s.netGain > 0 ? '+' : '';
         html += '<div class="score-row"><div><span class="score-name">' + (i === 0 ? '👑 ' : '') + esc(s.name) + '</span>';
-        html += '<div style="color:#94a3b8;font-size:12px">Final: ' + s.finalChips + ' chips</div></div>';
+        html += '<div class="score-detail">Final: ' + s.finalChips + ' chips</div></div>';
         html += '<span class="score-gain ' + gainClass + '">' + prefix + s.netGain + '</span></div>';
       }
     }
@@ -223,13 +216,13 @@ function renderPokerActions() {
 
   // Showdown
   if (ps.phase === 'showdown') {
-    let html = '<div style="text-align:center;padding:20px">';
+    let html = '<div class="poker-result">';
 
     // Check if this player needs to decide on rebuy
     if (me && me.needsRebuy) {
       html += '<div style="font-size:32px;margin-bottom:8px">💸</div>';
       html += '<h2 style="color:#d4a017;margin-bottom:12px">Out of Chips!</h2>';
-      html += '<p style="color:#e2e8f0;margin-bottom:16px">Buy back in for ' + ps.buyIn + ' chips?</p>';
+      html += '<p>Buy back in for ' + ps.buyIn + ' chips?</p>';
       html += '<button class="btn btn-green" style="margin-bottom:8px" onclick="send(\'poker-rebuy\')">Buy In (' + ps.buyIn + ' chips)</button>';
       html += '<button class="btn btn-red" onclick="send(\'poker-skip-rebuy\')">Sit Out</button>';
       html += '</div>';
@@ -242,7 +235,7 @@ function renderPokerActions() {
       const waitingFor = ps.players.filter(p => p.needsRebuy).map(p => p.name);
       html += '<div style="font-size:32px;margin-bottom:8px">⏳</div>';
       html += '<h2 style="color:#d4a017;margin-bottom:12px">Waiting for Rebuy</h2>';
-      html += '<p style="color:#94a3b8;margin-bottom:16px">' + waitingFor.map(n => esc(n)).join(', ') + ' deciding...</p>';
+      html += '<p>' + waitingFor.map(n => esc(n)).join(', ') + ' deciding...</p>';
       html += '</div>';
       area.innerHTML = html;
       return;
@@ -250,7 +243,7 @@ function renderPokerActions() {
 
     html += '<div style="font-size:32px;margin-bottom:8px">🃏</div>';
     html += '<h2 style="color:#d4a017;margin-bottom:16px">Showdown!</h2>';
-    if (ps.lastAction) html += '<p style="color:#e2e8f0;margin-bottom:16px">' + esc(ps.lastAction) + '</p>';
+    if (ps.lastAction) html += '<p>' + esc(ps.lastAction) + '</p>';
     html += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">';
     html += '<button class="btn btn-green" onclick="send(\'poker-next-hand\')">Deal Next Hand</button>';
     html += '<button class="btn btn-red" onclick="if(confirm(\'End game and show final scores?\'))send(\'poker-end-game\')">End Game</button>';
@@ -302,28 +295,15 @@ function renderPokerActions() {
   }
 
   // Raise
-  if (me.chips > callAmount && maxRaise > ps.currentBet) {
-    html += '<div style="margin-top:8px;background:#0a2e0a;border:1px solid #1a5a1a;border-radius:10px;padding:12px">';
-    html += '<div class="raise-amount" id="raise-display">' + raiseAmount + '</div>';
-    html += '<input type="range" class="raise-slider" id="raise-slider" min="' + minRaise + '" max="' + maxRaise + '" value="' + raiseAmount + '" step="' + ps.smallBlind + '" oninput="updateRaise(this.value)">';
-    html += '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">';
-    const sb = ps.smallBlind;
-    const increments = [{label: '+' + sb, val: sb}, {label: '+' + (sb*5), val: sb*5}, {label: '+' + (sb*10), val: sb*10}];
-    for (const inc of increments) {
-      html += '<button style="flex:1;padding:6px;border:1px solid #1a5a1a;background:#0a1e0a;color:#d4a017;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px" onclick="adjustRaise(' + inc.val + ',' + minRaise + ',' + maxRaise + ')">' + inc.label + '</button>';
-    }
-    html += '</div>';
-    if (raiseAmount >= maxRaise) {
-      html += '<button class="poker-action-btn poker-btn-allin" style="margin-top:8px" id="raise-btn" onclick="pokerAct(\'allin\')">All In (' + me.chips + ')</button>';
-    } else {
-      html += '<button class="poker-action-btn poker-btn-raise" style="margin-top:8px" id="raise-btn" onclick="pokerAct(\'raise\', raiseAmount)">Raise to ' + raiseAmount + '</button>';
-    }
-    html += '</div>';
-  }
-
-  // All-in button always available
-  if (me.chips > 0 && !(me.chips > callAmount && maxRaise > ps.currentBet)) {
-    html += '<button class="poker-action-btn poker-btn-allin" style="margin-top:8px" onclick="pokerAct(\'allin\')">All In (' + me.chips + ')</button>';
+  if (maxRaise > minRaise && me.chips > callAmount) {
+    html += `<div class="poker-raise"><div class="poker-amount">
+      <button class="poker-step" aria-label="Decrease raise" onclick="adjustRaise(-${ps.smallBlind})">−</button>
+      <output id="raise-display" for="raise-slider">${raiseAmount}</output>
+      <button class="poker-step" aria-label="Increase raise" onclick="adjustRaise(${ps.smallBlind})">+</button></div>
+      <button class="poker-action-btn poker-btn-raise" id="raise-btn" onclick="submitPokerRaise()">${raiseAmount === maxRaise ? 'All in' : 'Raise to ' + raiseAmount}</button>
+      <input type="range" class="raise-slider" id="raise-slider" aria-label="Raise total" min="${minRaise}" max="${maxRaise}" value="${raiseAmount}" oninput="updateRaise(this.value)"></div>`;
+  } else if (me.chips > callAmount) {
+    html += '<button class="poker-action-btn poker-btn-allin" onclick="pokerAct(\'allin\')">All in (' + me.chips + ')</button>';
   }
 
   html += '</div>';
@@ -331,25 +311,20 @@ function renderPokerActions() {
 }
 
 function updateRaise(val) {
-  raiseAmount = parseInt(val);
-  if (pokerState && pokerState.smallBlind > 0) {
-    const sb = pokerState.smallBlind;
-    raiseAmount = Math.round(raiseAmount / sb) * sb;
-    if (raiseAmount < sb) raiseAmount = sb;
-  }
-  const display = document.getElementById('raise-display');
-  if (display) display.textContent = raiseAmount;
-  const btn = document.getElementById('raise-btn');
-  if (btn) btn.textContent = 'Raise to ' + raiseAmount;
+  const slider = document.getElementById('raise-slider');
+  slider.value = Math.max(Number(slider.min), Math.min(Number(val), Number(slider.max)));
+  raiseAmount = Number(slider.value);
+  document.getElementById('raise-display').textContent = raiseAmount;
+  document.getElementById('raise-btn').textContent = raiseAmount === Number(slider.max) ? 'All in' : 'Raise to ' + raiseAmount;
 }
 
-function adjustRaise(increment, minR, maxR) {
-  let val = raiseAmount + increment;
-  if (val < minR) val = minR;
-  if (val > maxR) val = maxR;
-  updateRaise(val);
-  const slider = document.getElementById('raise-slider');
-  if (slider) slider.value = val;
+function adjustRaise(increment) {
+  updateRaise(raiseAmount + increment);
+}
+
+function submitPokerRaise() {
+  if (raiseAmount === Number(document.getElementById('raise-slider').max)) pokerAct('allin');
+  else pokerAct('raise', raiseAmount);
 }
 
 function pokerAct(action, amount) {
@@ -366,10 +341,10 @@ function renderPokerLog() {
   const hands = Object.keys(grouped).map(Number).sort((a,b) => b - a);
   let html = '';
   for (const h of hands) {
-    html += '<div class="log-turn" style="background:#0a2e0a;color:#22c55e">Hand #' + h + '</div>';
+    html += '<div class="log-turn">Hand #' + h + '</div>';
     for (const e of grouped[h].slice().reverse()) {
       const time = new Date(e.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-      html += '<div class="log-entry">' + esc(e.message) + ' <span style="color:#475569;font-size:10px">' + time + '</span></div>';
+      html += '<div class="log-entry">' + esc(e.message) + ' <time>' + time + '</time></div>';
     }
   }
   document.getElementById('poker-log-panel').innerHTML = html;
