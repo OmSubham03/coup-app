@@ -78,6 +78,7 @@ function renderCommuneGame() {
 // --- Card rendering ---
 function cmCard(card) {
   if (!card || card.id === 'hidden') return '<div class="cm-card cm-card-hidden">?</div>';
+  if (card.rank === 0) return '<div class="cm-card cm-card-wild"><span class="cm-card-rank">★</span><span class="cm-card-suit">Joker</span></div>';
   const suits = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
   const red = card.suit === 'hearts' || card.suit === 'diamonds';
   const ranks = {2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A'};
@@ -90,54 +91,62 @@ function cmRankLabel(rank) {
   return n[rank] || rank;
 }
 
-// --- Playing phase ---
-function renderCommunePlaying(tableArea, actionArea, me) {
-  const cur = communeState.players[communeState.currentPlayerIdx];
-  const isMyTurn = cur && cur.id === playerId;
+function cmTokenCount(count) {
+  const label = `${count} token${count === 1 ? '' : 's'} remaining`;
+  return `<span class="poker-wager" role="img" aria-label="${label}" title="${label}"><b>${count}</b></span>`;
+}
 
-  // Players bar
-  let playersHtml = '<div class="cm-players">';
+function cmTable() {
+  let playersHtml = '<div class="cm-players poker-rail">';
   for (let i = 0; i < communeState.players.length; i++) {
     const p = communeState.players[i];
-    const isCur = i === communeState.currentPlayerIdx;
+    const isCur = communeState.phase === 'playing' && i === communeState.currentPlayerIdx;
     const cls = !p.isAlive ? 'cm-p-dead' : isCur ? 'cm-p-active' : '';
     const cardCount = p.cards ? p.cards.length : 0;
     playersHtml += `<div class="cm-player ${cls}">
       <div class="cm-avatar cm-avatar-${i % 6}" aria-hidden="true">${avatarFace(p)}</div>
       <div class="cm-p-name">${esc(p.name)}</div>
-      <div class="cm-p-info">${cardCount} card${cardCount !== 1 ? 's' : ''}</div>
+      <div class="cm-p-info">${!p.isAlive ? 'Out' : isCur ? 'To act' : `${cardCount} card${cardCount !== 1 ? 's' : ''}`}</div>
+      <div class="poker-wager-slot">${cmTokenCount(p.tokens)}</div>
     </div>`;
   }
   playersHtml += '</div>';
 
   // Community cards
-  let communityHtml = '<div class="cm-community"><div class="cm-hand-label">Community Cards</div><div class="cm-cards">';
-  if (communeState.communityCards) {
-    for (const c of communeState.communityCards) communityHtml += cmCard(c);
-  }
-  communityHtml += '</div></div>';
+  const claim = communeState.declarations.at(-1);
+  const author = claim && communeState.players[claim.playerIdx];
+  const challenge = communeState.phase === 'called' ? communeState.players[communeState.callerIdx] : null;
+  return `<section class="cm-board" aria-label="Commune table">${playersHtml}
+    <div class="cm-community"><div class="cm-hand-label">Round ${communeState.round}</div>
+    <div class="cm-cards">${(communeState.communityCards || []).map(cmCard).join('')}</div>
+    ${claim ? `<div class="cm-current-claim" role="group" aria-label="Last declaration">
+      <span class="cm-claim-author">${playerBadge(author || {name:claim.playerName})}${esc(claim.playerName)}</span>
+      <strong>${esc(claim.displayText)}</strong></div>
+      ${challenge ? `<small class="cm-claim-call">${esc(challenge.name)} called</small>` : ''}` : ''}
+    </div></section>`;
+}
+
+function cmEarlierDeclarations() {
+  const earlier = communeState.declarations.slice(0, -1);
+  if (!earlier.length) return '';
+  return `<details class="cm-decl-list"><summary>Earlier declarations (${earlier.length})</summary>
+    ${earlier.reverse().map(d => `<div class="cm-decl-item"><strong>${esc(d.playerName)}</strong> declared ${esc(d.displayText)}</div>`).join('')}</details>`;
+}
+
+function renderCommunePlaying(tableArea, actionArea, me) {
+  const cur = communeState.players[communeState.currentPlayerIdx];
+  const isMyTurn = cur && cur.id === playerId;
 
   // My cards
   let cardsHtml = '';
-  if (me && me.cards) {
+  if (!isSpectating && me?.isAlive && me.cards?.length) {
     const myPlayerIndex = communeState.players.findIndex(player => player.id === playerId);
-    cardsHtml = `<div class="cm-my-hand"><div class="cm-my-hand-header"><div class="cm-avatar cm-avatar-${myPlayerIndex % 6}" aria-hidden="true">${avatarFace(me)}</div><div class="cm-my-hand-player"><b>${esc(me.name)} · You</b><span>${me.cards.length} cards</span></div></div><div class="cm-cards">`;
+    cardsHtml = `<div class="cm-my-hand"><div class="cm-my-hand-header"><div class="cm-avatar cm-avatar-${myPlayerIndex % 6}" aria-hidden="true">${avatarFace(me)}</div><div class="cm-my-hand-player"><b>${esc(me.name)} · You</b><span>Your hand · ${me.cards.length} card${me.cards.length === 1 ? '' : 's'}</span></div></div><div class="cm-cards">`;
     for (const c of me.cards) cardsHtml += cmCard(c);
     cardsHtml += '</div></div>';
   }
 
-  // Declarations
-  let declHtml = '<div class="cm-decl-list">';
-  if (communeState.declarations.length === 0) {
-    declHtml += '<div class="cm-decl-empty">No declarations yet</div>';
-  } else {
-    for (const d of communeState.declarations) {
-      declHtml += `<div class="cm-decl-item"><strong>${esc(d.playerName)}</strong>: ${esc(d.displayText)}</div>`;
-    }
-  }
-  declHtml += '</div>';
-
-  tableArea.innerHTML = playersHtml + communityHtml + cardsHtml + declHtml;
+  tableArea.innerHTML = cmTable() + cardsHtml + cmEarlierDeclarations();
 
   // Action area
   if (isMyTurn && !isSpectating) {
@@ -150,16 +159,13 @@ function renderCommunePlaying(tableArea, actionArea, me) {
 function renderCommuneDeclareForm(actionArea) {
   const lastDecl = communeState.lastDeclaration;
 
-  // Hand type buttons
-  let typesHtml = '<div class="cm-type-picker">';
-  for (const ht of CM_HAND_TYPES) {
-    const sel = cmSelType === ht.id ? ' selected' : '';
-    // Gray out types that are too low
-    let disabled = '';
-    if (lastDecl && ht.id < lastDecl.handType) disabled = ' disabled';
-    typesHtml += `<button class="cm-type-btn${sel}" ${disabled} onclick="cmPickType(${ht.id})">${ht.short}</button>`;
-  }
-  typesHtml += '</div>';
+  const options = CM_HAND_TYPES.map(ht => {
+    const disabled = lastDecl && ht.id < lastDecl.handType;
+    return `<option value="${ht.id}"${cmSelType === ht.id ? ' selected' : ''}${disabled ? ' disabled' : ''}>${ht.name}</option>`;
+  }).join('');
+  const typesHtml = `<label class="cm-hand-choice">Hand type
+    <select id="cm-hand-choice" onchange="cmPickType(Number(this.value))">
+    <option value="" disabled${cmSelType < 0 ? ' selected' : ''}>Choose a hand…</option>${options}</select></label>`;
 
   // Rank pickers based on type
   let ranksHtml = '';
@@ -250,7 +256,11 @@ function cmDeclPreview() {
   return '';
 }
 
-function cmPickType(t) { cmSelType = t; cmSelRank1 = 0; cmSelRank2 = 0; renderCommuneGame(); }
+function cmPickType(t) {
+  cmSelType = t; cmSelRank1 = 0; cmSelRank2 = 0;
+  renderCommuneGame();
+  document.getElementById('cm-hand-choice').focus({preventScroll:true});
+}
 function cmPickRank1(r) { cmSelRank1 = r; cmSelRank2 = 0; renderCommuneGame(); }
 function cmPickRank2(r) { cmSelRank2 = r; renderCommuneGame(); }
 
@@ -267,20 +277,11 @@ function cmCallIt() {
 function renderCommuneCalled(tableArea, actionArea, me) {
   const caller = communeState.players[communeState.callerIdx];
   const declarer = communeState.players[communeState.lastDeclarerIdx];
-  const lastDecl = communeState.declarations[communeState.declarations.length - 1];
-  const loser = communeState.players[communeState.loserIdx];
 
   let resultClass = communeState.callResult === 'caller_loses' ? 'cm-result-present' : 'cm-result-absent';
   let resultText = communeState.callResult === 'caller_loses'
     ? `✅ Hand IS present! ${esc(caller?.name)} loses a token.`
     : `❌ Hand NOT present! ${esc(declarer?.name)} loses a token.`;
-
-  // Community cards
-  let communityHtml = '<div class="cm-community"><div class="cm-hand-label">Community Cards</div><div class="cm-cards">';
-  if (communeState.communityCards) {
-    for (const c of communeState.communityCards) communityHtml += cmCard(c);
-  }
-  communityHtml += '</div></div>';
 
   // Show all players' cards
   let cardsHtml = '<div class="cm-all-cards">';
@@ -292,22 +293,11 @@ function renderCommuneCalled(tableArea, actionArea, me) {
   }
   cardsHtml += '</div>';
 
-  // Declaration history
-  let declHtml = '<div class="cm-decl-list">';
-  for (const d of communeState.declarations) {
-    declHtml += `<div class="cm-decl-item"><strong>${esc(d.playerName)}</strong>: ${esc(d.displayText)}</div>`;
-  }
-  declHtml += '</div>';
-
   tableArea.innerHTML = `
-    <div class="cm-call-banner">
-      <div class="cm-call-title">📣 ${esc(caller?.name)} called ${esc(declarer?.name)}'s declaration!</div>
-      <div class="cm-call-decl">"${esc(lastDecl?.displayText || '')}"</div>
-    </div>
-    ${communityHtml}
+    ${cmTable()}
     ${cardsHtml}
     <div class="cm-result ${resultClass}">${resultText}</div>
-    ${declHtml}`;
+    ${cmEarlierDeclarations()}`;
 
   actionArea.innerHTML = `<button class="btn cm-btn-next" onclick="send('commune-next-hand')">Deal Next Hand</button>`;
 }
@@ -333,9 +323,8 @@ function renderCommuneFinished(tableArea, actionArea) {
   let standingsHtml = '<div class="cm-standings"><div class="cm-stand-title">Final Standings</div>';
   const sorted = [...communeState.players].sort((a, b) => b.tokens - a.tokens);
   for (const p of sorted) {
-    const tokens = '●'.repeat(p.tokens) + '○'.repeat(5 - p.tokens);
     standingsHtml += `<div class="cm-stand-row${p.isAlive ? ' cm-stand-alive' : ''}">
-      <span>${esc(p.name)}</span><span class="cm-tokens">${tokens}</span>
+      <span>${esc(p.name)}</span>${cmTokenCount(p.tokens)}
     </div>`;
   }
   standingsHtml += '</div>';

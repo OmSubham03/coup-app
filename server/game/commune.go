@@ -160,7 +160,7 @@ func InitializeCommuneGame(players []struct{ ID, Name string }) *CommuneState {
 		ID:           fmt.Sprintf("commune-%d", time.Now().UnixNano()),
 		Players:      communePlayers,
 		Phase:        CommunePhasePlaying,
-		DealerIdx:    0,
+		DealerIdx:    rand.Intn(len(players)),
 		Round:        1,
 		Log:          []CommuneLogEntry{},
 		Declarations: []CommuneDeclEntry{},
@@ -277,7 +277,10 @@ func CommuneNextHand(state *CommuneState) {
 	state.CommunityCards = nil
 
 	communeDeal(state)
-	state.CurrentPlayerIdx = communeNextAlive(state, state.DealerIdx)
+	state.CurrentPlayerIdx = state.LoserIdx
+	if !state.Players[state.LoserIdx].IsAlive {
+		state.CurrentPlayerIdx = communeNextAlive(state, state.LoserIdx)
+	}
 	state.Phase = CommunePhasePlaying
 	addCommuneLog(state, fmt.Sprintf("— Round %d — Cards dealt! %s declares first.", state.Round, state.Players[state.CurrentPlayerIdx].Name))
 }

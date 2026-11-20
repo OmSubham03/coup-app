@@ -784,7 +784,7 @@
         <div class="phase-text" id="commune-phase-display"></div>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
-        <span style="color:#94a3b8;font-size:12px" id="commune-turn-display"></span>
+        <span style="font-size:12px" id="commune-turn-display"></span>
         <button class="game-settings-open" onclick="openGameSettings()" title="Settings" aria-label="Settings">&#9881;</button>
       </div>
     </div>
@@ -1131,6 +1131,7 @@
     </ul>
     <h3>Calling</h3>
     <p>When you call, all cards are revealed. The declared hand is checked against <b>ALL dealt cards</b> — community cards and every player's hand (using wilds). If the hand <b>IS present</b>, the <b>caller loses a token</b>. If it's <b>NOT present</b>, the <b>declarer loses a token</b>.</p>
+    <p>A random player declares first in round one. After that, the player who lost a token declares first in the next round. If that player is out, the next player still in the game starts.</p>
     <h3>Elimination</h3>
     <p>Lose all 5 tokens and you're out. As you lose tokens, you receive fewer cards. Last player standing wins!</p>
   </div>

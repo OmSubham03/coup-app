@@ -79,6 +79,17 @@ Switch between white and dark blue on the homepage, in the waiting lobby,
 or under **Settings** during any game. This preference is saved in your
 browser and does not change the theme for other players.
 
+Commune displays remaining tokens as numbered poker chips on the straight
+table border, aligned with each player's seat. The final standings use the
+same numbered chips.
+The latest declaration appears in a speech bubble beside the player's
+avatar and name. A call adds the challenger's name below the bubble.
+Earlier declarations can be expanded separately. The shared
+cards stay on the felt, with your private
+hand below. When a declaration is called, the table reveals the hands.
+To declare, choose a hand by its full name from the strength-ordered picker,
+then select any required ranks. Selecting a hand does not submit it.
+
 Open your profile on the homepage to choose one of nine animal avatars or
 select **Initials**. Your choice is saved in this browser and shared with
 other players in the waiting lobby and all ten web games.
