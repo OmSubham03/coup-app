@@ -162,12 +162,12 @@ test('Homepage themes persist and do not replace game screen styles', () => {
   app.run('toggleHomeTheme()');
   assert.equal(menu.dataset.homeTheme, 'dark');
   assert.equal(toggle['aria-pressed'], 'true');
-  for (const id of ['settings-dark-theme', 'lobby-dark-theme']) {
-    assert.equal(app.elements.get(id).checked, true);
-    assert.match(html, new RegExp(`id="${id}"[^>]+onchange="setPlayerTheme\\(this.checked\\)"`));
+  for (const id of ['settings-theme-toggle', 'lobby-theme-toggle', 'home-theme-toggle']) {
+    assert.equal(app.elements.get(id)['aria-pressed'], 'true');
+    assert.match(html, new RegExp(`<button[^>]+id="${id}"[^>]+class="home-theme-toggle"[^>]+onclick="toggleHomeTheme\\(\\)"[^>]*><span class="theme-sun"[^<]+</span><span class="theme-moon"`));
   }
   app.run('setPlayerTheme(false)');
-  assert.equal(app.elements.get('lobby-dark-theme').checked, false);
+  assert.equal(app.elements.get('lobby-theme-toggle')['aria-pressed'], 'false');
   assert.equal(toggle['aria-pressed'], 'false');
   app.run('setPlayerTheme(true)');
   assert.equal(app.run('localStorage.getItem("timecrusher_home_theme")'), 'dark');

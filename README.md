@@ -80,8 +80,8 @@ third-party fonts or image services.
 At widths of 640px or less, the homepage hero and room setup banners hide
 their decorative illustrations. Game cards keep their artwork.
 
-Switch between white and dark blue on the homepage, in the waiting lobby,
-or under **Settings** during any game. This preference is saved in your
+Use the same sun/moon button on the homepage, beside **Theme** in the waiting
+lobby, or under **Settings → Theme** during any game. This preference is saved in your
 browser and does not change the theme for other players.
 
 Commune displays remaining tokens as numbered poker chips on the straight

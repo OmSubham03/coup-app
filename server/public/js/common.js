@@ -1168,11 +1168,11 @@ let homeFilter = 'all';
 function applyHomeTheme(theme) {
   const dark = theme === 'dark';
   document.getElementById('screen-menu').dataset.homeTheme = dark ? 'dark' : 'light';
-  const toggle = document.getElementById('home-theme-toggle');
-  toggle.setAttribute('aria-pressed', String(dark));
-  toggle.title = dark ? 'Switch to white theme' : 'Switch to dark blue theme';
-  document.getElementById('lobby-dark-theme').checked = dark;
-  document.getElementById('settings-dark-theme').checked = dark;
+  for (const id of ['home-theme-toggle', 'lobby-theme-toggle', 'settings-theme-toggle']) {
+    const toggle = document.getElementById(id);
+    toggle.setAttribute('aria-pressed', String(dark));
+    toggle.title = dark ? 'Switch to white theme' : 'Switch to dark blue theme';
+  }
 }
 
 function toggleHomeTheme() {

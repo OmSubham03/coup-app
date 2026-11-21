@@ -420,7 +420,7 @@
       <h2>Room code</h2>
       <div class="room-code-row"><strong id="lobby-code"></strong><button class="room-copy" type="button" onclick="copyRoomCode(document.getElementById('invite-status'))">Copy code</button></div>
       <p class="room-hint" id="invite-status" role="status">Share this code so friends can join your table.</p>
-      <label class="room-public-switch lobby-theme-row"><span>Dark blue theme</span><input id="lobby-dark-theme" type="checkbox" role="switch" onchange="setPlayerTheme(this.checked)"></label>
+      <div class="lobby-theme-row"><span>Theme</span><button type="button" id="lobby-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button></div>
     <div class="lobby-visibility">
       <label class="room-public-switch" title="Show this lobby in available rooms">
         <span>Public room</span>
@@ -841,7 +841,7 @@
     <div><span>Room code</span><strong id="game-settings-room-code"></strong></div>
     <button type="button" onclick="copySettingsRoomCode()">Copy</button>
   </div>
-  <label class="game-settings-row room-public-switch"><span>Dark blue theme</span><input id="settings-dark-theme" type="checkbox" role="switch" onchange="setPlayerTheme(this.checked)"></label>
+  <div class="game-settings-row"><span>Theme</span><button type="button" id="settings-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button></div>
   <label class="game-settings-row"><span>Microphone</span><input id="settings-microphone" type="checkbox" role="switch" onchange="toggleMic()"></label>
   <p id="game-settings-decks" class="game-settings-status" hidden></p>
   <label class="game-settings-row"><span>Speaker</span><input id="settings-speaker" type="checkbox" role="switch" onchange="toggleSpeaker()"></label>

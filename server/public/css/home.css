@@ -41,9 +41,9 @@ body:has(#screen-menu.active.home-active) { background: var(--home-bg); }
 .home-theme-toggle::before { content: ''; position: absolute; width: 28px; height: 28px; top: 3px; left: 3px; border-radius: 50%; background: var(--home-surface); box-shadow: 0 1px 5px #00000014; transition: transform .2s; }
 .home-theme-toggle span { position: relative; width: 28px; font-size: 20px; line-height: 1; }
 .home-theme-toggle .theme-sun { color: var(--home-green); }
-[data-home-theme="dark"] .home-theme-toggle::before { transform: translateX(32px); background: #354765; }
-[data-home-theme="dark"] .theme-moon { color: #d3f66a; }
-[data-home-theme="dark"] .theme-sun { color: #aab9cf; }
+.home-theme-toggle[aria-pressed="true"]::before { transform: translateX(32px); background: #354765; }
+.home-theme-toggle[aria-pressed="true"] .theme-moon { color: #d3f66a; }
+.home-theme-toggle[aria-pressed="true"] .theme-sun { color: #aab9cf; }
 #game-list-view .home-profile-button { border: 3px solid var(--home-surface); outline: 1px solid var(--home-border); background: #e6dced; color: #624271; font-size: 12px; }
 .home-hero { position: relative; display: grid; grid-template-columns: 1.05fr 1fr; align-items: center; gap: 12px; padding: 36px 0; overflow: clip; overflow-clip-margin: 12px; }
 .home-eyebrow { color: var(--home-green); font-size: 10px; font-weight: 800; letter-spacing: 1.8px; line-height: 1.5; }
@@ -223,7 +223,7 @@ body:has(#screen-menu.active.home-active) .name-popup :is(input, button):focus-v
   #game-list-view .home-profile-button { width: 34px; height: 34px; flex-basis: 34px; }
   .home-theme-toggle { width: 62px; height: 34px; }
   .home-theme-toggle::before { width: 26px; height: 26px; }
-  [data-home-theme="dark"] .home-theme-toggle::before { transform: translateX(28px); }
+  .home-theme-toggle[aria-pressed="true"]::before { transform: translateX(28px); }
   .home-hero { grid-template-columns: 1fr; padding-top: 29px; padding-bottom: 27px; }
   #game-list-view .home-hero h2 { font-size: clamp(30px, 9.5vw, 40px); margin-block: 16px; letter-spacing: -1.6px; }
   .home-hero-copy > .home-eyebrow { font-size: 8px; }
