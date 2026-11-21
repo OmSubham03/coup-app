@@ -8,7 +8,6 @@ h1.poker-title { color: #f59e0b; }
 .poker-rules-close button { padding: 9px 16px; border: 0; border-radius: 8px; background: var(--home-accent); color: #213725; cursor: pointer; }
 
 #poker-active { max-width: 720px; margin: -24px auto 0; padding-bottom: env(safe-area-inset-bottom, 12px); color: var(--home-ink); }
-#poker-active::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--home-bg); }
 #poker-active .header-bar { border-color: var(--home-border); }
 #poker-active h2 { color: var(--home-ink); margin: 3px 0; letter-spacing: -.6px; }
 .poker-eyebrow { color: var(--home-green); font-size: 10px; font-weight: 800; letter-spacing: 1.5px; }

@@ -88,7 +88,7 @@ function harness() {
   context.localStorage.setItem('coup_name', 'Tester');
   function run(code) { return vm.runInContext(code, context); }
   run('let ludoState = null, nqState = null, communeState = null, tnState = null, htState = null, unoState = null; function updateVoiceUI() {} function renderGame() { document.getElementById("game-active").style.display = ""; }');
-  for (const name of ['avatars', 'common', 'bluff', 'blackjack']) run(fs.readFileSync(path.join(serverRoot, 'public/js', name + '.js'), 'utf8'));
+  for (const name of ['avatars', 'common', 'bluff', 'blackjack', 'tictactoe', 'scrabble']) run(fs.readFileSync(path.join(serverRoot, 'public/js', name + '.js'), 'utf8'));
   run('ws = new WebSocket("test"); hostId = playerId;');
   const message = (type, payload) => run('handleWSMessage({data:' + JSON.stringify(JSON.stringify({ type, payload })) + '})');
   return { run, message, elements, sent, errors, document };
@@ -131,7 +131,7 @@ test('HTML readiness count, unique IDs, callbacks, assets, and default deck opti
   assert.equal(new Set(ids).size, ids.length);
   const scripts = [...html.matchAll(/<script src="([^"]+)" defer onload="checkScriptsLoaded\(\)"><\/script>/g)];
   assert.equal(scripts.length, Number(html.match(/let totalScripts = (\d+)/)[1]));
-  assert.equal(scripts.length, 13);
+  assert.equal(scripts.length, 15);
   for (const script of scripts) assert.ok(fs.existsSync(path.join(serverRoot, 'public', script[1])));
   for (const match of html.matchAll(/\bon(?:click|input|keydown|change|load)="([^"]*)"/g)) new Function('event', match[1]);
   for (const type of ['bluff', 'blackjack']) assert.ok(!new RegExp('id="' + type + '-two-decks"[^>]*checked').test(html));
@@ -174,7 +174,7 @@ test('Homepage themes persist and do not replace game screen styles', () => {
   app.run('applyHomeTheme("light"); initHomeTheme()');
   assert.equal(menu.dataset.homeTheme, 'dark');
   app.run('startPublicRoomDiscovery = () => {}');
-  for (const type of ['coup', 'uno', 'poker', 'ludo', 'nquestions', 'commune', 'twentynine', 'hearts', 'bluff', 'blackjack']) {
+  for (const type of ['coup', 'uno', 'poker', 'ludo', 'nquestions', 'commune', 'twentynine', 'hearts', 'bluff', 'blackjack', 'tictactoe', 'scrabble']) {
     app.run(`openGameMenu('${type}')`);
     assert.equal(menu.classList.contains('home-active'), false);
     assert.equal(app.elements.get('menu-' + type).style.display, '');
@@ -200,15 +200,15 @@ test('Homepage categories and case-insensitive search intersect and reset empty 
   const filters = ['all', 'cards', 'board', 'party'].map(filter => ({
     dataset: { homeFilter: filter }, setAttribute(name, value) { this[name] = value; }
   }));
-  assert.equal(cards.length, 10);
+  assert.equal(cards.length, 12);
   cards.find(card => card.textContent === 'twentynine').dataset.homeKeywords = '29 twenty nine twentynine';
   const originalQuery = app.document.querySelectorAll;
   app.document.querySelectorAll = selector => selector === '[data-home-filter]' ? filters : selector === '#home-game-list .game-card' ? cards : originalQuery(selector);
   const visible = () => cards.filter(card => !card.hidden).map(card => card.textContent);
   app.run('setHomeFilter("board")');
-  assert.deepEqual(visible(), ['ludo']);
+  assert.deepEqual(visible(), ['ludo', 'tictactoe', 'scrabble']);
   assert.equal(filters[2]['aria-pressed'], 'true');
-  assert.equal(app.elements.get('home-search-status').textContent, '1 game found.');
+  assert.equal(app.elements.get('home-search-status').textContent, '3 games found.');
   app.elements.get('home-search').value = '  POKER  ';
   app.run('filterHomeGames()');
   assert.deepEqual(visible(), []);
@@ -216,7 +216,7 @@ test('Homepage categories and case-insensitive search intersect and reset empty 
   app.run('setHomeFilter("cards")');
   assert.deepEqual(visible(), ['poker']);
   app.run('resetHomeGames()');
-  assert.equal(visible().length, 10);
+  assert.equal(visible().length, 12);
   assert.equal(app.elements.get('home-search').value, '');
   assert.equal(app.elements.get('home-empty').hidden, true);
   app.run('setHomeFilter("party")');
@@ -240,7 +240,7 @@ test('Homepage and room illustrations are local and every referenced symbol exis
 
 test('Every home game has create and join panels with its own artwork and code-entry controls', () => {
   const games = [...html.matchAll(/class="game-card [^"]*"[^>]*onclick="openGameMenu\('([^']+)'\)"/g)].map(match => match[1]);
-  assert.equal(games.length, 10);
+  assert.equal(games.length, 12);
   for (const game of games) {
     const setup = html.match(new RegExp(`<div id="menu-${game}" class="room-stage room-setup"[^>]*>([\\s\\S]*?)\\n  </div>`));
     assert.ok(setup, game + ' setup');
@@ -298,6 +298,29 @@ test('Bluff all nonactors challenge, next accepts, and pending empty hand is not
   assert.deepEqual(app.errors, []);
 });
 
+test('Tic-Tac-Toe accepts only empty cells on your turn and highlights the winning line', () => {
+  const app = harness();
+  const state = {phase:'playing', board:Array(9).fill(''), currentPlayerIdx:0,
+    players:[{id:'test-player',name:'Alex'},{id:'other',name:'River'}]};
+  app.message('tictactoe-state', state);
+  assert.equal(app.elements.get('ttt-status').textContent, 'Your turn');
+  assert.equal((app.elements.get('ttt-board').innerHTML.match(/onclick="markTTT/g) || []).length, 9);
+  app.run('markTTT(0)');
+  assert.deepEqual(app.sent.at(-1), {type:'tictactoe-move',payload:{cell:0}});
+  const count = app.sent.length;
+  state.board[0] = 'X';
+  state.currentPlayerIdx = 1;
+  app.message('tictactoe-state', state);
+  app.run('markTTT(1)');
+  assert.equal(app.sent.length, count);
+  Object.assign(state,{phase:'game_over',winnerId:'test-player',winningLine:[0,1,2]});
+  app.message('tictactoe-state', state);
+  assert.equal(app.elements.get('ttt-status').textContent,'Alex wins!');
+  assert.equal((app.elements.get('ttt-board').innerHTML.match(/class="ttt-win"/g)||[]).length,3);
+  assert.equal(app.elements.get('ttt-return').hidden,false);
+  assert.deepEqual(app.errors,[]);
+});
+
 test('Blackjack totals handle aces, never count hidden dealer cards, and display public hands', () => {
   const app = harness();
   app.message('blackjack-state', blackjackFixture());
@@ -340,13 +363,13 @@ test('Blackjack next round requires active host, terminal inactive member can re
   assert.deepEqual(app.errors, []);
 });
 
-test('All ten chats distinguish own and incoming bubbles with persistent sender faces', () => {
+test('Every game chat distinguishes own and incoming bubbles with persistent sender faces', () => {
   const app = harness();
   app.message('room-visibility', {avatars:{other:'fox'}});
   app.message('chat', {senderId:'other',senderName:'Alex',message:'Good hand!',timestamp:Date.now()});
   app.message('room-visibility', {});
   app.message('chat', {senderId:app.run('playerId'),senderName:'River Song#0001',message:'Thanks!',timestamp:Date.now()});
-  for (const prefix of ['', 'poker-', 'ludo-', 'nq-', 'commune-', 'tn-', 'ht-', 'uno-', 'bluff-', 'blackjack-']) {
+  for (const prefix of ['', 'poker-', 'ludo-', 'nq-', 'commune-', 'tn-', 'ht-', 'uno-', 'bluff-', 'blackjack-', 'tictactoe-', 'scrabble-']) {
     const html = app.elements.get(prefix + 'chat-messages').innerHTML;
     assert.match(html, /class="chat-row">[\s\S]*🦊[\s\S]*Good hand!/);
     assert.match(html, /class="chat-row outgoing">[\s\S]*>RS<[\s\S]*>You<[\s\S]*Thanks!/);

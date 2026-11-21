@@ -115,6 +115,8 @@ body:has(#screen-menu.active.home-active) { background: var(--home-bg); }
 #game-list-view .home-featured .game-card-arrow { top: 20px; bottom: auto; right: 20px; background: #ffffff66; border: 1px solid #ffffff88; color: #3a3042; }
 .game-card-poker { --scene: #d6e8d9; }
 .game-card-ludo { --scene: #f7e9ad; }
+.game-card-scrabble { --scene:#ecd7b5; }
+.game-card-tictactoe { --scene:#dcebcf; }
 .game-card-nq { --scene: #dbe3ff; }
 .game-card-commune { --scene: #e8ddf1; }
 .game-card-tn { --scene: #cde7e8; }

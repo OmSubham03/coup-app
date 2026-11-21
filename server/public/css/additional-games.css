@@ -77,8 +77,19 @@ button.additional-card { cursor: pointer; touch-action: manipulation; }
 .additional-rules-dialog { width: min(600px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 20px; border: 1px solid #647c95; border-radius: 8px; background: #182534; color: #e2e8f0; }
 .additional-rules-dialog::backdrop { background: rgba(0,0,0,.8); }
 
+#tictactoe-active { margin:auto; max-width:600px; padding:16px; border-radius:16px; background:var(--home-bg); color:var(--home-ink); }
+#ttt-seats { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+#ttt-seats > div { display:flex; align-items:center; gap:5px; padding:8px; background:var(--home-soft); border-radius:10px; font-size:14px; overflow-wrap:anywhere; }
+#ttt-status { margin:16px auto; text-align:center; font-weight:700; }
+#ttt-board { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:0 auto 16px; max-width:360px; padding:8px; background:var(--home-border); border-radius:18px; }
+#ttt-board button { aspect-ratio:1; border:0; border-radius:10px; background:var(--home-surface); color:var(--home-green); font:800 clamp(30px,10vw,62px)/1 system-ui; cursor:pointer; }
+#ttt-board button:disabled { cursor:default; opacity:1; }
+#ttt-board button[data-mark="O"] { color:#bf7340; }
+#ttt-board .ttt-win { background:var(--home-accent); color:#233c2c; }
+#ttt-board button:enabled:hover { background:var(--home-soft); }
+#ttt-board button:focus-visible { outline:3px solid var(--home-green); }
+
 /* Blackjack felt and rail. Keep the hands in document order as the table narrows. */
-body:has(#blackjack-active:not([style*="display:none"]):not([style*="display: none"])) { background:var(--home-bg); }
 #blackjack-active { color:var(--home-ink); --additional-accent:var(--home-green); }
 #blackjack-active :is(.phase-text,.additional-table-meta,#blackjack-last-action) { color:var(--home-muted); }
 .bj-table { position:relative; isolation:isolate; padding:12px clamp(8px,2vw,22px) 30px; text-align:center; color:#fff6dc;

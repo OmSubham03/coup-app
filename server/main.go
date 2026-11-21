@@ -39,6 +39,8 @@ type Room struct {
 	unoState           *game.UNOState
 	bluffState         *game.BluffState
 	blackjackState     *game.BlackjackState
+	ticTacToeState     *game.TicTacToeState
+	scrabbleState      *game.ScrabbleState
 	twoDecks           bool
 	unoStackingEnabled bool
 	unoMultiSkipEnabled bool
@@ -175,7 +177,7 @@ func (r *Room) playerList() []PlayerConn {
 }
 
 func (r *Room) broadcastState() {
-	if r.gameType == "bluff" || r.gameType == "blackjack" {
+	if r.isAdditionalGame() {
 		r.broadcastAdditionalState()
 		return
 	}
@@ -458,6 +460,10 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "room required", http.StatusBadRequest)
 		return
 	}
+	if playerID == "" {
+		http.Error(w, "playerId required", http.StatusBadRequest)
+		return
+	}
 
 	if gameType == "" {
 		gameType = "coup" // Default for backward compatible
@@ -472,11 +478,11 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	}
 
 	connID := uuid.New().String()
-	log.Printf("[WS] New connection: connID=%s playerID=%s room=%s action=%s variant=%s gameType=%s", connID[:8], playerID[:8], roomCode, action, variant, gameType)
+	log.Printf("[WS] New connection: connID=%s playerID=%.8s room=%s action=%s variant=%s gameType=%s", connID[:8], playerID, roomCode, action, variant, gameType)
 
 	// Check if player is already in an active game in a different room
 	if existingRoom := findPlayerActiveRoom(playerID); existingRoom != nil && existingRoom.code != roomCode {
-		log.Printf("[REDIRECT] Player %s already in active game %s, redirecting from attempted join to %s", playerID[:8], existingRoom.code, roomCode)
+		log.Printf("[REDIRECT] Player %.8s already in active game %s, redirecting from attempted join to %s", playerID, existingRoom.code, roomCode)
 		data, _ := json.Marshal(OutMessage{Type: "redirect", Payload: map[string]string{
 			"message":  "You are already in an active game. Redirecting...",
 			"roomCode": existingRoom.code,
@@ -491,13 +497,14 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	room.mu.Lock()
 
 	if action == "create" && !room.created {
+		room.gameType, room.variant = gameType, variant
 		room.created = true
 		room.twoDecks = twoDecks
 		if gameType == "uno" {
 			room.unoStackingEnabled = unoStacking
 			room.unoMultiSkipEnabled = unoMultiSkip
 		}
-		log.Printf("[ROOM] Created room %s by player %s", roomCode, playerID[:8])
+		log.Printf("[ROOM] Created room %s by player %.8s", roomCode, playerID)
 	}
 
 	if !room.created && action != "create" {
@@ -512,13 +519,13 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 	room.connections[connID] = conn
 	room.connPlayer[connID] = playerID
 	room.sendRoomVisibility(connID)
-	log.Printf("[ROOM] %s: stored conn %s -> player %s (total conns: %d, players: %d)", roomCode, connID[:8], playerID[:8], len(room.connections), len(room.players))
+	log.Printf("[ROOM] %s: stored conn %s -> player %.8s (total conns: %d, players: %d)", roomCode, connID[:8], playerID, len(room.connections), len(room.players))
 
 	// Cancel any pending disconnect timer for this player
 	if timer, ok := room.disconnectTimers[playerID]; ok {
 		timer.Stop()
 		delete(room.disconnectTimers, playerID)
-		log.Printf("[RECONNECT] room=%s player=%s — cancelled disconnect timer", roomCode, playerID[:8])
+		log.Printf("[RECONNECT] room=%s player=%.8s — cancelled disconnect timer", roomCode, playerID)
 	}
 
 	// If game already started, check reconnection
@@ -585,7 +592,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 
 		if !isReconnecting {
 			// Allow spectating — send current game state as spectator
-			if room.gameType == "bluff" || room.gameType == "blackjack" {
+			if room.isAdditionalGame() {
 				room.sendAdditionalState(connID, "")
 			} else if room.gameType == "poker" {
 				personalized := room.createPersonalizedPokerState("")
@@ -612,7 +619,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			}
 			room.mu.Unlock()
 		} else {
-			if room.gameType == "bluff" || room.gameType == "blackjack" {
+			if room.isAdditionalGame() {
 				room.sendAdditionalState(connID, playerID)
 			} else if room.gameType == "poker" {
 				personalized := room.createPersonalizedPokerState(playerID)
@@ -682,8 +689,12 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 
 		if !hasOtherConn && pID != "" {
 			gameInProgress := false
-			if room.gameType == "bluff" || room.gameType == "blackjack" {
+			if room.isAdditionalGame() {
 				gameInProgress = room.additionalPlayerActive(pID)
+				// Keep finished match seats reconnectable until return-to-lobby.
+				if room.ticTacToeState != nil || room.scrabbleState != nil {
+					gameInProgress = room.additionalPlayerInGame(pID)
+				}
 			} else if room.gameType == "poker" {
 				gameInProgress = room.pokerState != nil && room.pokerState.Phase != game.PokerPhaseWaiting && room.pokerState.Phase != game.PokerPhaseGameOver
 			} else if room.gameType == "ludo" {
@@ -704,7 +715,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 
 			if gameInProgress {
 				// Give 5 minutes to reconnect before eliminating
-				log.Printf("[DISCONNECT] room=%s player=%s — starting 300s reconnect grace period", room.code, pID[:8])
+				log.Printf("[DISCONNECT] room=%s player=%.8s — starting 300s reconnect grace period", room.code, pID)
 				timer := time.AfterFunc(300*time.Second, func() {
 					room.mu.Lock()
 					defer room.mu.Unlock()
@@ -715,8 +726,8 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 						}
 					}
 					delete(room.disconnectTimers, pID)
-					log.Printf("[DISCONNECT] room=%s player=%s — grace period expired, eliminating", room.code, pID[:8])
-					if room.gameType == "bluff" || room.gameType == "blackjack" {
+					log.Printf("[DISCONNECT] room=%s player=%.8s — grace period expired, eliminating", room.code, pID)
+					if room.isAdditionalGame() {
 						room.exitAdditionalPlayer(pID)
 						room.broadcastState()
 					} else if room.gameType == "poker" {
@@ -779,8 +790,8 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 						log.Printf("[DISCONNECT] room=%s host transferred to %s", room.code, room.hostID)
 					}
 					// Remove from players map
-					delete(room.players, pID)
-					if room.gameType == "bluff" || room.gameType == "blackjack" {
+					room.removeSeat(pID)
+					if room.isAdditionalGame() {
 						room.broadcastVisibility()
 						room.broadcast(room.additionalLobbyMessage())
 					}
@@ -788,7 +799,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 				room.disconnectTimers[pID] = timer
 			} else {
 				// In lobby — remove immediately
-				delete(room.players, pID)
+				room.removeSeat(pID)
 				if pID == room.hostID {
 					room.hostID = ""
 					for id := range room.players {
@@ -799,7 +810,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 				room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
 					"players":    room.playerList(),
 					"hostId":     room.hostID,
-					"gameActive": (room.gameType == "bluff" || room.gameType == "blackjack") && room.hasStartedGame(),
+					"gameActive": room.isAdditionalGame() && room.hasStartedGame(),
 					"twoDecks": room.twoDecks,
 				}})
 			}
@@ -820,7 +831,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		log.Printf("[MSG] room=%s player=%s type=%s payload=%s", roomCode, playerID[:8], msg.Type, string(msg.Payload))
+		log.Printf("[MSG] room=%s player=%.8s type=%s payload=%s", roomCode, playerID, msg.Type, string(msg.Payload))
 		room.mu.Lock()
 		room.lastActivity = time.Now()
 		handleMessage(room, connID, playerID, msg)
@@ -862,7 +873,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 
 		gameInProgress := room.hasStartedGame()
 		if gameInProgress {
-			if room.additionalPlayerActive(playerID) {
+			if room.additionalPlayerActive(playerID) || ((room.ticTacToeState != nil || room.scrabbleState != nil) && room.additionalPlayerInGame(playerID)) {
 				room.sendAdditionalState(connID, playerID)
 				return
 			}
@@ -877,7 +888,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "UNO supports 2 to 6 players"}})
 			return
 		}
-		if (room.gameType == "bluff" || room.gameType == "blackjack") && len(room.players) >= roomCapacity(room.gameType) && room.players[playerID] == nil {
+		if room.isAdditionalGame() && len(room.players) >= roomCapacity(room.gameType) && room.players[playerID] == nil {
 			room.sendTo(connID, OutMessage{Type: "error", Payload: map[string]string{"message": "Room is full"}})
 			return
 		}
@@ -902,7 +913,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		}
 		room.players[playerID] = &PlayerConn{ID: playerID, Name: name, Avatar: payload.Avatar}
 		room.broadcastVisibility()
-		log.Printf("[JOIN] room=%s player=%s name=%q (total players: %d)", room.code, playerID[:8], name, len(room.players))
+		log.Printf("[JOIN] room=%s player=%.8s name=%q (total players: %d)", room.code, playerID, name, len(room.players))
 
 		room.broadcast(OutMessage{Type: "players-updated", Payload: map[string]interface{}{
 			"players":    room.playerList(),
@@ -1233,7 +1244,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 		} else {
 			hostShort := "(none)"
 			if len(room.hostID) >= 8 { hostShort = room.hostID[:8] }
-			log.Printf("[RTL] player=%s host=%s gameState=%v phase=%v", playerID[:8], hostShort, room.gameState != nil, func() string { if room.gameState != nil { return string(room.gameState.Phase) }; return "nil" }())
+			log.Printf("[RTL] player=%.8s host=%s gameState=%v phase=%v", playerID, hostShort, room.gameState != nil, func() string { if room.gameState != nil { return string(room.gameState.Phase) }; return "nil" }())
 			if room.gameState == nil {
 				log.Printf("[RTL] gameState is nil, sending lobby state to player")
 				room.sendTo(connID, OutMessage{Type: "state", Payload: nil})

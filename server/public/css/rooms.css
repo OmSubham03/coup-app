@@ -1,4 +1,22 @@
 /* The backdrop belongs to the visible pre-game panel, not the shared game screen. */
+body:has(#screen-game.active > [id$="-active"]:not([style*="display:none"]):not([style*="display: none"])) {
+  background: var(--home-bg);
+}
+.container:has(#screen-game.active > [id$="-active"]:not([style*="display:none"]):not([style*="display: none"])) {
+  padding: max(.5rem, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+}
+#screen-game > [id$="-active"] {
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  color: var(--home-ink);
+  color-scheme: light;
+}
+body:has(#screen-menu[data-home-theme="dark"]) #screen-game > [id$="-active"] { color-scheme: dark; }
+#screen-game > [id$="-active"] > .header-bar { border-color: var(--home-border); }
+#screen-game > [id$="-active"] > .header-bar :is(h2,.phase-text) { color: var(--home-ink); }
+#screen-game > [id$="-active"] > .header-bar [id$="-turn-display"] { color: var(--home-muted) !important; }
+#screen-game > [id$="-active"] :is(.player-card,.panel,.blackjack-outcome) { color: #e2e8f0; }
 .room-stage { color: var(--home-ink); }
 .room-stage::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--home-bg); pointer-events: none; }
 .room-setup, .room-lobby { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; padding-bottom: 32px; }

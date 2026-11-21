@@ -28,6 +28,7 @@
 <link rel="stylesheet" href="/css/additional-games.css">
 <link rel="stylesheet" href="/css/home.css">
 <link rel="stylesheet" href="/css/rooms.css">
+<link rel="stylesheet" href="/css/scrabble.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -81,11 +82,11 @@
       <section class="home-library" id="home-games" aria-labelledby="home-games-title">
         <div class="home-section-heading">
           <div><p class="home-eyebrow">THE GOOD-TIME COLLECTION</p><h2 id="home-games-title">Pick a game. Make a night.</h2></div>
-          <span class="home-game-count">10 games. Endless rematches.</span>
+          <span class="home-game-count">12 games. Endless rematches.</span>
         </div>
         <div class="home-discovery">
           <div class="home-filters" role="group" aria-label="Filter games">
-            <button type="button" data-home-filter="all" aria-pressed="true" onclick="setHomeFilter('all')">All games <span>10</span></button>
+            <button type="button" data-home-filter="all" aria-pressed="true" onclick="setHomeFilter('all')">All games <span>12</span></button>
             <button type="button" data-home-filter="cards" aria-pressed="false" onclick="setHomeFilter('cards')">Cards &amp; bluffing</button>
             <button type="button" data-home-filter="board" aria-pressed="false" onclick="setHomeFilter('board')">Board games</button>
             <button type="button" data-home-filter="party" aria-pressed="false" onclick="setHomeFilter('party')">Party games</button>
@@ -137,6 +138,14 @@
           <button type="button" class="game-card game-card-blackjack" data-home-category="cards" onclick="openGameMenu('blackjack')">
             <span class="home-card-scene"><span class="home-card-badge">GO SOLO OR TOGETHER</span><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#blackjack"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Blackjack</span><span class="game-card-desc">Feeling lucky? Make it twenty-one.</span><span class="home-card-meta">Beat the dealer <span>&middot;</span> 1-4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-tictactoe" data-home-category="board" onclick="openGameMenu('tictactoe')" data-home-keywords="tic tac toe tictactoe noughts crosses">
+            <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#tictactoe"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Tic-Tac-Toe</span><span class="game-card-desc">Three in a row. One move ahead.</span><span class="home-card-meta">Board game &middot; 2 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-scrabble" data-home-category="board" onclick="openGameMenu('scrabble')" data-home-keywords="words letters crossword spelling">
+            <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#scrabble"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Scrabble</span><span class="game-card-desc">Seven tiles. Find your word.</span><span class="home-card-meta">Word game &middot; 2-4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
         </div>
         <div id="home-empty" class="home-empty" hidden><h3>No games found. No fun lost.</h3><p>Try another name or explore the whole collection.</p><button type="button" onclick="resetHomeGames()">Show all games <span aria-hidden="true">&#8594;</span></button></div>
@@ -360,7 +369,22 @@
     </section>
   </div>
 
-  <!-- Commune Menu -->
+  <div id="menu-scrabble" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar"><button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button><button class="btn btn-sm" onclick="toggleAdditionalRules('scrabble')">Rules</button></div>
+    <header class="room-banner"><div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Scrabble</h1><p>Build a crossword together. 2-4 players.</p></div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#scrabble"></use></svg></header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Invite up to three friends to the board.</p><button class="btn" onclick="createAdditionalGame('scrabble')">Create Scrabble Game</button></section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="scrabble-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('scrabble-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinAdditionalWithCode('scrabble')">
+      <button class="btn btn-amber" id="scrabble-join-btn" disabled onclick="joinAdditionalWithCode('scrabble')">Join Game</button></section>
+  </div>
+  <div id="menu-tictactoe" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar"><button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button><button class="btn btn-sm" onclick="toggleAdditionalRules('tictactoe')">Rules</button></div>
+    <header class="room-banner"><div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Tic-Tac-Toe</h1><p>Three in a row. Two players.</p></div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#tictactoe"></use></svg></header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Invite a friend for a head-to-head match.</p><button class="btn" onclick="createAdditionalGame('tictactoe')">Create Tic-Tac-Toe Game</button></section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
+      <input id="tictactoe-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('tictactoe-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinAdditionalWithCode('tictactoe')">
+      <button class="btn btn-amber" id="tictactoe-join-btn" disabled onclick="joinAdditionalWithCode('tictactoe')">Join Game</button></section>
+  </div>
   <div id="menu-commune" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
@@ -526,6 +550,21 @@
   </div>
 
   <!-- Active game (Coup) -->
+  <div id="scrabble-active" style="display:none">
+    <div class="header-bar"><h2>Scrabble</h2><button type="button" class="game-settings-open" onclick="openGameSettings()" aria-label="Settings">&#9881;</button></div>
+    <div class="tab-bar"><button class="tab active" id="scrabbletab-game" onclick="switchAdditionalTab('scrabble','game')">Board</button><button class="tab" id="scrabbletab-chat" onclick="switchAdditionalTab('scrabble','chat')">Chat</button></div>
+    <div id="scrabble-game-tab"><p id="scrabble-status" role="status"></p><div id="scrabble-play-area"></div></div>
+    <div id="scrabble-chat-tab" style="display:none"><div class="chat-panel"><div class="chat-messages" id="scrabble-chat-messages" role="log" aria-label="Room chat"></div><div class="chat-input-row"><input id="scrabble-chat-input" aria-label="Chat message" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()"><button class="btn" onclick="sendChat()">Send</button></div></div></div>
+  </div>
+  <div id="tictactoe-active" style="display:none">
+    <div class="header-bar"><h2>Tic-Tac-Toe</h2><button type="button" class="game-settings-open" onclick="openGameSettings()" aria-label="Settings">&#9881;</button></div>
+    <div class="tab-bar"><button class="tab active" id="tictactoetab-game" onclick="switchAdditionalTab('tictactoe','game')">Board</button><button class="tab" id="tictactoetab-chat" onclick="switchAdditionalTab('tictactoe','chat')">Chat</button></div>
+    <div id="tictactoe-game-tab">
+      <div id="ttt-seats"></div><p id="ttt-status" role="status"></p><div id="ttt-board" role="group" aria-label="Tic-Tac-Toe board"></div>
+      <button class="btn" id="ttt-return" onclick="send('return-to-lobby')" hidden>Return to lobby</button>
+    </div>
+    <div id="tictactoe-chat-tab" style="display:none"><div class="chat-panel"><div class="chat-messages" id="tictactoe-chat-messages" role="log" aria-label="Room chat"></div><div class="chat-input-row"><input id="tictactoe-chat-input" aria-label="Chat message" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()"><button class="btn" onclick="sendChat()">Send</button></div></div></div>
+  </div>
   <div id="game-active" style="display:none">
     <div class="header-bar">
       <div>
@@ -858,6 +897,18 @@
   <p>After either resolution, the rank advances and the next active player takes a turn. An empty hand wins only after its claim is accepted or a challenge proves it truthful. A caught bluff must pick up the pile and continue.</p>
   <p>Leaving returns your remaining cards to the pile. Fewer than two active players ends the game without awarding a winner.</p>
 </dialog>
+<dialog id="scrabble-rules-dialog" class="additional-rules-dialog" aria-labelledby="scrabble-rules-title">
+  <div class="game-settings-heading"><h2 id="scrabble-rules-title">Scrabble rules</h2><button class="game-settings-close" onclick="toggleAdditionalRules('scrabble')" aria-label="Close rules">&times;</button></div>
+  <p>Choose a rack tile, then a square. Tap a newly placed tile to take it back. Use the arrow keys to explore the board. DL/TL doubles or triples a letter; DW/TW doubles or triples a word.</p>
+  <p>Use your seven tiles to form a word in one row or column. Open across the center star; later plays must connect to the board. Every word you form scores. Letter and word bonuses apply only to newly covered squares. Blanks score zero; playing all seven tiles adds 50 points.</p>
+  <p>If any word is missing from the English word list, the play goes to a vote. Submitting counts as your approval. All other active players must approve before the tiles and points count. One rejection returns the tiles and lets you try again on the same turn.</p>
+  <p>You may pass or exchange tiles instead of playing. Exchanging requires at least seven tiles in the bag.</p>
+  <p>The game ends when a player empties their rack with the bag empty, or after six consecutive scoreless turns. Leftover tiles are deducted from scores; a player who goes out collects the other players' leftover tile values.</p>
+</dialog>
+<dialog id="tictactoe-rules-dialog" class="additional-rules-dialog" aria-labelledby="ttt-rules-title">
+  <div class="game-settings-heading"><h2 id="ttt-rules-title">Tic-Tac-Toe rules</h2><button class="game-settings-close" onclick="toggleAdditionalRules('tictactoe')" aria-label="Close rules">&times;</button></div>
+  <p>X goes first. Take turns marking one empty square. Get three of your marks across, down or diagonally to win. If the board fills without a line, the game is a draw.</p>
+</dialog>
 <dialog id="blackjack-rules-dialog" class="additional-rules-dialog" aria-labelledby="blackjack-rules-title">
   <div class="game-settings-heading"><h2 id="blackjack-rules-title">Blackjack Rules</h2><button type="button" class="game-settings-close" onclick="toggleBlackjackRules()" aria-label="Close Blackjack rules">&times;</button></div>
   <p>1-4 players. Play chips only: everyone starts with 1000 chips. Each round posts a fixed 50-chip bet and uses a fresh shuffled one-deck or two-deck shoe.</p>
@@ -1187,7 +1238,7 @@
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 13;
+let totalScripts = 15;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
@@ -1218,6 +1269,8 @@ function checkScriptsLoaded() {
 <script src="/js/uno.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/bluff.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/blackjack.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/tictactoe.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/scrabble.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

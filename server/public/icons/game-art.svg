@@ -138,4 +138,22 @@
   <symbol id="blackjack" viewBox="0 0 320 230">
     <g filter="url(#shadow)"><use href="#ace" x="86" y="36" width="105" height="147" transform="rotate(-19 138 109)"/><g transform="rotate(13 203 116)"><rect x="153" y="45" width="104" height="147" rx="11" fill="#c8c9bc"/><rect x="150" y="40" width="104" height="147" rx="11" fill="url(#paper)" stroke="#fff" stroke-width="2"/><text x="162" y="70" fill="#334d3c" font-family="Georgia,serif" font-size="23">J</text><path d="m176 102 12 10 13-18 14 18 13-10-6 37h-41Z" fill="url(#gold)" stroke="#c79b42" stroke-width="2"/><use href="#spade" x="193" y="145" width="18" height="20" color="#3b5848"/></g><use href="#chip" x="47" y="169" width="93" height="42"/><use href="#chip" x="47" y="157" width="93" height="42"/></g>
   </symbol>
+  <symbol id="tictactoe" viewBox="0 0 320 230">
+    <g transform="translate(83 35) rotate(-6 80 80)">
+      <rect x="3" y="7" width="162" height="162" rx="18" fill="#3a6456"/>
+      <rect width="162" height="162" rx="18" fill="#f7f4d9"/>
+      <path d="M54 10v142m54-142v142M10 54h142M10 108h142" fill="none" stroke="#b4c4a7" stroke-width="3"/>
+      <g fill="none" stroke="#336e58" stroke-width="9" stroke-linecap="round"><path d="m16 16 23 23m0-23L16 39m53 30 23 23m0-23L69 92m54 31 23 23m0-23-23 23"/></g>
+      <g fill="none" stroke="#ce7550" stroke-width="8"><circle cx="81" cy="27" r="14"/><circle cx="27" cy="81" r="14"/></g>
+    </g>
+  </symbol>
+  <symbol id="scrabble" viewBox="0 0 320 230">
+    <g transform="translate(43 43) rotate(-7 112 70)">
+      <rect width="230" height="143" rx="14" fill="#567969"/>
+      <path d="M38 0v143m38-143v143m38-143v143m38-143v143m38-143v143M0 36h230M0 72h230M0 108h230" stroke="#d8e2cc" opacity=".55"/>
+      <g fill="#d99183"><rect x="3" y="3" width="32" height="30"/><rect x="193" y="110" width="34" height="30"/></g>
+      <g fill="#f7ddb0" stroke="#af8752" stroke-width="2"><rect x="22" y="49" width="42" height="45" rx="5"/><rect x="68" y="49" width="42" height="45" rx="5"/><rect x="114" y="49" width="42" height="45" rx="5"/><rect x="160" y="49" width="42" height="45" rx="5"/></g>
+      <g font-family="Georgia,serif" font-size="27" font-weight="bold" fill="#433621" text-anchor="middle"><text x="43" y="81">W</text><text x="89" y="81">O</text><text x="135" y="81">R</text><text x="181" y="81">D</text></g>
+    </g>
+  </symbol>
 </svg>

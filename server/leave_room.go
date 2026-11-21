@@ -2,10 +2,20 @@ package main
 
 import "coup-server/game"
 
+func (room *Room) removeSeat(playerID string) {
+	delete(room.players, playerID)
+	if (room.ticTacToeState != nil || room.scrabbleState != nil) && len(room.players) == 0 {
+		// Nobody remains who can return the finished match to the lobby.
+		room.ticTacToeState = nil
+		room.scrabbleState = nil
+		room.broadcast(OutMessage{Type: "state", Payload: nil})
+	}
+}
+
 func (room *Room) leaveGameRoom(playerID string) error {
 	if room.players[playerID] != nil {
 		switch room.gameType {
-		case "bluff", "blackjack":
+		case "bluff", "blackjack", "tictactoe", "scrabble":
 			if err := room.exitAdditionalPlayer(playerID); err != nil {
 				return err
 			}
@@ -45,7 +55,7 @@ func (room *Room) leaveGameRoom(playerID string) error {
 			}
 		}
 	}
-	delete(room.players, playerID)
+	room.removeSeat(playerID)
 	delete(room.ludoColors, playerID)
 	if timer := room.disconnectTimers[playerID]; timer != nil {
 		timer.Stop()

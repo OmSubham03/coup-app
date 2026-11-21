@@ -1,4 +1,4 @@
-const CACHE_NAME = 'timecrusher-v3';
+const CACHE_NAME = 'timecrusher-v4';
 const PRECACHE = [
   '/textures/duke.jpg',
   '/textures/assassin.jpg',

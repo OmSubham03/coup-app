@@ -17,11 +17,13 @@ type publicRoomSummary struct {
 
 func roomCapacity(gameType string) int {
 	switch gameType {
+	case "tictactoe":
+		return 2
 	case "coup", "uno", "bluff":
 		return 6
 	case "poker":
 		return 8
-	case "ludo", "twentynine", "hearts", "blackjack":
+	case "ludo", "twentynine", "hearts", "blackjack", "scrabble":
 		return 4
 	case "commune", "nquestions":
 		return 10
@@ -33,7 +35,7 @@ func roomCapacity(gameType string) int {
 func (room *Room) hasStartedGame() bool {
 	return room.gameState != nil || room.pokerState != nil || room.ludoState != nil ||
 		room.nqState != nil || room.communeState != nil || room.tnState != nil ||
-		room.heartsState != nil || room.unoState != nil || room.bluffState != nil || room.blackjackState != nil
+		room.heartsState != nil || room.unoState != nil || room.bluffState != nil || room.blackjackState != nil || room.ticTacToeState != nil || room.scrabbleState != nil
 }
 
 func (room *Room) availablePublicRoom() bool {

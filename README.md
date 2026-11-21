@@ -67,7 +67,21 @@ The dealer's total appears only after the hidden card is revealed. Player score
 badges sit beside each wager chip, with Double, Hit and Stand below the curved
 rail. Wagers are shown in game chips; the table does not offer insurance.
 
-Open `http://localhost:8080`. The responsive TimeCrusher homepage includes all ten
+**Tic-Tac-Toe** is a two-player room game under **Board games**. Create a
+room, share its code, and start once both players have joined. X moves first;
+three marks in a row win, and a full board without a line is a draw.
+
+**Scrabble** is a 2–4 player board game with private seven-tile racks. Place
+tiles in a line, use premium squares, and build off previous words. The
+server checks every new word against the bundled, public-domain
+[ENABLE lexicon (172,823 entries)](https://github.com/dolph/dictionary/blob/233d25a56b9ac8bef906916ccf091a976995cce0/enable1.txt);
+it is not an official tournament dictionary. Unknown words go to a house
+vote: the proposer counts as approving, every other active player must
+approve, and one rejection returns the tiles without consuming the turn.
+Placement rules cannot be overridden by a vote. No external dictionary
+service or API key is required.
+
+Open `http://localhost:8080`. The responsive TimeCrusher homepage includes all twelve
 games, category filters, game search, and a white / dark-blue theme switch.
 The theme preference is saved in browser local storage. Homepage styles are
 shared by the game hub, room setup, and waiting lobby. The lobby includes a
@@ -82,7 +96,9 @@ their decorative illustrations. Game cards keep their artwork.
 
 Use the same sun/moon button on the homepage, beside **Theme** in the waiting
 lobby, or under **Settings → Theme** during any game. This preference is saved in your
-browser and does not change the theme for other players.
+browser and does not change the theme for other players. All active games use
+the same page background and a single narrow outer gutter on phones. Boards,
+cards, and felt keep their game-specific colors.
 
 Commune displays remaining tokens as numbered poker chips on the straight
 table border, aligned with each player's seat. The final standings use the
@@ -97,7 +113,7 @@ then select any required ranks. Selecting a hand does not submit it.
 
 Open your profile on the homepage to choose one of nine animal avatars or
 select **Initials**. Your choice is saved in this browser and shared with
-other players in the waiting lobby and all ten web games.
+other players in the waiting lobby and all twelve web games.
 The in-game Chat tab uses the same avatar or initials. Your messages appear
 on the right with a **You** label; other players' messages appear on the left.
 
