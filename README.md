@@ -100,6 +100,12 @@ browser and does not change the theme for other players. All active games use
 the same page background and a single narrow outer gutter on phones. Boards,
 cards, and felt keep their game-specific colors.
 
+Hearts uses a poker-style player rail above the green felt. Each player's chip
+shows penalty points for the current hand; their total score is listed separately.
+Trick cards stay upright in their seat positions. Your private hand sits along
+the bottom edge of the felt during both passing and play. On phones, the
+**Play Card** button spans the width of the table.
+
 The Coup table puts opponents' coins and public influence in a horizontal row.
 Your private role portraits appear below it, above the action buttons. Spectators
 see only public influence; revealed roles are marked **Lost**.

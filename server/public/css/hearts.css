@@ -193,3 +193,35 @@
 @media (min-width: 600px) {
   .ht-my-cards { grid-template-columns: repeat(13, minmax(0, 1fr)); }
 }
+@media (max-width: 599px) {
+  .ht-play-btn { display: block; width: 100%; margin-inline: 0; }
+}
+
+/* The chip on each seat tracks this hand's penalties, not a wager. */
+#ht-active { max-width:720px; }
+.ht-score-bar { margin:0; padding:8px 4px 0; gap:3px; border:1px solid var(--home-border); border-bottom:0; border-radius:14px 14px 0 0; background:linear-gradient(to bottom,var(--home-surface) calc(100% - 18px),#805432 calc(100% - 18px),#553420); }
+.ht-score-item { display:grid; justify-items:center; align-content:start; gap:2px; }
+.ht-score-item .player-avatar-badge { margin:0; }
+.ht-score-item.current .player-avatar-badge { outline:2px solid var(--home-green); outline-offset:1px; }
+.ht-score-name { max-width:100%; color:var(--home-ink); font-size:13px; }
+.ht-total { color:var(--home-muted); font:600 11px/1.3 system-ui; }
+.ht-point-chip { display:grid; place-items:center; width:35px; aspect-ratio:1; border:3px dashed #dcb96d; border-radius:50%; background:#57392b; color:#fff5d2; font:800 12px system-ui; }
+.ht-board { max-width:none; height:auto; border:0; border-top:3px solid #443224; border-radius:0 0 18px 18px; color:#fff; background:radial-gradient(ellipse at top,#247456,#104e3e 80%); }
+.ht-trick-zone { position:relative; height:232px; }
+.ht-passing .ht-trick-zone { height:145px; }
+.ht-board .ht-player-name { color:#f0fff6; }
+.ht-card-count { color:#c1ddcf; }
+.ht-info-bar .ht-hearts-broken { color:#ffddad; }
+.ht-center { top:61%; width:140px; height:158px; }
+.ht-trick-card { height:52px; width:39px; border:0; box-shadow:0 2px 5px #042e2677; }
+.ht-trick-card.pos-top { transform:translateX(-50%); }
+.ht-trick-card.pos-left,.ht-trick-card.pos-right { transform:translateY(-50%); }
+.ht-hand { max-width:none; padding:8px clamp(4px,1vw,8px); border-top:1px solid #ffffff38; text-align:left; }
+.ht-hand-title { color:#f0fff6; font-size:14px; }
+.ht-card:not(:disabled) { border-color:#718a7e; }
+.ht-card.selected,.ht-card.pass-selected { border-color:#bc851e; }
+.ht-waiting { color:var(--home-muted); }
+.ht-result { background:var(--home-soft); color:var(--home-ink); }
+.ht-result h3,.ht-result p,.ht-result-table td { color:var(--home-ink); }
+.ht-result-table th { color:var(--home-muted); }
+.ht-result-table :is(th,td) { border-color:var(--home-border); }

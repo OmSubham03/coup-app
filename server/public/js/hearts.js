@@ -142,10 +142,10 @@ function renderHTGame() {
   turnEl.textContent = htState.phase === 'passing' ? `Pass ${htState.passDirName}` :
     htState.phase === 'playing' ? (myIdx === htState.currentPlayerIdx ? 'Your turn' : `${htState.players[htState.currentPlayerIdx].name}'s turn`) : '';
 
-  let html = renderHTScoreBar(myIdx);
+  let html = '';
 
   if (htState.phase === 'passing') {
-    html += renderHTPassingBoard(myIdx);
+    html = renderHTScoreBar(myIdx) + renderHTPassingBoard(myIdx);
     tableArea.innerHTML = html;
     actionArea.innerHTML = renderHTPassingActions(myIdx);
     return;
@@ -157,7 +157,7 @@ function renderHTGame() {
     return;
   }
 
-  html += renderHTPlayingBoard(myIdx);
+  html = renderHTScoreBar(myIdx) + renderHTPlayingBoard(myIdx);
   tableArea.innerHTML = html;
   actionArea.innerHTML = renderHTPlayingActions(myIdx);
 }
@@ -167,11 +167,11 @@ function renderHTScoreBar(myIdx) {
   for (let i = 0; i < 4; i++) {
     const p = htState.players[i];
     const s = p.totalScore;
-    const cls = s < 30 ? 'low' : (s < 70 ? 'mid' : 'high');
-    html += `<div class="ht-score-item">
-      <div class="ht-score-name${i === myIdx ? ' me' : ''}">${playerBadge(p)}${htEsc(p.name)}</div>
-      <div class="ht-score-val ${cls}">${s}<span class="ht-score-label">Total</span></div>
-      <div class="ht-hand-pts">Hand +${p.handPoints}</div>
+    const active = htState.phase === 'playing' && i === htState.currentPlayerIdx;
+    html += `<div class="ht-score-item${active ? ' current' : ''}" ${active ? 'aria-current="true"' : ''}>
+      ${playerBadge(p)}<strong class="ht-score-name">${i === myIdx ? 'You' : htEsc(p.name)}</strong>
+      <span class="ht-total">${s} total</span>
+      <span class="ht-point-chip" title="Penalty points this hand"><span class="home-sr-only">Hand points: </span>+${p.handPoints}</span>
     </div>`;
   }
   html += '</div>';
@@ -182,7 +182,7 @@ function renderHTPassingBoard(myIdx) {
   const seatMap = myIdx >= 0 ? [(myIdx)%4,(myIdx+1)%4,(myIdx+2)%4,(myIdx+3)%4] : [0,1,2,3];
   const posClasses = ['ht-player-bottom','ht-player-left','ht-player-top','ht-player-right'];
 
-  let html = '<div class="ht-board">';
+  let html = '<div class="ht-board ht-passing"><div class="ht-trick-zone">';
 
   // Center info
   html += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;text-align:center">';
@@ -205,7 +205,7 @@ function renderHTPassingBoard(myIdx) {
   if (myIdx >= 0) {
     const me = htState.players[myIdx];
     html += '<div class="ht-hand">';
-    html += `<div class="ht-player-name${me.hasPassed ? ' active' : ''}">${htEsc(me.name)}${me.hasPassed ? ' ✓' : ''}</div>`;
+    html += '<strong class="ht-hand-title">Your hand</strong>';
     html += '<div class="ht-my-cards">';
     for (const c of me.cards) {
       if (c.id.startsWith('hidden_')) continue;
@@ -217,7 +217,7 @@ function renderHTPassingBoard(myIdx) {
     html += '</div></div>';
   }
 
-  return html;
+  return html + '</div>';
 }
 
 function renderHTPassingActions(myIdx) {
@@ -234,7 +234,7 @@ function renderHTPlayingBoard(myIdx) {
   const positions = ['bottom','left','top','right'];
   const posClasses = ['ht-player-bottom','ht-player-left','ht-player-top','ht-player-right'];
 
-  let html = '<div class="ht-board">';
+  let html = '<div class="ht-board"><div class="ht-trick-zone">';
 
   // Info bar — only hearts broken indicator, no trick counter
   if (htState.heartsBroken) {
@@ -249,7 +249,7 @@ function renderHTPlayingBoard(myIdx) {
     const isActive = pi === htState.currentPlayerIdx;
     const cardCount = p.cards ? p.cards.length : 0;
     html += `<div class="ht-player-spot ${posClasses[s]}">`;
-    html += `<div class="ht-player-name${isActive ? ' active' : ''}">${htEsc(p.name)}(+${p.handPoints})</div>`;
+    html += `<div class="ht-player-name${isActive ? ' active' : ''}">${htEsc(p.name)}</div>`;
     html += `<div class="ht-card-count">${cardCount} cards</div></div>`;
   }
 
@@ -272,7 +272,7 @@ function renderHTPlayingBoard(myIdx) {
     const me = htState.players[myIdx];
     const isMyTurn = myIdx === htState.currentPlayerIdx;
     html += '<div class="ht-hand">';
-    html += `<div class="ht-player-name${isMyTurn ? ' active' : ''}">${htEsc(me.name)}(+${me.handPoints})</div>`;
+    html += '<strong class="ht-hand-title">Your hand</strong>';
     html += '<div class="ht-my-cards">';
     const leadSuit = htState.currentTrick?.leadSuit;
     const hasSuit = leadSuit ? me.cards.some(c => c.suit === leadSuit) : false;
@@ -293,7 +293,7 @@ function renderHTPlayingBoard(myIdx) {
     }
     html += '</div></div>';
   }
-  return html;
+  return html + '</div>';
 }
 
 function renderHTPlayingActions(myIdx) {
