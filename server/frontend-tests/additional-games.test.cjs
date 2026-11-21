@@ -301,7 +301,8 @@ test('Bluff all nonactors challenge, next accepts, and pending empty hand is not
 test('Blackjack totals handle aces, never count hidden dealer cards, and display public hands', () => {
   const app = harness();
   app.message('blackjack-state', blackjackFixture());
-  assert.equal(app.elements.get('blackjack-dealer-total').textContent, 'Visible total: 11');
+  assert.equal(app.elements.get('blackjack-dealer-total').hidden, true);
+  assert.equal(app.elements.get('blackjack-dealer-total').textContent, '');
   assert.match(app.elements.get('blackjack-dealer-cards').innerHTML, /aria-label="Hidden card"/);
   assert.match(app.elements.get('blackjack-players').innerHTML, /Ace of spades/);
   assert.equal(app.run('blackjackTotal([{rank:1},{rank:1},{rank:13}])'), 12);
@@ -323,6 +324,7 @@ test('Blackjack next round requires active host, terminal inactive member can re
   state.dealerCards = [card(10), card(7)];
   app.message('blackjack-state', state);
   assert.equal(app.elements.get('blackjack-dealer-total').textContent, 'Total: 17');
+  assert.equal(app.elements.get('blackjack-dealer-total').hidden, false);
   assert.equal(app.elements.get('blackjack-next-round-btn').disabled, false);
   app.run("blackjackAction('next-round')");
   assert.equal(app.sent.at(-1).type, 'blackjack-next-round');

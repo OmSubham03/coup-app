@@ -505,12 +505,15 @@
     </div>
     <div id="blackjack-game-tab">
       <section id="blackjack-round-results" class="blackjack-round-results" role="status" aria-live="polite" hidden></section>
-      <section class="additional-dealer"><h2>Dealer</h2><div id="blackjack-dealer-cards" class="additional-cards"></div><p id="blackjack-dealer-total" class="additional-status"></p></section>
-      <div id="blackjack-players"></div>
+      <section class="bj-table" aria-label="Blackjack table">
+        <div class="bj-rack" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <section class="additional-dealer"><h2>Dealer</h2><div id="blackjack-dealer-cards" class="additional-cards"></div><p id="blackjack-dealer-total" class="additional-status"></p></section>
+        <div id="blackjack-players"></div>
+      </section>
       <div class="additional-actions" id="blackjack-turn-actions" hidden>
-        <button type="button" class="btn btn-green" id="blackjack-hit-btn" disabled onclick="blackjackAction('hit')">Hit</button>
-        <button type="button" class="btn btn-blue" id="blackjack-stand-btn" disabled onclick="blackjackAction('stand')">Stand</button>
-        <button type="button" class="btn btn-amber" id="blackjack-double-btn" disabled onclick="blackjackAction('double')">Double</button>
+        <button type="button" class="btn btn-amber" id="blackjack-double-btn" disabled onclick="blackjackAction('double')"><b aria-hidden="true">&times;2</b>Double</button>
+        <button type="button" class="btn btn-green" id="blackjack-hit-btn" disabled onclick="blackjackAction('hit')"><b aria-hidden="true">+</b>Hit</button>
+        <button type="button" class="btn btn-blue" id="blackjack-stand-btn" disabled onclick="blackjackAction('stand')"><b aria-hidden="true">&#9632;</b>Stand</button>
       </div>
       <p id="blackjack-last-action" class="additional-status" role="status"></p>
       <button type="button" class="btn btn-green" id="blackjack-next-round-btn" hidden disabled onclick="blackjackAction('next-round')">Next Round</button>

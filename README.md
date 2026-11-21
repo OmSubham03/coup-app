@@ -62,6 +62,11 @@ The server starts on port **8080** and provides:
 
 ### Web game hub
 
+Blackjack uses a green felt table with larger dealer cards above the players.
+The dealer's total appears only after the hidden card is revealed. Player score
+badges sit beside each wager chip, with Double, Hit and Stand below the curved
+rail. Wagers are shown in game chips; the table does not offer insurance.
+
 Open `http://localhost:8080`. The responsive TimeCrusher homepage includes all ten
 games, category filters, game search, and a white / dark-blue theme switch.
 The theme preference is saved in browser local storage. Homepage styles are
