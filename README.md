@@ -100,6 +100,10 @@ browser and does not change the theme for other players. All active games use
 the same page background and a single narrow outer gutter on phones. Boards,
 cards, and felt keep their game-specific colors.
 
+The Coup table puts opponents' coins and public influence in a horizontal row.
+Your private role portraits appear below it, above the action buttons. Spectators
+see only public influence; revealed roles are marked **Lost**.
+
 Commune displays remaining tokens as numbered poker chips on the straight
 table border, aligned with each player's seat. The final standings use the
 same numbered chips.

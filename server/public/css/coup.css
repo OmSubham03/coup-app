@@ -23,14 +23,46 @@ h1.coup-title { color: #4f46e5; }
 #game-active .tab.active { background: #38204f; color: #f0e1ff; }
 #game-active .tab-rules { background: #4a47d2; }
 #game-active .tab-exit { background: #ef3340; }
-#game-active .header-bar > div:first-child > span { color: #d6b2ff !important; }
+#game-active .header-bar > div:first-child > span { color: var(--home-ink) !important; letter-spacing: .08em; }
 #game-active #players-board {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-columns: minmax(0, 1fr);
 	gap: 8px;
 	width: min(100%, 760px);
 	margin: 0 auto;
 }
+
+.court-rail { display:flex; gap:5px; overflow-x:auto; padding-block:2px; scrollbar-width:thin; }
+.court-seat { position:relative; flex:1 0 103px; min-width:0; padding:7px; text-align:center; border:1px solid var(--home-border); border-radius:10px; background:var(--home-soft); }
+.court-seat.current { border-color:var(--home-green); }
+.court-name { display:flex; align-items:center; gap:4px; font-size:.8rem; min-width:0; }
+.court-name strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.court-seat .court-name strong { max-width:12ch; }
+.court-coins { margin-inline-start:auto; display:inline-flex; align-items:center; gap:3px; font-weight:800; }
+.court-coins i { width:14px; height:14px; border-radius:50%; background:#f7c864; border:3px double #855320; }
+.court-cards { display:flex; align-items:center; justify-content:center; gap:4px; padding:5px 0; }
+.court-back,.court-portrait { position:relative; display:block; width:42px; aspect-ratio:2/3; border:1px solid #80b5ad; border-radius:5px; background-position:center; background-size:cover; overflow:hidden; }
+.court-back { background-color:#15373d; background-image:url('/textures/card-back.svg'); }
+.court-portrait span { position:absolute; inset:auto 0 0; padding:3px 1px; background:#092526dc; color:white; text-align:center; font:700 8px/1.1 system-ui; }
+.court-portrait.lost { filter:grayscale(1); }
+.court-portrait b,.court-seat>small,.court-hand>small { font:800 10px/1 system-ui; text-transform:uppercase; letter-spacing:.08em; }
+.court-portrait b { position:absolute; top:5px; left:3px; background:#29282a; color:white; padding:3px; }
+.court-hand { position:relative; isolation:isolate; overflow:hidden; border-radius:12px; padding:9px 12px 14px; color:#f7f4dc; background:repeating-linear-gradient(45deg,transparent 0 13px,#89e9cb09 13px 14px),radial-gradient(ellipse at top,#286369,#10343b 75%); }
+.court-hand .court-cards { padding:10px 0 3px; gap:0; }
+.court-hand .court-portrait { width:clamp(102px,29vw,154px); border-radius:9px; border-color:#c2d9b8; box-shadow:0 4px 9px #00161880; transform:rotate(-4deg); }
+.court-hand .court-portrait + .court-portrait { transform:rotate(4deg); }
+.court-hand .court-portrait span { padding:7px 2px; font:bold clamp(13px,3.5vw,18px) Georgia,serif; }
+.court-hand>small { position:absolute; bottom:8px; left:10px; }
+.court-dock { max-width:760px; margin:10px auto; }
+.court-dock h2 { margin:0 0 6px; font:bold 17px Georgia,serif; color:var(--home-ink); }
+.court-moves { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(80px,23%),1fr)); gap:4px; }
+.court-move { position:relative; min-height:53px; padding:5px 2px; border-radius:8px; border:1px solid var(--home-border); background:var(--home-soft); color:var(--home-ink); cursor:pointer; }
+.court-move i,.court-move strong { display:block; font:800 20px/1.1 Georgia,serif; }
+.court-move strong { font:700 12px/1.2 system-ui; }
+.court-move small { position:absolute; right:4px; top:3px; font-weight:bold; }
+.court-move.move-coup { background:#ac373b; color:white; }
+.court-move:disabled { opacity:.5; cursor:not-allowed; }
+.court-move:enabled:hover,.court-move:focus-visible { outline:2px solid var(--home-green); outline-offset:-2px; }
 #game-active .player-card {
 	min-width: 0;
 	padding: 10px;

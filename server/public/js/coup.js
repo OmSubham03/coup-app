@@ -27,31 +27,26 @@ function renderGame() {
 
 function renderPlayers() {
   const cp = gameState.players[gameState.currentPlayerIndex];
-  let html = '';
+  const opponents = [];
+  let hand = '';
   for (const p of gameState.players) {
-    const isMe = p.id === playerId;
-    const isCurrent = p.id === cp.id;
-    const cls = 'player-card' + (isMe ? ' mine' : '') + (isCurrent ? ' current' : '') + (!p.isAlive ? ' dead' : '');
-    html += '<div class="' + cls + '">';
-    html += '<div class="player-header"><div>';
-    if (isCurrent) html += '👑 ';
-    html += '<span class="player-name">' + playerBadge(p) + esc(p.name) + '</span>';
-    if (isMe) html += '<span class="badge">You</span>';
-    if (isCurrent) html += ' <span style="color:#3b82f6;font-size:12px">Current Turn</span>';
-    html += '</div><span class="coins">💰 ' + p.coins + '</span></div>';
-    html += '<div>';
-    for (const c of p.cards) {
-      if (c.revealed) {
-        html += '<span class="card-box card-revealed" style="background-image:url(' + CHAR_IMG[c.character] + ')"><span class="card-label">' + c.character + '</span></span>';
-      } else if (isMe) {
-        html += '<span class="card-box" style="background-image:url(' + CHAR_IMG[c.character] + ')"><span class="card-label">' + c.character + '</span></span>';
-      } else {
-        html += '<span class="card-box card-hidden"></span>';
-      }
-    }
-    html += '</div></div>';
+    const mine = !isSpectating && p.id === playerId;
+    const current = p.id === cp.id && gameState.phase !== 'game_over';
+    const cards = p.cards.map(c => {
+      if (!mine && !c.revealed) return '<span class="court-back" role="img" aria-label="Hidden influence"></span>';
+      return `<span class="court-portrait${c.revealed ? ' lost' : ''}" style="background-image:url(${CHAR_IMG[c.character]})"><span>${esc(c.character)}</span>${c.revealed ? '<b>Lost</b>' : ''}</span>`;
+    }).join('');
+    const coins = `<span class="court-coins"><i aria-hidden="true"></i>${Number(p.coins)}<span class="home-sr-only"> coins</span></span>`;
+    const marker = !p.isAlive ? 'Out' : current ? 'Turn' : '';
+    const seat = `<section class="${mine ? 'court-hand' : 'court-seat'}${current ? ' current' : ''}">
+      <div class="court-name">${playerBadge(p)}<strong>${mine ? 'Your influence' : esc(p.name)}</strong>${coins}</div>
+      <div class="court-cards">${cards}</div>${marker ? `<small>${marker}</small>` : ''}</section>`;
+    if (mine) hand = seat; else opponents.push(seat);
   }
-  document.getElementById('players-board').innerHTML = html;
+  const board = document.getElementById('players-board');
+  const offset = board.querySelector('.court-rail')?.scrollLeft || 0;
+  board.innerHTML = `<div class="court-rail" role="region" aria-label="Public influences" tabindex="0">${opponents.join('')}</div>${hand}`;
+  board.querySelector('.court-rail').scrollLeft = offset;
 }
 
 const ACTION_INFO = {
@@ -119,17 +114,19 @@ function renderActions() {
       ? ['income','foreign_aid','tax','inquire','steal','interrogate','assassinate','coup']
       : ['income','foreign_aid','tax','exchange','steal','assassinate','coup'];
 
-    let html = '<div class="panel panel-action"><h2>⚔️ Choose Your Action</h2>';
+    let html = '<div class="court-dock"><h2>Your move</h2>';
     if (mustCoup) {
       html += '<p style="color:#f59e0b;margin:8px 0">You have 10+ coins — you must Coup!</p>';
     }
-    html += '<div class="action-grid">';
+    html += '<div class="court-moves">';
     for (const a of actions) {
       if (mustCoup && a !== 'coup') continue;
       const info = ACTION_INFO[a];
       const req = ACTION_REQS[a];
       const disabled = (req.cost && me.coins < req.cost) ? 'disabled' : '';
-      html += '<button class="btn ' + info.color + '" ' + disabled + ' onclick="actionClick(\'' + a + '\')"><div class="action-label">' + info.label + '</div><div class="action-desc">' + info.desc + '</div></button>';
+      const label = info.label.split(' (')[0];
+      const glyph = {income:'&#9673;', foreign_aid:'&#10070;', tax:'&#9819;', exchange:'&#8644;', inquire:'&#9678;', steal:'&#9875;', assassinate:'&#10022;', coup:'&#9876;', interrogate:'?' }[a];
+      html += `<button type="button" class="court-move move-${a}" ${disabled} title="${info.label}: ${info.desc}" onclick="actionClick('${a}')"><i aria-hidden="true">${glyph}</i><strong>${label}</strong><small>${req.cost ? '&minus;' + req.cost : a === 'income' ? '+1' : a === 'foreign_aid' ? '+2' : a === 'tax' ? '+3' : ''}</small><span class="home-sr-only">${info.label}: ${info.desc}</span></button>`;
     }
     html += '</div></div>';
     area.innerHTML = html;
