@@ -7,10 +7,18 @@ const vm = require('node:vm');
 const serverRoot = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(serverRoot, 'client.html'), 'utf8');
 
-function harness() {
+function emptyRoomStats() {
+  return { players: 0, games: Object.fromEntries([
+    'coup', 'poker', 'ludo', 'nquestions', 'commune', 'twentynine',
+    'hearts', 'uno', 'bluff', 'blackjack', 'tictactoe', 'scrabble', 'kabo'
+  ].map(type => [type, { players: 0, publicRooms: 0 }])) };
+}
+
+function harness(backendURL = '', options = {}) {
   const elements = new Map();
   const sent = [];
   const errors = [];
+  const requests = [];
   function element() {
     const classes = new Set();
     return {
@@ -29,7 +37,12 @@ function harness() {
       setAttribute(name, value) { this[name] = value; },
       addEventListener(name, callback) { this['on' + name] = callback; },
       showModal() { this.open = true; }, close() { this.open = false; }, focus() {},
-      append() {}, replaceChildren() {}, parentElement: { title: '' }
+      append(...children) { this.children.push(...children); },
+      replaceChildren(...children) { this.children = children; },
+      querySelector(selector) {
+        return this.children.find(child => child.className === selector.slice(1)) || null;
+      },
+      parentElement: { title: '', setAttribute(name, value) { this[name] = value; } }
     };
   }
   for (const match of html.matchAll(/\bid="([^"]+)"/g)) elements.set(match[1], element());
@@ -43,6 +56,7 @@ function harness() {
   };
   const document = {
     getElementById(id) {
+      if (id === 'guide-status') return null;
       assert.ok(elements.has(id), 'Missing HTML element: ' + id);
       return elements.get(id);
     },
@@ -77,21 +91,28 @@ function harness() {
   }
   const context = vm.createContext({
     document, sessionStorage: storage(), localStorage: storage(),
-    location: { port: '8080', hostname: 'localhost', host: 'localhost:8080', protocol: 'http:' },
+    location: { port: '8080', hostname: 'localhost', host: 'localhost:8080', protocol: 'http:', search: options.search || '' },
     crypto: { randomUUID: () => 'test-player' }, WebSocket: Socket,
-    URLSearchParams, AbortController, navigator: {},
+    URL, URLSearchParams, AbortController, navigator: {},
     console: { log() {}, error: (...args) => errors.push(args) },
     setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
     alert() {}, confirm: () => true,
-    fetch: async () => ({ ok: true, json: async () => ({ players: 0, code: 'ABCDE' }) })
+    fetch: async url => {
+      requests.push(url);
+      return { ok: true, json: async () => url.includes('/api/public-rooms?') ? [] :
+        url.endsWith('/api/room-stats') ? (options.stats || emptyRoomStats()) : ({ code: 'ABCDE' }) };
+    }
   });
   context.localStorage.setItem('coup_name', 'Tester');
+  for (const [key, value] of Object.entries(options.session || {})) context.sessionStorage.setItem(key, value);
   function run(code) { return vm.runInContext(code, context); }
   run('let ludoState = null, nqState = null, communeState = null, tnState = null, htState = null, unoState = null; function updateVoiceUI() {} function renderGame() { document.getElementById("game-active").style.display = ""; }');
-  for (const name of ['avatars', 'common', 'bluff', 'blackjack', 'tictactoe', 'scrabble']) run(fs.readFileSync(path.join(serverRoot, 'public/js', name + '.js'), 'utf8'));
+  run(fs.readFileSync(path.join(serverRoot, 'public/js/config.js'), 'utf8'));
+  context.TIMECRUSHER_CONFIG.backendURL = backendURL;
+  for (const name of ['theme', 'avatars', 'common', 'bluff', 'blackjack', 'tictactoe', 'scrabble', 'kabo']) run(fs.readFileSync(path.join(serverRoot, 'public/js', name + '.js'), 'utf8'));
   run('ws = new WebSocket("test"); hostId = playerId;');
   const message = (type, payload) => run('handleWSMessage({data:' + JSON.stringify(JSON.stringify({ type, payload })) + '})');
-  return { run, message, elements, sent, errors, document };
+  return { run, message, elements, sent, errors, document, requests };
 }
 
 const card = (rank, id = 'card-' + rank, suit = 'spades') => ({ rank, id, suit });
@@ -131,11 +152,288 @@ test('HTML readiness count, unique IDs, callbacks, assets, and default deck opti
   assert.equal(new Set(ids).size, ids.length);
   const scripts = [...html.matchAll(/<script src="([^"]+)" defer onload="checkScriptsLoaded\(\)"><\/script>/g)];
   assert.equal(scripts.length, Number(html.match(/let totalScripts = (\d+)/)[1]));
-  assert.equal(scripts.length, 15);
+  assert.equal(scripts.length, 18);
   for (const script of scripts) assert.ok(fs.existsSync(path.join(serverRoot, 'public', script[1])));
   for (const match of html.matchAll(/\bon(?:click|input|keydown|change|load)="([^"]*)"/g)) new Function('event', match[1]);
   for (const type of ['bluff', 'blackjack']) assert.ok(!new RegExp('id="' + type + '-two-decks"[^>]*checked').test(html));
   assert.ok(fs.existsSync(path.join(serverRoot, 'public/textures/card-back.svg')));
+});
+
+test('Homepage footer links to the Studio-hosted policy and central contact section', () => {
+  const footer = html.match(/<footer class="site-footer">([\s\S]*?)<\/footer>/)[1];
+  const links = [
+    ['https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html', 'Privacy Policy'],
+    ['https://hobbystudio.github.io/Website/#contact', 'Contact Us']
+  ];
+  assert.match(footer, /<nav class="site-footer-links" aria-label="Information and support">/);
+  for (const [url, label] of links) {
+    assert.ok(footer.includes(`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`));
+  }
+  assert.match(footer, /Made with play by Hobby Studio/);
+});
+
+test('Card activity hides each zero value while homepage and game setups display zero live', async () => {
+  const stats = emptyRoomStats();
+  stats.games.coup = { players: 5, publicRooms: 2 };
+  stats.games.ludo = { players: 3, publicRooms: 0 };
+  stats.players = 8;
+  const app = harness('', { stats });
+  await app.run('loadRoomPlayerCount()');
+  assert.equal(app.elements.get('room-player-total').textContent, 8);
+  assert.equal(app.elements.get('coup-card-rooms').textContent, '2 rooms');
+  assert.equal(app.elements.get('coup-card-rooms').hidden, false);
+  assert.equal(app.elements.get('coup-card-live').textContent, '5 live');
+  assert.equal(app.elements.get('coup-card-live').hidden, false);
+  assert.equal(app.elements.get('coup-card-activity').hidden, false);
+  assert.equal(app.elements.get('ludo-card-rooms').hidden, true);
+  assert.equal(app.elements.get('ludo-card-live').textContent, '3 live');
+  assert.equal(app.elements.get('ludo-card-live').hidden, false);
+  for (const type of Object.keys(stats.games)) {
+    assert.equal(app.elements.get(type + '-setup-live').textContent, stats.games[type].players + ' live');
+    if (stats.games[type].players === 0) {
+      assert.equal(app.elements.get(type + '-card-activity').hidden, true);
+      assert.equal(app.elements.get(type + '-card-live').hidden, true);
+      assert.equal(app.elements.get(type + '-card-rooms').hidden, true);
+    }
+  }
+  app.run('renderRoomStats(' + JSON.stringify(emptyRoomStats()) + ')');
+  assert.equal(app.elements.get('room-player-total').textContent, 0);
+  assert.equal(app.elements.get('coup-setup-live').textContent, '0 live');
+  assert.equal(app.elements.get('coup-card-activity').hidden, true);
+  assert.match(html, /id="room-player-total">--<\/strong><span>live<\/span>/);
+  assert.deepEqual(app.errors, []);
+});
+
+test('Activity stats share an in-flight request and refresh once per setup open, without a timer', async () => {
+  const app = harness();
+  const before = app.requests.filter(url => url.endsWith('/api/room-stats')).length;
+  await app.run('Promise.all([loadRoomPlayerCount(), loadRoomPlayerCount()])');
+  assert.equal(app.requests.filter(url => url.endsWith('/api/room-stats')).length, before);
+  app.run('setInterval = () => { throw new Error("No activity polling timer expected"); }; startPublicRoomDiscovery = () => {}');
+  app.run("openGameMenu('ludo')");
+  await app.run('loadRoomPlayerCount()');
+  assert.equal(app.requests.filter(url => url.endsWith('/api/room-stats')).length, before + 1);
+  app.run('backToGameList()');
+  assert.equal(app.requests.filter(url => url.endsWith('/api/room-stats')).length, before + 1);
+  assert.deepEqual(app.errors, []);
+});
+
+test('Activity fetch failures and invalid counts surface unavailable states rather than false zeros', async () => {
+  const app = harness();
+  await app.run('loadRoomPlayerCount()');
+  app.run('renderRoomStats(' + JSON.stringify({ ...emptyRoomStats(), players: 1, games: {
+    ...emptyRoomStats().games, coup: { players: 1, publicRooms: 1 }
+  } }) + ')');
+  const invalid = [
+    null, { players: 0 }, { ...emptyRoomStats(), players: -1 },
+    { ...emptyRoomStats(), players: 1 },
+    { ...emptyRoomStats(), games: { ...emptyRoomStats().games, coup: { players: 0, publicRooms: 1 } } },
+    { ...emptyRoomStats(), games: { ...emptyRoomStats().games, coup: { players: 1.5, publicRooms: 0 } } }
+  ];
+  for (const value of invalid) {
+    app.run('fetch = async () => ({ok:true, json:async () => (' + JSON.stringify(value) + ')})');
+    await app.run('loadRoomPlayerCount()');
+    assert.equal(app.elements.get('room-player-total').textContent, '--');
+    assert.equal(app.elements.get('coup-setup-live').textContent, '-- live');
+    assert.equal(app.elements.get('coup-card-activity').hidden, true);
+  }
+  app.run('fetch = async () => ({ok:false})');
+  await app.run('loadRoomPlayerCount()');
+  assert.match(app.elements.get('coup-setup-live').title, /unavailable/);
+  app.run('fetch = async () => {throw new Error("Offline")};');
+  await app.run('loadRoomPlayerCount()');
+  assert.equal(app.errors.length, invalid.length + 2);
+});
+
+test('Every game has its own card badges and setup live total without replacing guide or Rules controls', () => {
+  for (const type of Object.keys(emptyRoomStats().games)) {
+    assert.match(html, new RegExp('id="' + type + '-card-activity" hidden><span id="' + type + '-card-rooms" hidden></span><span id="' + type + '-card-live" hidden></span>'));
+    const toolbar = html.match(new RegExp('<div id="menu-' + type + '"[\\s\\S]*?<div class="room-toolbar">([\\s\\S]*?)</div>'))[1];
+    assert.ok(toolbar.includes('id="' + type + '-setup-live"'));
+    assert.ok(toolbar.indexOf('id="' + type + '-setup-live"') < toolbar.indexOf('room-guide-link'));
+    assert.match(toolbar, /room-guide-link/);
+    assert.match(toolbar, />Rules<\/button>/);
+  }
+  const css = fs.readFileSync(path.join(serverRoot, 'public/css/rooms.css'), 'utf8');
+  assert.match(css, /@media \(max-width: 640px\) \{[\s\S]*?\.room-setup \.room-live-count \{ display: none; \}/);
+  assert.match(css, /\.room-setup \.room-guide-link \{ margin-left: auto; \}/);
+});
+
+test('Every Rules surface uses the shared theme panel without inline game colors', () => {
+  const overlays = ['rules-overlay', 'poker-rules-overlay', 'ludo-rules-overlay', 'tn-rules-overlay',
+    'ht-rules-overlay', 'uno-rules-overlay', 'commune-rules-overlay', 'nq-rules-overlay'];
+  for (const id of overlays) {
+    assert.match(html, new RegExp('<div class="rules-overlay" id="' + id + '">\\s*<div class="[^"]*rules-panel">'));
+  }
+  for (const id of ['bluff-rules-dialog', 'blackjack-rules-dialog', 'tictactoe-rules-dialog', 'scrabble-rules-dialog', 'uno-house-rule-dialog', 'kabo-rules-dialog', 'kabo-confirm-dialog']) {
+    assert.match(html, new RegExp('<dialog id="' + id + '" class="[^"]*rules-panel"'));
+  }
+  assert.equal((html.match(/\brules-panel\b/g) || []).length, 15);
+  assert.doesNotMatch(html, /class="[^"]*rules-content[^"]*" style="/);
+  assert.doesNotMatch(html, /onclick="toggle[^"]*Rules[^"]*" style="/);
+  const css = fs.readFileSync(path.join(serverRoot, 'public/css/rooms.css'), 'utf8');
+  assert.match(css, /\.rules-panel \{[^}]*background: var\(--home-surface\);[^}]*color: var\(--home-ink\)/);
+  assert.match(css, /\.rules-panel h3 \{[^}]*color: var\(--home-green\)/);
+  assert.match(css, /\.rules-panel :is\(p,li\) \{[^}]*color: var\(--home-muted\)/);
+  assert.match(css, /body:has\(#screen-menu\[data-home-theme="dark"\]\) \.rules-panel \{ color-scheme: dark; \}/);
+});
+
+test('In-game Settings Rules opens the same game rule handler and closes Settings first', () => {
+  const app = harness();
+  app.run('globalThis.openedRules = []');
+  const callbacks = {
+    coup: 'toggleRules', poker: 'togglePokerRules', ludo: 'toggleLudoRules',
+    nquestions: 'toggleNQRules', commune: 'toggleCommuneRules', twentynine: 'toggleTNRules',
+    hearts: 'toggleHTRules', uno: 'toggleUNORules', bluff: 'toggleBluffRules', blackjack: 'toggleBlackjackRules'
+  };
+  for (const [type, callback] of Object.entries(callbacks)) {
+    app.run(callback + ' = () => openedRules.push("' + type + '")');
+  }
+  app.run('toggleAdditionalRules = type => openedRules.push(type)');
+  for (const type of Object.keys(emptyRoomStats().games)) {
+    app.elements.get('game-settings-dialog').open = true;
+    app.run('currentGameType = "' + type + '"; openSettingsRules()');
+    assert.equal(app.run('openedRules.at(-1)'), type);
+    assert.equal(app.elements.get('game-settings-dialog').open, false);
+  }
+});
+
+test('Guide Play now queries open the correct setup without creating a room', async () => {
+  for (const game of ['coup', 'ludo', 'tictactoe', 'poker', 'nquestions', 'commune', 'twentynine', 'hearts', 'uno', 'bluff', 'blackjack', 'scrabble', 'kabo']) {
+    const app = harness('', { search: '?game=' + game });
+    await app.run('Promise.resolve()');
+    assert.equal(app.run('currentGameType'), game);
+    assert.equal(app.elements.get('menu-' + game).style.display, '');
+    assert.equal(app.elements.get('game-list-view').style.display, 'none');
+    assert.equal(app.run('roomCode'), '');
+    assert.equal(app.run('wsConnecting'), false);
+    assert.equal(app.run('savedSessionReconnectPending'), false);
+    assert.ok(app.requests.some(url => url.includes('/api/public-rooms?gameType=' + game)));
+    assert.ok(!app.requests.some(url => url.includes('/api/generate-code')));
+    assert.deepEqual(app.errors, []);
+  }
+});
+
+function kaboFixture(phase = 'draw') {
+  const card = id => ({ id, rank: 0, suit: '' });
+  return { id: 'kabo-match', revision: 5, round: 1, phase, currentPlayerIdx: 0,
+    players: [
+      { id: 'test-player', name: '<Tester>', active: true, ready: false, totalScore: 0, cards: ['a','b','c','d'].map(card) },
+      { id: 'other', name: 'Alex', active: true, ready: false, totalScore: 0, cards: ['e','f','g','h'].map(card) }
+    ], discard: {rank:7,suit:'hearts'}, discardId:'discard-1', drawn:null, fromDeck:true,
+    reveals: [], power:'', matchOpen:true, matchAllowed:true, callerId:'', finalTurns:0,
+    lastAction:'', winners:[], roundWinners:[] };
+}
+
+test('Kabo matching selects opponent and own cards, confirms atomically, and resets stale selections', () => {
+  const app = harness();
+  app.message('kabo-state', kaboFixture());
+  assert.match(app.elements.get('kabo-opponents').innerHTML, /data-kabo-slot="e"/);
+  assert.match(app.elements.get('kabo-own-name').innerHTML, /&lt;Tester&gt;/);
+  assert.ok(!app.elements.get('kabo-results').innerHTML);
+  app.run('kaboChoose("other","e")');
+  assert.equal(app.run('kaboCommand()'), null);
+  assert.match(app.elements.get('kabo-prompt').textContent, /give Alex/);
+  app.run('kaboChoose(playerId,"b"); kaboPrimary()');
+  assert.equal(app.elements.get('kabo-confirm-dialog').open, true);
+  assert.equal(app.sent.length, 0);
+  app.run('kaboConfirmAction()');
+  assert.deepEqual(app.sent.at(-1), {type:'kabo-match',payload:{targetId:'e',slotId:'b',discardId:'discard-1',revision:5}});
+  assert.equal(app.run('kaboBusy'), true);
+  app.message('kabo-state', {...kaboFixture(), revision:6});
+  assert.equal(app.run('kaboSelected.length'),0);
+  assert.equal(app.run('kaboTarget'),'');
+  assert.equal(app.run('kaboBusy'),false);
+  app.run('kaboChoose(playerId,"a"); kaboPrimary()');
+  app.message('kabo-state', {...kaboFixture(), revision:7});
+  assert.equal(app.elements.get('kabo-confirm-dialog').open,false);
+  app.run('kaboConfirmAction()');
+  assert.equal(app.sent.length,1);
+  const empty = {...kaboFixture(),revision:8};
+  empty.players[0].cards[1].empty = true;
+  app.message('kabo-state',empty);
+  assert.match(app.elements.get('kabo-hand').innerHTML,/Empty card position/);
+  app.run('kaboChoose(playerId,"b")');
+  assert.equal(app.run('kaboSelected.length'),0);
+});
+
+test('Kabo initial peek, draw decision, powers and private reveal removal use the server state', () => {
+  const app=harness();
+  app.message('kabo-state',kaboFixture('initial'));
+  app.run('kaboChoose(playerId,"a");kaboChoose(playerId,"b");kaboPrimary()');
+  assert.equal(app.sent.at(-1).type,'kabo-initial');
+  const revealed={...kaboFixture('initial'),revision:6,reveals:[
+    {playerId:'test-player',slotId:'a',card:{rank:13,suit:'hearts'}},
+    {playerId:'test-player',slotId:'b',card:{rank:3,suit:'clubs'}}
+  ]};
+  app.message('kabo-state',revealed);
+  assert.match(app.elements.get('kabo-hand').innerHTML,/King of hearts/);
+  app.run('kaboPrimary()');
+  assert.equal(app.sent.at(-1).type,'kabo-ready');
+  app.message('kabo-state',{...kaboFixture(),revision:7});
+  assert.doesNotMatch(app.elements.get('kabo-hand').innerHTML,/King of hearts/);
+  app.message('kabo-state',{...kaboFixture('resolve'),revision:8,drawn:{rank:3,suit:'clubs'}});
+  assert.match(app.elements.get('kabo-drawn').innerHTML,/3 of clubs/);
+  assert.equal(app.elements.get('kabo-call').hidden,false);
+  app.message('kabo-state',{...kaboFixture('power'),revision:9,power:'king'});
+  app.run('kaboChoose(playerId,"a");kaboChoose("other","e");kaboPrimary()');
+  assert.equal(app.sent.at(-1).type,'kabo-power');
+  app.message('kabo-state',{...kaboFixture('peek'),revision:10,power:'king',reveals:revealed.reveals});
+  assert.equal(app.run('kaboCommand().kind'),'ack');
+  app.message('kabo-state',{...kaboFixture('decision'),revision:11,power:'king'});
+  assert.equal(app.elements.get('kabo-decision').hidden,false);
+  assert.doesNotMatch(app.elements.get('kabo-hand').innerHTML,/King of hearts/);
+});
+
+test('Kabo spectators, errors, round scores, host controls, chat and lobby reset are consistent', () => {
+  const app=harness();
+  const state=kaboFixture();
+  state.players[0].id='someone-else';
+  app.message('kabo-state',state);
+  assert.equal(app.run('isSpectating'),true);
+  app.run('kaboChoose("other","e");kaboSend("draw",{source:"deck"})');
+  assert.equal(app.sent.length,0);
+  const over={...kaboFixture('round_over'),revision:8,roundWinners:['test-player']};
+  over.players[0].roundScore=-1;over.players[0].totalScore=-1;
+  over.players[1].roundScore=3;over.players[1].totalScore=3;
+  app.message('kabo-state',over);
+  assert.match(app.elements.get('kabo-results').innerHTML,/-1/);
+  assert.equal(app.elements.get('kabo-next-round').hidden,false);
+  app.elements.get('kabo-chat-input').value='Hello';
+  app.run('sendChat()');
+  assert.equal(app.sent.at(-1).type,'chat');
+  app.message('error',{message:'The table changed'});
+  assert.equal(app.elements.get('kabo-prompt').textContent,'The table changed');
+  app.message('state',null);
+  assert.equal(app.run('kaboState'),null);
+  assert.equal(app.elements.get('kabo-active').style.display,'none');
+});
+
+test('Saved sessions take priority over game links and keep reconnect identity and variant', () => {
+  const app = harness('', { search: '?game=ludo', session: {
+    coup_room: 'ABCDE', coup_joinedName: 'Tester#1234', coup_gameType: 'coup', coup_variant: 'inquisitor', coup_pid: 'saved-player'
+  } });
+  assert.equal(app.run('currentGameType'), 'coup');
+  assert.equal(app.run('roomCode'), 'ABCDE');
+  assert.equal(app.run('variant'), 'inquisitor');
+  assert.equal(app.run('savedSessionReconnectPending'), true);
+  assert.ok(!app.requests.some(url => url.includes('/api/public-rooms')));
+  app.run('resumeSavedSessionReconnect()');
+  assert.match(app.run('ws.url'), /room=ABCDE.*playerId=saved-player.*variant=inquisitor.*gameType=coup/);
+  assert.equal(app.run('savedSessionReconnectPending'), false);
+});
+
+test('Invalid and duplicate game queries show a notification instead of opening a broken setup', () => {
+  for (const search of ['?game=unknown', '?game=', '?game=coup&game=ludo', '?game=__proto__']) {
+    const app = harness('', { search });
+    assert.equal(app.elements.get('home-navigation-status').hidden, false);
+    assert.match(app.elements.get('home-navigation-status').textContent, /not valid/);
+    assert.equal(app.errors.length, 1);
+    assert.ok(!app.requests.some(url => url.includes('/api/public-rooms')));
+  }
+  const plain = harness('', { search: '?utm_source=studio' });
+  assert.deepEqual(plain.errors, []);
+  assert.equal(plain.run('roomCode'), '');
 });
 
 test('Avatar presets, initials, storage and remote identities remain independent of display names', () => {
@@ -195,12 +493,12 @@ test('Homepage themes persist and do not replace game screen styles', () => {
 test('Homepage categories and case-insensitive search intersect and reset empty results', () => {
   const app = harness();
   const cards = [...html.matchAll(/<button type="button" class="game-card [^"]*" data-home-category="([^"]+)" onclick="openGameMenu\('([^']+)'\)"/g)].map(match => ({
-    dataset: { homeCategory: match[1] }, textContent: match[2], hidden: false
+    dataset: { homeCategory: match[1] }, textContent: match[2], hidden: false, querySelector: () => null
   }));
   const filters = ['all', 'cards', 'board', 'party'].map(filter => ({
     dataset: { homeFilter: filter }, setAttribute(name, value) { this[name] = value; }
   }));
-  assert.equal(cards.length, 12);
+  assert.equal(cards.length, 13);
   cards.find(card => card.textContent === 'twentynine').dataset.homeKeywords = '29 twenty nine twentynine';
   const originalQuery = app.document.querySelectorAll;
   app.document.querySelectorAll = selector => selector === '[data-home-filter]' ? filters : selector === '#home-game-list .game-card' ? cards : originalQuery(selector);
@@ -216,15 +514,21 @@ test('Homepage categories and case-insensitive search intersect and reset empty 
   app.run('setHomeFilter("cards")');
   assert.deepEqual(visible(), ['poker']);
   app.run('resetHomeGames()');
-  assert.equal(visible().length, 12);
+  assert.equal(visible().length, 13);
   assert.equal(app.elements.get('home-search').value, '');
   assert.equal(app.elements.get('home-empty').hidden, true);
   app.run('setHomeFilter("party")');
-  assert.equal(visible().length, 5);
+  assert.equal(visible().length, 6);
   app.run('resetHomeGames()');
   app.elements.get('home-search').value = '29';
   app.run('filterHomeGames()');
   assert.deepEqual(visible(), ['twentynine']);
+  const pokerCard = cards.find(card => card.textContent === 'poker');
+  pokerCard.textContent = '12345 livepoker';
+  pokerCard.querySelector = () => ({ textContent: '12345 live' });
+  app.elements.get('home-search').value = '12345';
+  app.run('filterHomeGames()');
+  assert.deepEqual(visible(), []);
   assert.deepEqual(app.errors, []);
 });
 
@@ -240,7 +544,7 @@ test('Homepage and room illustrations are local and every referenced symbol exis
 
 test('Every home game has create and join panels with its own artwork and code-entry controls', () => {
   const games = [...html.matchAll(/class="game-card [^"]*"[^>]*onclick="openGameMenu\('([^']+)'\)"/g)].map(match => match[1]);
-  assert.equal(games.length, 12);
+  assert.equal(games.length, 13);
   for (const game of games) {
     const setup = html.match(new RegExp(`<div id="menu-${game}" class="room-stage room-setup"[^>]*>([\\s\\S]*?)\\n  </div>`));
     assert.ok(setup, game + ' setup');
@@ -369,7 +673,7 @@ test('Every game chat distinguishes own and incoming bubbles with persistent sen
   app.message('chat', {senderId:'other',senderName:'Alex',message:'Good hand!',timestamp:Date.now()});
   app.message('room-visibility', {});
   app.message('chat', {senderId:app.run('playerId'),senderName:'River Song#0001',message:'Thanks!',timestamp:Date.now()});
-  for (const prefix of ['', 'poker-', 'ludo-', 'nq-', 'commune-', 'tn-', 'ht-', 'uno-', 'bluff-', 'blackjack-', 'tictactoe-', 'scrabble-']) {
+  for (const prefix of ['', 'poker-', 'ludo-', 'nq-', 'commune-', 'tn-', 'ht-', 'uno-', 'bluff-', 'blackjack-', 'tictactoe-', 'scrabble-', 'kabo-']) {
     const html = app.elements.get(prefix + 'chat-messages').innerHTML;
     assert.match(html, /class="chat-row">[\s\S]*🦊[\s\S]*Good hand!/);
     assert.match(html, /class="chat-row outgoing">[\s\S]*>RS<[\s\S]*>You<[\s\S]*Thanks!/);
@@ -420,6 +724,24 @@ test('Create alone includes twoDecks; join and reconnect preserve server setting
   assert.ok(!app.run('ws.url').includes('twoDecks'));
   app.run('tryReconnect(); ws.onopen()');
   assert.ok(!app.run('ws.url').includes('twoDecks'));
+  assert.equal(app.sent.at(-1).type, 'join');
+  assert.deepEqual(app.errors, []);
+});
+
+test('Separate frontend hosting uses the configured backend for APIs, creation, joining and reconnects', async () => {
+  const backend = 'https://games.example.com:8443';
+  const app = harness(backend);
+  await app.run('loadRoomPlayerCount(); createBluffGame()');
+  assert.ok(app.requests.includes(backend + '/api/room-stats'));
+  assert.ok(app.requests.includes(backend + '/api/generate-code'));
+  assert.ok(app.requests.every(url => url.startsWith(backend + '/api/')));
+  assert.ok(app.run('ws.url').startsWith('wss://games.example.com:8443/ws?'));
+  app.run('ws.onopen()');
+  app.elements.get('blackjack-join-code').value = 'xyz12';
+  app.run('joinBlackjackWithCode()');
+  assert.ok(app.run('ws.url').startsWith('wss://games.example.com:8443/ws?room=XYZ12'));
+  app.run('tryReconnect(); ws.onopen()');
+  assert.ok(app.run('ws.url').startsWith('wss://games.example.com:8443/ws?room=XYZ12'));
   assert.equal(app.sent.at(-1).type, 'join');
   assert.deepEqual(app.errors, []);
 });

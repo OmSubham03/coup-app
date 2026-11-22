@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Ludo Online with Friends | Time Crushers</title>
+  <meta name="description" content="Play free Ludo online for 2-4 players. Learn TimeCrusher's safe squares, captures, bonus rolls, exact finishing rolls, and how to invite friends.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/ludo/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container">
+    <div id="screen-menu" class="screen active home-active" data-home-theme="light">
+      <div id="game-list-view">
+        <header class="home-header">
+          <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+          <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=ludo">Room setup</a></nav>
+          <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+        </header>
+        <main>
+          <p id="guide-status" role="status"></p>
+          <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Ludo</span></nav>
+          <section class="guide-banner" aria-labelledby="guide-title">
+            <div>
+              <p class="home-eyebrow">BOARD GAME / TOKEN RACING / 2-4 PLAYERS</p>
+              <h1 id="guide-title">Play Ludo online.<br>Every token has a journey.</h1>
+              <p>One roll can bring a token out, knock a rival back, or finally send you home. Ludo combines a familiar race with small tactical choices: advance your leader, launch another runner, or take the capture?</p>
+              <a class="home-primary" href="/?game=ludo">Play Ludo now <span aria-hidden="true">&rarr;</span></a>
+              <div class="guide-facts"><span>2-4 players</span><span>Four tokens each</span><span>No downloads</span></div>
+            </div>
+            <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#ludo"></use></svg>
+          </section>
+          <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+          <article class="guide-article" aria-label="Ludo game guide">
+            <section class="guide-section" id="join">
+              <h2>Invite the colors to the board</h2>
+              <ol>
+                <li>Select <strong>Play Ludo now</strong> and create a room. Choose a display name so friends can recognize you.</li>
+                <li>Share the five-character code. Friends select Ludo and enter it, or find your available room if you enable the host's <strong>Public room</strong> switch.</li>
+                <li>Pick a color in the waiting room. The host starts with two to four players. Two-player games use opposite board positions.</li>
+              </ol>
+              <p class="guide-note">Your saved game reconnects before a new game link opens. Reading this guide does not join a room, roll a die, or send requests to the multiplayer server.</p>
+            </section>
+            <section class="guide-section" id="rules">
+              <h2>The race used by TimeCrusher</h2>
+              <p>Each player has <strong>four tokens</strong> in their yard. A random player takes the first turn. Tokens travel around the shared 52-square track and into their own six-square home column. The first player to finish all four tokens is the winner; with more players, the race continues to establish the remaining places until only one unfinished player remains.</p>
+              <h3>Roll, choose, and move</h3>
+              <ul>
+                <li>A <strong>six</strong> lets you bring a yard token onto your starting square. Bringing it out uses that roll; it does not also move six more squares.</li>
+                <li>An active token normally moves by the rolled value. If only one token can move, the game makes that move automatically. Otherwise, choose one of the highlighted legal tokens.</li>
+                <li>If no move is possible, a non-six roll passes the turn. A six with no legal move still gives another roll.</li>
+                <li>Three consecutive sixes end your turn before the third roll can be used. Earlier moves from that turn are not undone.</li>
+              </ul>
+              <h3>Captures and safe squares</h3>
+              <p>Landing on an opponent on an ordinary track square returns their token to the yard. The eight star-marked safe squares, including starting squares, prevent captures. This implementation allows your own tokens to share a track square; they do not create a blockade. The private home column is also protected from opponents.</p>
+              <h3>Bonus rolls and finishing</h3>
+              <ul>
+                <li>You earn another roll after rolling six, making a capture, or finishing a token. A single move gives one bonus roll even if it meets more than one of those conditions.</li>
+                <li>You need an <strong>exact roll</strong> to finish from the home column. A roll that overshoots is not a legal move for that token.</li>
+                <li>Separate tokens cannot end on the same unfinished home-column square. A different token may still be legal, so check the highlights before assuming the turn is blocked.</li>
+                <li>Once all four of your tokens finish, your place is recorded and you stop taking turns.</li>
+              </ul>
+              <p>These are TimeCrusher's current rules. If you grew up with another Ludo variant, pay particular attention to the automatic single move, the finishing bonus, and the absence of track blockades.</p>
+            </section>
+            <section class="guide-section" id="example">
+              <h2>A capture creates a second opportunity</h2>
+              <div class="guide-example">
+                <p>Your red token is four squares behind a blue token on an ordinary, unprotected part of the track. You roll four and choose that red token. It lands on blue, sends blue back to its yard, and earns you a bonus roll.</p>
+                <p>The next roll is six. You may bring out a yard token or move a legal active token. If you bring one out, it stops on your safe starting square and you roll again. If the next roll is also six, that is only your second consecutive six; a third six would end the turn before another move.</p>
+                <p>A token already four steps from finishing in its home column needs four exactly. Rolling five does not move it past home; another legal token must move, or the turn passes.</p>
+              </div>
+            </section>
+            <section class="guide-section" id="tips">
+              <h2>Plan for the roll you might get</h2>
+              <ul>
+                <li><strong>Keep options alive.</strong> More than one token on the track gives you alternatives when a leader needs an exact finishing roll.</li>
+                <li><strong>Count threats.</strong> A rival one to six squares behind an exposed token may capture it on their next turn. Safe squares can buy breathing room.</li>
+                <li><strong>Value the extra roll.</strong> Capturing or finishing a token can be better than a longer ordinary advance, but compare the positions you leave exposed.</li>
+                <li><strong>Do not rely on a wall.</strong> Stacked track tokens do not block passage in this version. Your protection comes from safe squares, not from forming a pair.</li>
+              </ul>
+              <p>Put those choices into practice: <a href="/?game=ludo">open a Ludo room</a> and share the code.</p>
+            </section>
+          </article>
+          <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">Try a different kind of strategy</h2><div class="guide-related-links"><a href="/games/coup/">Learn Coup &rarr;</a><a href="/games/tic-tac-toe/">Learn Tic-Tac-Toe &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+        </main>
+        <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

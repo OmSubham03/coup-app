@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play 20 Questions Online with Friends | Time Crushers</title>
+  <meta name="description" content="Guess a secret name, place, animal, or thing with friends. Learn TimeCrusher's 20 Questions turns, shared question budget, giver verdicts, and final guesses.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/20-questions/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container"><div id="screen-menu" class="screen active home-active" data-home-theme="light"><div id="game-list-view">
+    <header class="home-header">
+      <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+      <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=nquestions">Room setup</a></nav>
+      <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+    </header>
+    <main>
+      <p id="guide-status" role="status"></p>
+      <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>20 Questions</span></nav>
+      <section class="guide-banner" aria-labelledby="guide-title">
+        <div><p class="home-eyebrow">PARTY GAME / WORD GUESSING / 2-10 PLAYERS</p><h1 id="guide-title">Play 20 Questions online.<br>Ask better. Guess smarter.</h1>
+          <p>One friend knows the answer. Everyone else turns clues into a shared theory. Narrow down a name, place, animal, or thing, then decide when you know enough to risk a guess.</p>
+          <a class="home-primary" href="/?game=nquestions">Play 20 Questions now <span aria-hidden="true">&rarr;</span></a>
+          <div class="guide-facts"><span>2-10 players</span><span>Human word-giver</span><span>Configurable budget</span></div>
+        </div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#questions"></use></svg>
+      </section>
+      <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+      <article class="guide-article" aria-label="20 Questions game guide">
+        <section class="guide-section" id="join"><h2>Choose your mystery</h2>
+          <ol><li>Open <strong>Play 20 Questions now</strong>, choose the question budget, and create a room.</li><li>Share the five-character room code with friends. Use display names, then have the host start with at least two players.</li><li>The host is the first word-giver and selects a category and secret word. Guessers see the category, not the answer.</li></ol>
+          <p class="guide-note">The word-giver is another player, not an AI. The host may enable public-room discovery. A saved session in the same tab takes priority over a new game link.</p>
+        </section>
+        <section class="guide-section" id="rules"><h2>Work together inside the budget</h2>
+          <p>Guessers take turns asking a question. The giver replies with yes, no, or a short clarification, and the next guesser takes over. Read earlier answers so the group does not spend another turn confirming the same clue.</p>
+          <h3>How the counter works here</h3>
+          <p>In this implementation, the displayed question counter advances after a <strong>full rotation of guessers</strong>, not after each individual player's question. An incorrect guess during the asking phase also advances the counter once. With just one guesser, each answered question completes a rotation.</p>
+          <p>Any non-giver can make a guess during the asking phase; it does not have to be their question turn. You must wait while the giver is answering a question or judging another guess.</p>
+          <h3>Verdicts and the final round</h3>
+          <p>The giver marks a guess correct or wrong. The game does not require automatic exact-text matching, so the giver can recognize a reasonable spelling or equivalent answer. A correct verdict ends the round with a guessers' win and reveals the answer.</p>
+          <p>Once the budget is exhausted, each guesser gets one final guess in turn order. The giver still verifies every attempt. If all final guesses fail, the giver wins. Starting the next round rotates the giver role to the next player.</p>
+        </section>
+        <section class="guide-section" id="example"><h2>Make the clues do the work</h2><div class="guide-example">
+          <p>The category is Animal and the secret is elephant. One guesser asks whether it is a mammal, another whether it usually lives on land, and a third whether it is larger than a person. The giver answers yes to all three. That complete rotation advances the counter once.</p>
+          <p>A player then guesses giraffe. The giver marks it wrong, consuming another counter step. A later question about a trunk points to elephant; the giver can accept a clear equivalent answer instead of rejecting it for a small spelling mistake.</p>
+        </div></section>
+        <section class="guide-section" id="tips"><h2>Reduce the possibilities before naming one</h2>
+          <ul><li>Start broad: living or non-living, real or fictional, indoors or outdoors.</li><li>Ask one clear question at a time. A combined question can make a yes/no answer ambiguous.</li><li>Use the shared history to avoid contradictions in your theory.</li><li>As giver, choose a recognizable answer and apply the same standard to every player's guesses.</li></ul>
+          <p><a href="/?game=nquestions">Create a 20 Questions room</a> and let a friend choose the first mystery.</p>
+        </section>
+      </article>
+      <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">Words, claims, and good guesses</h2><div class="guide-related-links"><a href="/games/scrabble/">Learn Scrabble &rarr;</a><a href="/games/bluff/">Learn Bluff &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+    </main>
+    <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+  </div></div></div>
+</body>
+</html>

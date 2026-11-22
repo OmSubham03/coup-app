@@ -156,4 +156,12 @@
       <g font-family="Georgia,serif" font-size="27" font-weight="bold" fill="#433621" text-anchor="middle"><text x="43" y="81">W</text><text x="89" y="81">O</text><text x="135" y="81">R</text><text x="181" y="81">D</text></g>
     </g>
   </symbol>
+  <symbol id="kabo" viewBox="0 0 320 230">
+    <ellipse cx="160" cy="184" rx="105" ry="22" fill="#315d4320"/>
+    <g transform="translate(79 30) rotate(-9 76 77)" stroke="#f5f0df" stroke-width="5">
+      <rect width="68" height="85" rx="9" fill="#315d43"/><rect x="82" width="68" height="85" rx="9" fill="#496f57"/>
+      <rect y="96" width="68" height="85" rx="9" fill="#496f57"/><rect x="82" y="96" width="68" height="85" rx="9" fill="#315d43"/>
+    </g>
+    <g fill="#d3f66a"><path d="M41 84l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/><path d="M269 133l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/></g>
+  </symbol>
 </svg>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Texas Hold'em Online with Friends | Time Crushers</title>
+  <meta name="description" content="Learn TimeCrusher's free Texas Hold'em for 2-8 players: hole cards, betting rounds, hand rankings, virtual chips, and inviting friends to a room.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/poker/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container"><div id="screen-menu" class="screen active home-active" data-home-theme="light"><div id="game-list-view">
+    <header class="home-header">
+      <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+      <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=poker">Room setup</a></nav>
+      <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+    </header>
+    <main>
+      <p id="guide-status" role="status"></p>
+      <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Poker</span></nav>
+      <section class="guide-banner" aria-labelledby="guide-title">
+        <div><p class="home-eyebrow">CARD GAME / TEXAS HOLD'EM / 2-8 PLAYERS</p><h1 id="guide-title">Play poker online.<br>Read the board. Read the room.</h1>
+          <p>Two private cards, a shared board, and a decision every time the bet comes around. TimeCrusher's Texas Hold'em table gives friends a place to practice hand reading and betting without real-money stakes.</p>
+          <a class="home-primary" href="/?game=poker">Play poker now <span aria-hidden="true">&rarr;</span></a>
+          <div class="guide-facts"><span>2-8 players</span><span>Virtual chips only</span><span>Configurable blinds</span></div>
+        </div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#poker"></use></svg>
+      </section>
+      <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+      <article class="guide-article" aria-label="Poker game guide">
+        <section class="guide-section" id="join"><h2>Set up your home table</h2>
+          <ol><li>Choose <strong>Play poker now</strong>. The host chooses the starting buy-in, small blind, and whether to enable the big blind before creating the room.</li><li>Choose display names and share the five-character code. Friends open Poker and join with that code, or enter a public room when the host enables discovery.</li><li>The host starts with two to eight players. Watch the turn indicator and the bet shown beneath each seat before choosing an action.</li></ol>
+          <p class="guide-note">Chips and buy-ins are game values, not payments or redeemable prizes. No download is needed. A saved game in the same tab reconnects before a new game link opens.</p>
+        </section>
+        <section class="guide-section" id="rules"><h2>Build the best five-card hand</h2>
+          <p>Each player receives two hidden hole cards. The shared board appears in stages: three cards on the <strong>flop</strong>, one on the <strong>turn</strong>, and one on the <strong>river</strong>. At showdown, make your strongest five-card hand from any combination of your two cards and the five community cards. You may use both hole cards, one, or neither.</p>
+          <h3>Betting choices</h3>
+          <ul><li><strong>Fold</strong> gives up the hand and chips already committed.</li><li><strong>Check</strong> passes only when you owe no additional chips. <strong>Call</strong> matches the outstanding bet within your available stack.</li><li><strong>Raise</strong> increases the bet. The controls show the legal minimum and maximum; the displayed amount is the total bet you are raising to, not just an extra increment.</li><li><strong>All in</strong> commits your remaining stack. Do not treat it as a way to reset a losing hand.</li></ul>
+          <p>If everyone else folds, the remaining player wins without needing a showdown. Otherwise the server compares hand strength and kickers; equally strong winning hands share the pot. Suits are not a tiebreaker.</p>
+          <h3>Rankings and blinds</h3>
+          <p>From highest to lowest: royal flush, straight flush, four of a kind, full house, flush, straight, three of a kind, two pair, one pair, high card. An ace can be low in A-2-3-4-5 or high at the top of a straight.</p>
+          <p>The dealer button rotates between hands. With the big blind enabled, it is twice the small blind; disabling it is a TimeCrusher table option. In a two-player hand, the dealer posts the small blind. Check the room settings rather than assuming every table uses the same stakes.</p>
+        </section>
+        <section class="guide-section" id="example"><h2>The board can help both players</h2><div class="guide-example">
+          <p>You hold ace of hearts and queen of clubs. The board is ace of clubs, queen of diamonds, seven of spades, three of clubs, and two of diamonds. Your best five cards make two pair: aces and queens, with a seven kicker.</p>
+          <p>A rival holding two sevens has three sevens using the board's seven. Three of a kind beats your two pair even though your pair ranks are higher. Count the complete hand category before deciding that a top pair or two pair must be ahead.</p>
+        </div></section>
+        <section class="guide-section" id="tips"><h2>Make each decision about the current hand</h2>
+          <ul><li>Track how much a call costs relative to the pot, not just the size of your starting stack.</li><li>Re-evaluate after each new community card; a river can complete a straight or flush for an opponent.</li><li>A fold preserves chips for later hands. Money already in the pot is not a reason to keep calling.</li><li>Start with small virtual blinds while learning the controls, and agree with friends on when to end the session.</li></ul>
+          <p><a href="/?game=poker">Open Poker's room setup</a> to choose your table settings.</p>
+        </section>
+      </article>
+      <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">Keep the cards moving</h2><div class="guide-related-links"><a href="/games/blackjack/">Learn Blackjack &rarr;</a><a href="/games/commune/">Learn Commune &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+    </main>
+    <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+  </div></div></div>
+</body>
+</html>

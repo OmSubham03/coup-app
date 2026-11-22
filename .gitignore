@@ -2,6 +2,8 @@
 server/coup-server
 server/coup-server.exe
 server/server.exe
+server/dist/
+.wrangler/
 *.apk
 
 # Mobile (Capacitor)

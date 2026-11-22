@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Scrabble Online with Friends | Time Crushers</title>
+  <meta name="description" content="Build words with friends on TimeCrusher's 15-by-15 board. Learn premium squares, blanks, ENABLE word checks, house votes, scoring, and tile exchanges.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/scrabble/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container"><div id="screen-menu" class="screen active home-active" data-home-theme="light"><div id="game-list-view">
+    <header class="home-header">
+      <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+      <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=scrabble">Room setup</a></nav>
+      <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+    </header>
+    <main>
+      <p id="guide-status" role="status"></p>
+      <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Scrabble</span></nav>
+      <section class="guide-banner" aria-labelledby="guide-title">
+        <div><p class="home-eyebrow">BOARD GAME / WORD BUILDING / 2-4 PLAYERS</p><h1 id="guide-title">Play Scrabble online.<br>Seven tiles. Find your word.</h1>
+          <p>Build off the words already on the board, make premium squares count, and save a useful rack for your next turn. TimeCrusher checks its bundled lexicon and lets the table vote on unfamiliar words.</p>
+          <a class="home-primary" href="/?game=scrabble">Play Scrabble now <span aria-hidden="true">&rarr;</span></a>
+          <div class="guide-facts"><span>2-4 players</span><span>Private seven-tile racks</span><span>15-by-15 board</span></div>
+        </div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#scrabble"></use></svg>
+      </section>
+      <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+      <article class="guide-article" aria-label="Scrabble game guide">
+        <section class="guide-section" id="join"><h2>Bring your word-building friends</h2>
+          <ol><li>Select <strong>Play Scrabble now</strong>, create a room, and choose a display name.</li><li>Share its five-character code with one to three friends, or enable public discovery for available seats.</li><li>The host starts with two to four players. Select tiles from your private rack, place them on the board, and submit when the arrangement is ready.</li></ol>
+          <p class="guide-note">No account, download, or dictionary API key is needed. A saved session reconnects before a new link opens another setup.</p>
+        </section>
+        <section class="guide-section" id="rules"><h2>Build connected words, not isolated islands</h2>
+          <p>The first move must cover the center square. On a turn, place one to seven rack tiles in a single row or column without gaps, using existing tiles to connect later moves. Every new main or crossing word must be valid; a one-letter arrangement without a longer word is not enough.</p>
+          <h3>Points and blanks</h3>
+          <p>Letters have individual values. Double/triple letter squares multiply a newly placed letter, and double/triple word squares multiply the new word. Premiums apply only when their square receives a new tile, not every time someone reuses that letter. Playing all seven rack tiles adds 50 points.</p>
+          <p>A blank can represent a chosen letter but remains worth zero, even on a letter multiplier. Once placed, that letter assignment stays on the board. Your rack refills toward seven from the remaining bag after an accepted move.</p>
+          <h3>Dictionary checks and house voting</h3>
+          <p>The bundled public-domain <strong>ENABLE lexicon</strong> checks new words; it is not an official tournament dictionary. An unknown word sends the proposed move to a house vote. The proposer counts as approving, and every other active player must approve. One rejection returns the proposal without consuming the turn.</p>
+          <p>A vote cannot override invalid placement, missing rack tiles, disconnected words, or gaps. The table judges unfamiliar words, not whether the geometric move rules apply.</p>
+          <h3>Passing, exchanging, and finishing</h3>
+          <p>You may pass, or exchange one to seven rack tiles when the bag has at least seven tiles; either uses your turn. The game ends when someone goes out with an empty bag, or after six consecutive scoreless turns. Leftover tile values are deducted; a player who goes out also collects the others' leftover values. Highest final score wins.</p>
+        </section>
+        <section class="guide-section" id="example"><h2>A short word can use the center well</h2><div class="guide-example">
+          <p>On an empty board, place C-A-T horizontally with A on the center double-word square. C scores three, A one, and T one: five before the multiplier, or ten points for the opening word.</p>
+          <p>If A came from a blank, its value would be zero, making the same placement worth eight. A later player building a crossing word through that A does not reuse the center's double-word bonus because the center tile is already on the board.</p>
+        </div></section>
+        <section class="guide-section" id="tips"><h2>Score this turn without ruining the next</h2>
+          <ul><li>Inspect every cross-word before submitting a long main word.</li><li>Balance consonants and vowels instead of keeping only high-value letters.</li><li>Short words that make several crossings can outperform a long isolated word.</li><li>Agree on how you will judge unknown words, and save blanks for flexible placements rather than assuming they score like printed letters.</li></ul>
+          <p><a href="/?game=scrabble">Open Scrabble's room setup</a> and build your first word across the center.</p>
+        </section>
+      </article>
+      <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">More thinking, less setup</h2><div class="guide-related-links"><a href="/games/20-questions/">Learn 20 Questions &rarr;</a><a href="/games/tic-tac-toe/">Learn Tic-Tac-Toe &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+    </main>
+    <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+  </div></div></div>
+</body>
+</html>

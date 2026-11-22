@@ -8,10 +8,14 @@ import (
 )
 
 func (room *Room) isAdditionalGame() bool {
-	return room.gameType == "bluff" || room.gameType == "blackjack" || room.gameType == "tictactoe" || room.gameType == "scrabble"
+	return room.gameType == "bluff" || room.gameType == "blackjack" || room.gameType == "tictactoe" || room.gameType == "scrabble" || room.gameType == "kabo"
 }
 
 func (room *Room) additionalPlayerInGame(playerID string) bool {
+	if state := room.kaboState; state != nil {
+		i := state.PlayerIndex(playerID)
+		return room.players[playerID] != nil && i >= 0 && state.Players[i].Active
+	}
 	if state := room.scrabbleState; state != nil {
 		i := state.PlayerIndex(playerID)
 		return room.players[playerID] != nil && i >= 0 && state.Players[i].Active
@@ -38,13 +42,20 @@ func (room *Room) additionalPlayerInGame(playerID string) bool {
 
 func (room *Room) additionalPlayerActive(playerID string) bool {
 	return room.additionalPlayerInGame(playerID) &&
-		(room.scrabbleState != nil && room.scrabbleState.Phase != game.ScrabbleGameOver ||
+		(room.kaboState != nil && room.kaboState.Phase != game.KaboGameOver ||
+			room.scrabbleState != nil && room.scrabbleState.Phase != game.ScrabbleGameOver ||
 			room.ticTacToeState != nil && room.ticTacToeState.Phase == game.TicTacToePlaying ||
 			room.bluffState != nil && room.bluffState.Phase != game.BluffPhaseGameOver ||
 			room.blackjackState != nil && room.blackjackState.Phase != game.BlackjackPhaseGameOver)
 }
 
 func (room *Room) sendAdditionalState(connID, viewerID string) {
+	if state := room.kaboState; state != nil {
+		if !room.additionalPlayerInGame(viewerID) {
+			viewerID = ""
+		}
+		room.sendTo(connID, OutMessage{Type:"kabo-state", Payload:state.View(viewerID)})
+	}
 	if state := room.scrabbleState; state != nil {
 		room.sendTo(connID, OutMessage{Type: "scrabble-state", Payload: state.View(viewerID)})
 	}
@@ -69,6 +80,10 @@ func (room *Room) broadcastAdditionalState() {
 }
 
 func (room *Room) exitAdditionalPlayer(playerID string) error {
+	if state := room.kaboState; state != nil {
+		state.Leave(playerID)
+		return nil
+	}
 	if !room.additionalPlayerActive(playerID) {
 		return nil
 	}
@@ -103,6 +118,10 @@ func (room *Room) handleAdditionalMessage(connID, playerID string, msg InMessage
 	case "start-game":
 		if playerID != room.hostID || room.players[playerID] == nil {
 			err = fmt.Errorf("Only the host can start the game")
+			break
+		}
+		if room.gameType == "kabo" {
+			err = room.startKabo()
 			break
 		}
 		if room.gameType == "scrabble" {
@@ -151,7 +170,7 @@ func (room *Room) handleAdditionalMessage(connID, playerID string, msg InMessage
 			}
 		}
 	case "get-state":
-		if room.gameType == "scrabble" {
+		if room.gameType == "scrabble" || room.gameType == "kabo" {
 			if !room.additionalPlayerInGame(playerID) {
 				playerID = ""
 			}
@@ -166,7 +185,8 @@ func (room *Room) handleAdditionalMessage(connID, playerID string, msg InMessage
 		room.sendAdditionalState(connID, "")
 		return true
 	case "return-to-lobby":
-		if room.scrabbleState != nil && room.scrabbleState.Phase != game.ScrabbleGameOver ||
+		if room.kaboState != nil && room.kaboState.Phase != game.KaboGameOver ||
+			room.scrabbleState != nil && room.scrabbleState.Phase != game.ScrabbleGameOver ||
 			room.ticTacToeState != nil && room.ticTacToeState.Phase != game.TicTacToeGameOver ||
 			room.bluffState != nil && room.bluffState.Phase != game.BluffPhaseGameOver ||
 			room.blackjackState != nil && room.blackjackState.Phase != game.BlackjackPhaseGameOver {
@@ -181,6 +201,7 @@ func (room *Room) handleAdditionalMessage(connID, playerID string, msg InMessage
 		room.blackjackState = nil
 		room.ticTacToeState = nil
 		room.scrabbleState = nil
+		room.kaboState = nil
 		for id, timer := range room.disconnectTimers {
 			timer.Stop()
 			delete(room.disconnectTimers, id)
@@ -206,7 +227,7 @@ func (room *Room) handleAdditionalMessage(connID, playerID string, msg InMessage
 		room.broadcast(room.additionalLobbyMessage())
 		return true
 	case "exit-game":
-		if (room.gameType == "tictactoe" || room.gameType == "scrabble") && !room.additionalPlayerInGame(playerID) {
+		if (room.gameType == "tictactoe" || room.gameType == "scrabble" || room.gameType == "kabo") && !room.additionalPlayerInGame(playerID) {
 			err = game.ErrInvalidPlayer
 			break
 		}
@@ -226,6 +247,12 @@ func (room *Room) handleAdditionalMessage(connID, playerID string, msg InMessage
 			break
 		}
 		err = room.scrabbleAction(playerID, msg)
+	case "kabo-initial", "kabo-ready", "kabo-draw", "kabo-call", "kabo-replace", "kabo-discard",
+		"kabo-power", "kabo-ack", "kabo-decision", "kabo-skip", "kabo-match", "kabo-next-round", "kabo-end-game":
+		if room.gameType != "kabo" {
+			return false
+		}
+		err = room.kaboAction(playerID, msg)
 	case "tictactoe-move":
 		if room.gameType != "tictactoe" {
 			return false

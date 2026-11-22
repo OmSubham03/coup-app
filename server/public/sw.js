@@ -1,4 +1,4 @@
-const CACHE_NAME = 'timecrusher-v4';
+const CACHE_NAME = 'timecrusher-v5';
 const PRECACHE = [
   '/textures/duke.jpg',
   '/textures/assassin.jpg',
@@ -29,9 +29,11 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin || e.request.method !== 'GET') return;
   // Only cache static assets (textures, icons) — never JS, CSS, or HTML
   if (url.pathname === '/' || url.pathname.startsWith('/ws') || url.pathname.startsWith('/api/') ||
-      url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/')) {
+      url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/') ||
+      url.pathname.startsWith('/games/') || url.pathname === '/sitemap.xml' || url.pathname === '/robots.txt') {
     return;
   }
   // Cache-first for static assets (textures, icons)

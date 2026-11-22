@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Kabo Online with Friends | Time Crushers</title>
+  <meta name="description" content="Play Kabo with 2-6 friends: remember hidden cards, use peeks and swaps, match discards, and keep your total low. Learn TimeCrusher's Kabo house rules.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/kabo/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container"><div id="screen-menu" class="screen active home-active" data-home-theme="light"><div id="game-list-view">
+    <header class="home-header"><a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a><nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=kabo">Room setup</a></nav><button id="home-theme-toggle" type="button" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button></header>
+    <main>
+      <p id="guide-status" role="status"></p>
+      <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Kabo</span></nav>
+      <section class="guide-banner" aria-labelledby="guide-title"><div><p class="home-eyebrow">CARD GAME / MEMORY AND MATCHING / 2-6 PLAYERS</p><h1 id="guide-title">Play Kabo online.<br>Remember the card. Make your move.</h1><p>Four hidden cards are a small puzzle that keeps changing. Remember low values, exchange cards with friends, and use a matching discard to reduce your hand before someone calls Kabo.</p><a class="home-primary" href="/?game=kabo">Play Kabo now <span aria-hidden="true">&rarr;</span></a><div class="guide-facts"><span>2-6 players</span><span>Private peeks</span><span>Lowest score wins</span></div></div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#kabo"></use></svg></section>
+      <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+      <article class="guide-article" aria-label="Kabo game guide">
+        <section class="guide-section" id="join"><h2>Get the hidden hands ready</h2><ol><li>Create a Kabo room and share its five-character code with one to five friends.</li><li>The host starts after everyone joins. Each player selects exactly two of their four cards to peek at.</li><li>Remember those two positions, then choose Hide &amp; ready. Play begins after everyone confirms.</li></ol><p class="guide-note">This is TimeCrusher's standard-playing-card house variant, not a promise to match every published Cabo edition. Peeks disappear when acknowledged. A saved room in your tab reconnects before a new game link.</p></section>
+        <section class="guide-section" id="rules"><h2>Keep the score low without keeping the cards visible</h2><p>A single 52-card deck has no jokers. Ace scores one, 2-10 their face value, Jack eleven, Queen twelve, black King thirteen, and red King minus one. Red Kings can make a negative round score.</p>
+          <h3>Your turn</h3><p>Draw from the deck or take the top discard. Replace one of your hidden cards, putting the replaced card on discard. A deck-drawn card can instead be discarded for an optional power. A card taken from discard must replace your card and does not trigger a power.</p>
+          <ul><li>7/8: peek at one of your cards.</li><li>9/10: peek at one opponent card.</li><li>Jack/Queen: swap your card with an opponent card blindly.</li><li>Black King: peek at your card and an opponent card, hide them, then choose whether to swap those same cards.</li></ul>
+          <h3>Matching between turns</h3><p>After a turn's discard and power resolve, anyone may attempt a match before the next player draws. Match the discard's rank, not suit or scoring value. Discard your matching card, or select an opponent's matching card and your card to give them. Confirming a successful opponent match discards their card, moves yours into that position, and reduces your hand by one.</p><p>A wrong attempt leaves the targeted card unchanged and adds one unseen penalty card to your hand. Each player gets one attempt per discard. Incorrect attempts do not close the window for others, but the first successful match closes it, with no chains. A draw also closes the window. The server decides the order in which actions arrive.</p>
+          <h3>Kabo, final turns, and scoring</h3><p>Call Kabo after drawing, before resolving your drawn card. You must still replace or discard that card and finish its power. Every other active player gets one final turn. Emptying a hand through matching ends the round immediately.</p><p>Reveal and score actual hand values with no caller bonus or penalty. Ties share the round win. The host can redeal or end the game after a round. Reaching 100 or more cumulative points ends the match automatically; the lowest cumulative score wins, with ties shared. The deck recycles older discards if needed, leaving the top discard in place.</p>
+        </section>
+        <section class="guide-section" id="example"><h2>Discard their match, give them your card</h2><div class="guide-example"><p>The discard is a seven. You remember Alex's top-left card is a seven too. Tap that card, select your high-valued card to give Alex, and confirm Discard &amp; give. Alex's seven goes onto the discard, your selected card replaces it, and your hand shrinks by one.</p><p>If Alex's remembered card was actually an eight, no card is transferred. Instead, you receive one unseen penalty card. If your own remaining cards are a red King and an ace, they total zero: minus one plus one.</p></div></section>
+        <section class="guide-section" id="tips"><h2>Track positions, not just faces</h2><ul><li>A swap changes who holds a card. Update your mental map after each visible action.</li><li>Remember that Kings match Kings even when their point values differ by color.</li><li>Do not rush an uncertain match: a hidden penalty makes your memory problem bigger.</li><li>Call only after drawing and before finishing that card. Calling does not erase a high score or skip your required action.</li></ul><p><a href="/?game=kabo">Open Kabo's room setup</a> and keep the first round simple.</p></section>
+      </article>
+      <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">More hidden information</h2><div class="guide-related-links"><a href="/games/coup/">Learn Coup &rarr;</a><a href="/games/bluff/">Learn Bluff &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+    </main>
+    <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+  </div></div></div>
+</body>
+</html>

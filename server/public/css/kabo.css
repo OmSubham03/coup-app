@@ -1,0 +1,52 @@
+#kabo-active { max-width: 680px; margin: auto; color: var(--home-ink); }
+.kabo-title { display: flex; align-items: center; gap: 14px; }
+.kabo-title small { color: var(--home-muted); font-size: 12px; }
+.kabo-opponents { display: flex; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; padding: 4px 3px 12px; }
+.kabo-seat { flex: 1 0 112px; border: 1px solid var(--home-border); border-radius: 14px; padding: 10px 7px; background: var(--home-surface); }
+.kabo-identity { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; overflow-wrap: anywhere; }
+.kabo-identity strong { min-width: 0; }
+.kabo-identity small { color: var(--home-muted); }
+.kabo-mini-hand { display: grid; grid-template-columns: repeat(2, 44px); justify-content: center; gap: 6px; margin-top: 10px; }
+.kabo-card-target { background: none; border: 0; padding: 0; border-radius: 8px; cursor: pointer; min-width: 44px; min-height: 56px; }
+.kabo-card-target .additional-card { width: 64px; height: 82px; }
+.kabo-mini-hand .additional-card { width: 44px; height: 56px; padding: 4px; }
+.kabo-mini-hand .additional-card-rank { font-size: 14px; }
+.kabo-mini-hand .additional-card-suit { font-size: 22px; }
+#kabo-active .additional-card-back { position: relative; border-color: #f4eee1; background: repeating-linear-gradient(45deg, #315747 0 5px, #436b55 5px 6px); }
+#kabo-active .additional-card-back > span { display: none; }
+#kabo-active .additional-card-back::before { content: ''; position: absolute; inset: 4px; border: 1px solid #caddb88c; border-radius: 3px; }
+#kabo-active .additional-card-back::after { content: '\2726'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 25px; color: #cfe1b8; }
+.kabo-card-target.selected { outline: 3px solid var(--home-green); outline-offset: 2px; }
+.kabo-empty-slot { width: 64px; height: 82px; border: 1px dashed var(--home-border); border-radius: 8px; }
+.kabo-mini-hand .kabo-empty-slot { width: 44px; height: 56px; }
+.kabo-card-target:disabled { cursor: default; }
+.kabo-card-target:focus-visible { outline: 3px solid var(--home-green); outline-offset: 3px; }
+.kabo-seat > small { display: block; color: var(--home-muted); font-size: 11px; margin-top: 8px; }
+.kabo-table { display: flex; justify-content: center; align-items: center; gap: 30px; padding: 22px; border: 5px solid #284538; border-radius: 26px; background: radial-gradient(ellipse at 50% 35%, #216949, #11402e 80%); box-shadow: inset 0 0 25px #08281a70; }
+.kabo-pile { display: flex; flex-direction: column; align-items: center; gap: 10px; border: 0; background: none; color: #dbe9d8; font: inherit; font-size: 11px; cursor: pointer; min-width: 64px; }
+.kabo-pile:disabled { cursor: default; }
+.kabo-pile:focus-visible { outline: 3px solid #d3f66a; outline-offset: 4px; }
+.kabo-pile .additional-card { width: 58px; height: 78px; }
+.kabo-own-heading { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 12px; gap: 10px; }
+.kabo-turn { color: var(--home-green); font-size: 11px; font-weight: 750; }
+.kabo-turn:not(:empty)::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #459c64; border-radius: 50%; margin-right: 6px; }
+.kabo-hand { display: grid; grid-template-columns: repeat(2, 64px); gap: 12px 18px; justify-content: center; }
+.kabo-action-tray { display: flex; align-items: center; gap: 12px; margin: 14px 0 10px; min-height: 64px; border: 1px solid var(--home-border); border-radius: 12px; padding: 10px; background: var(--home-surface); }
+.kabo-action-tray p { color: var(--home-ink); font-size: 13px; line-height: 1.5; min-width: 0; }
+.kabo-action-tray .additional-card { width: 34px; height: 48px; padding: 4px; flex-shrink: 0; }
+.kabo-action-tray .additional-card-rank { font-size: 12px; }
+.kabo-action-tray .additional-card-suit { font-size: 22px; }
+.kabo-clear { border: 1px solid var(--home-border); background: var(--home-soft); color: var(--home-ink); border-radius: 8px; min-width: 44px; height: 44px; margin-left: auto; font-size: 20px; }
+.kabo-actions, .kabo-decision { display: flex; flex-wrap: wrap; gap: 8px; }
+.kabo-actions .btn, .kabo-decision .btn { flex: 1 1 120px; width: auto; min-height: 44px; background: var(--home-accent); color: #203824; font-size: 13px; padding: 12px; }
+.kabo-actions .btn:disabled { opacity: .5; cursor: default; }
+.kabo-actions .btn-secondary, .kabo-decision .btn-secondary { background: var(--home-soft); color: var(--home-ink); border: 1px solid var(--home-border); }
+#kabo-active [hidden] { display: none !important; }
+#kabo-confirm-dialog .game-settings-command { background: var(--home-accent); color: #203824; border-color: var(--home-border); }
+.kabo-final { padding: 12px; margin-bottom: 12px; background: var(--home-soft); border: 1px solid var(--home-green); border-radius: 10px; font-size: 13px; }
+.kabo-results { padding: 18px; margin: 16px 0; background: var(--home-surface); border: 1px solid var(--home-border); border-radius: 14px; }
+.kabo-results h3 { color: var(--home-green); margin-bottom: 14px; }
+.kabo-results p { font-size: 14px; line-height: 1.8; }
+.kabo-log { color: var(--home-muted); font-size: 11px; margin-top: 12px; line-height: 1.5; }
+.game-card-kabo { --scene: #dce8ca; }
+@media (max-width: 400px) { .kabo-identity { font-size: 11px; } .kabo-table { padding: 16px; } }

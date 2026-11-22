@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Tic-Tac-Toe Online with a Friend | Time Crushers</title>
+  <meta name="description" content="Play free two-player Tic-Tac-Toe online. Learn the rules, see a winning example, practice blocking and forks, and invite a friend to a TimeCrusher room.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/tic-tac-toe/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container">
+    <div id="screen-menu" class="screen active home-active" data-home-theme="light">
+      <div id="game-list-view">
+        <header class="home-header">
+          <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+          <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=tictactoe">Room setup</a></nav>
+          <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+        </header>
+        <main>
+          <p id="guide-status" role="status"></p>
+          <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Tic-Tac-Toe</span></nav>
+          <section class="guide-banner" aria-labelledby="guide-title">
+            <div>
+              <p class="home-eyebrow">BOARD GAME / THREE IN A ROW / 2 PLAYERS</p>
+              <h1 id="guide-title">Play Tic-Tac-Toe online.<br>Small board. Big next move.</h1>
+              <p>Nine squares are enough for a quick duel. Place X or O, stop your friend's threats, and try to build two winning lines at once. It is easy to learn, but a careless move can turn a safe draw into a loss.</p>
+              <a class="home-primary" href="/?game=tictactoe">Play Tic-Tac-Toe now <span aria-hidden="true">&rarr;</span></a>
+              <div class="guide-facts"><span>Exactly two players</span><span>X moves first</span><span>Free in your browser</span></div>
+            </div>
+            <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#tictactoe"></use></svg>
+          </section>
+          <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+          <article class="guide-article" aria-label="Tic-Tac-Toe game guide">
+            <section class="guide-section" id="join">
+              <h2>One room, one friend</h2>
+              <ol>
+                <li>Select <strong>Play Tic-Tac-Toe now</strong>, create a room, and choose a display name.</li>
+                <li>Send its five-character code to a friend. They open Tic-Tac-Toe's setup and join with the code. If you enable <strong>Public room</strong>, another player can find the available seat in room discovery.</li>
+                <li>Once both seats are filled, the host selects <strong>Start Game</strong>. The host plays X and the guest plays O.</li>
+              </ol>
+              <p class="guide-note">This is a human-versus-human game, not a solo bot mode. No download or account sign-in is needed. If the same tab has a saved game, the app reconnects to it before opening a new setup.</p>
+            </section>
+            <section class="guide-section" id="rules">
+              <h2>Nine squares, eight winning lines</h2>
+              <p>The board has three rows and three columns. <strong>X always moves first</strong>, then X and O alternate. On your turn, place your mark in one empty square. An occupied square cannot be changed, and you cannot move twice in a row.</p>
+              <ul>
+                <li>Three matching marks across any row win.</li>
+                <li>Three down any column win.</li>
+                <li>Either corner-to-corner diagonal can win.</li>
+                <li>If all nine squares fill without a winning line, the result is a draw.</li>
+              </ul>
+              <p>The server checks every move and stops the round as soon as a win or draw occurs. Spectators do not get a playing seat or permission to mark the board.</p>
+              <h3>Replay and interruptions</h3>
+              <p>After a completed round, either seated player can return the room to the lobby. The host can then start another round. Seats keep their roles: replay does not automatically swap X and O. If a player leaves an active match, the other player wins by forfeit. A temporary connection interruption can be restored using the same tab's saved session; it is not a promise of indefinite room retention.</p>
+            </section>
+            <section class="guide-section" id="example">
+              <h2>Follow a diagonal all the way through</h2>
+              <div class="guide-example">
+                <ol>
+                  <li>X takes the top-left square.</li>
+                  <li>O takes the top-middle square.</li>
+                  <li>X takes the center. X now threatens the bottom-right square.</li>
+                  <li>O chooses bottom-left instead of blocking.</li>
+                  <li>X takes bottom-right and wins along the top-left-to-bottom-right diagonal.</li>
+                </ol>
+                <p>The key decision was O's fourth move. Before making a new threat, check whether the other player can win immediately. Bottom-right would have blocked the diagonal and kept the game alive.</p>
+              </div>
+            </section>
+            <section class="guide-section" id="tips">
+              <h2>A simple order for choosing a square</h2>
+              <ul>
+                <li><strong>Win if you can.</strong> Look for a line with two of your marks and one empty square.</li>
+                <li><strong>Block an immediate loss.</strong> If you cannot win now, close the opponent's open two-mark line.</li>
+                <li><strong>Look for a fork.</strong> A move that creates two separate one-move wins can be harder to defend than a single obvious line.</li>
+                <li><strong>Value the center and corners.</strong> The center belongs to four winning lines, corners to three, and edge middles to two. Those counts help, but do not replace checking immediate threats.</li>
+                <li><strong>A draw is a good defense.</strong> With perfect play, neither player can force a win. Learn which move kept you safe, not just who took the first turn.</li>
+              </ul>
+              <p>Try the example with a friend, then change O's response. <a href="/?game=tictactoe">Open Tic-Tac-Toe's room setup</a> to begin.</p>
+            </section>
+          </article>
+          <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">More ways to outthink a friend</h2><div class="guide-related-links"><a href="/games/coup/">Learn Coup &rarr;</a><a href="/games/ludo/">Learn Ludo &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+        </main>
+        <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

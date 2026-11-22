@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://timecrushers.pages.dev/sitemap.xml

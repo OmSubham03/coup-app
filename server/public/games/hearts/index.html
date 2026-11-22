@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Hearts Online with Friends | Time Crushers</title>
+  <meta name="description" content="Play four-player Hearts online for free. Learn passing, following suit, penalty points, shooting the moon, and TimeCrusher's hearts-breaking rule.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/hearts/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container"><div id="screen-menu" class="screen active home-active" data-home-theme="light"><div id="game-list-view">
+    <header class="home-header">
+      <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+      <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=hearts">Room setup</a></nav>
+      <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+    </header>
+    <main>
+      <p id="guide-status" role="status"></p>
+      <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Hearts</span></nav>
+      <section class="guide-banner" aria-labelledby="guide-title">
+        <div><p class="home-eyebrow">CARD GAME / TRICK AVOIDANCE / 4 PLAYERS</p><h1 id="guide-title">Play Hearts online.<br>Sometimes winning a trick is losing.</h1>
+          <p>Pass three cards, follow the suit, and try not to collect the dangerous ones. Hearts rewards careful timing: a harmless-looking lead can become an expensive trick when someone runs out of that suit.</p>
+          <a class="home-primary" href="/?game=hearts">Play Hearts now <span aria-hidden="true">&rarr;</span></a>
+          <div class="guide-facts"><span>Exactly four players</span><span>Lowest score wins</span><span>13 cards each</span></div>
+        </div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#hearts"></use></svg>
+      </section>
+      <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+      <article class="guide-article" aria-label="Hearts game guide">
+        <section class="guide-section" id="join"><h2>Bring three friends to the table</h2>
+          <ol><li>Select <strong>Play Hearts now</strong>, create a room, and choose your display name.</li><li>Share its five-character code with three other players. The host can enable public discovery to fill available seats.</li><li>Once all four seats are occupied, the host starts. On passing hands, select exactly three cards and confirm the pass before play begins.</li></ol>
+          <p class="guide-note">This is a four-person game without bot-filled seats. Reading the guide does not join a room, and saved sessions take priority over new game links.</p>
+        </section>
+        <section class="guide-section" id="rules"><h2>Keep penalty cards out of your tricks</h2>
+          <p>A standard deck deals 13 cards to each player. Every heart is worth one penalty point, and the queen of spades is worth 13. There are 26 penalty points in a hand. The match ends when anyone reaches 100 or more total points; the lowest total wins.</p>
+          <h3>Passing and following</h3>
+          <p>Pass three cards left on the first hand, right on the second, across on the third, and none on the fourth. The cycle repeats. The player holding the two of clubs leads the first trick with that card.</p>
+          <p>You must follow the led suit if you have it. Otherwise discard another suit. The highest card of the led suit wins the trick; there are no trumps. Its winner collects the penalties in that trick and leads the next one.</p>
+          <h3>Opening restrictions</h3>
+          <p>On the first trick, do not discard a heart or the queen of spades if a legal non-penalty card is available. Hearts cannot normally be led until broken, unless your remaining hand contains only hearts.</p>
+          <p>In TimeCrusher, playing <strong>either a heart or the queen of spades breaks hearts</strong>. This differs from versions where only a heart breaks them.</p>
+          <h3>Shooting the moon</h3>
+          <p>Capture all 26 penalty points in one hand and your hand score becomes zero while each opponent receives 26. This happens automatically; there is no choice to subtract points from your own total instead. Capturing only some penalties gives you their ordinary cost.</p>
+        </section>
+        <section class="guide-section" id="example"><h2>A high club can carry unwanted company</h2><div class="guide-example">
+          <p>Later in a hand, clubs are led. You follow with the ace of clubs. Two players who have no clubs discard a heart and the queen of spades, while the last player follows with a lower club.</p>
+          <p>Your ace wins the trick and you receive 14 penalty points: one for the heart and 13 for the queen. The queen also breaks hearts in this version, so a later heart lead is now permitted even if no earlier heart had been played.</p>
+        </div></section>
+        <section class="guide-section" id="tips"><h2>Pass with a plan for the whole hand</h2>
+          <ul><li>Passing dangerous high cards can help, but leave yourself enough low cards to follow safely.</li><li>Remember which players are void in a suit; they can discard penalties when you lead it.</li><li>Do not attempt the moon simply because you already took the queen. You still need every heart.</li><li>Read hand points and total score separately: winning a single safe trick is not the same as winning the match.</li></ul>
+          <p><a href="/?game=hearts">Open Hearts' room setup</a> and start the first passing hand.</p>
+        </section>
+      </article>
+      <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">Change the trick-taking goal</h2><div class="guide-related-links"><a href="/games/twenty-nine/">Learn 29 &rarr;</a><a href="/games/uno/">Learn UNO &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+    </main>
+    <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+  </div></div></div>
+</body>
+</html>

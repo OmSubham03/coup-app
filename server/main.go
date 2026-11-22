@@ -41,6 +41,7 @@ type Room struct {
 	blackjackState     *game.BlackjackState
 	ticTacToeState     *game.TicTacToeState
 	scrabbleState      *game.ScrabbleState
+	kaboState         *game.KaboState
 	twoDecks           bool
 	unoStackingEnabled bool
 	unoMultiSkipEnabled bool
@@ -692,7 +693,7 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			if room.isAdditionalGame() {
 				gameInProgress = room.additionalPlayerActive(pID)
 				// Keep finished match seats reconnectable until return-to-lobby.
-				if room.ticTacToeState != nil || room.scrabbleState != nil {
+				if room.ticTacToeState != nil || room.scrabbleState != nil || room.kaboState != nil {
 					gameInProgress = room.additionalPlayerInGame(pID)
 				}
 			} else if room.gameType == "poker" {
@@ -831,7 +832,11 @@ func handleWS(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		log.Printf("[MSG] room=%s player=%.8s type=%s payload=%s", roomCode, playerID, msg.Type, string(msg.Payload))
+		if gameType == "kabo" {
+			log.Printf("[MSG] room=%s player=%.8s type=%s", roomCode, playerID, msg.Type)
+		} else {
+			log.Printf("[MSG] room=%s player=%.8s type=%s payload=%s", roomCode, playerID, msg.Type, string(msg.Payload))
+		}
 		room.mu.Lock()
 		room.lastActivity = time.Now()
 		handleMessage(room, connID, playerID, msg)
@@ -873,7 +878,7 @@ func handleMessage(room *Room, connID, playerID string, msg InMessage) {
 
 		gameInProgress := room.hasStartedGame()
 		if gameInProgress {
-			if room.additionalPlayerActive(playerID) || ((room.ticTacToeState != nil || room.scrabbleState != nil) && room.additionalPlayerInGame(playerID)) {
+			if room.additionalPlayerActive(playerID) || ((room.ticTacToeState != nil || room.scrabbleState != nil || room.kaboState != nil) && room.additionalPlayerInGame(playerID)) {
 				room.sendAdditionalState(connID, playerID)
 				return
 			}
@@ -2187,6 +2192,13 @@ func main() {
 	}
 	http.Handle("/css/", noCacheFS("public/css", "/css/"))
 	http.Handle("/js/", noCacheFS("public/js", "/js/"))
+	http.Handle("/games/", noCacheFS("public/games", "/games/"))
+	http.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "public/robots.txt")
+	})
+	http.HandleFunc("/sitemap.xml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "public/sitemap.xml")
+	})
 	http.HandleFunc("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/manifest+json")
 		http.ServeFile(w, r, "public/manifest.json")

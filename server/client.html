@@ -7,6 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#020617">
+<meta name="google-adsense-account" content="ca-pub-2847092601328775">
+<meta name="google-site-verification" content="CsEBsvodVkwPHxb2Tx7tUOZIN0hGEMG_VE8N21X1ljM">
+<meta name="description" content="Play free multiplayer card, board, and party games on Time Crushers. Create a room, invite friends, or join a public lobby. No downloads needed.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TimeCrusher">
@@ -15,7 +18,8 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
-<title>TimeCrusher</title>
+<title>Time Crushers - Free Multiplayer Card &amp; Board Games</title>
+<link rel="canonical" href="https://timecrushers.pages.dev/">
 <link rel="stylesheet" href="/css/common.css">
 <link rel="stylesheet" href="/css/coup.css">
 <link rel="stylesheet" href="/css/poker.css">
@@ -29,6 +33,7 @@
 <link rel="stylesheet" href="/css/home.css">
 <link rel="stylesheet" href="/css/rooms.css">
 <link rel="stylesheet" href="/css/scrabble.css">
+<link rel="stylesheet" href="/css/kabo.css">
 <style>
 #app-loader{position:fixed;inset:0;background:#020617;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;will-change:opacity}
 #app-loader .loader-title{font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:16px;background:linear-gradient(135deg,#f59e0b,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -55,19 +60,20 @@
         <a href="#home-how">How to play</a>
       </nav>
       <div class="home-account">
-        <div class="home-online" title="Players inside all game rooms" role="status">
-          <span class="home-online-dot" aria-hidden="true"></span><strong id="room-player-total">--</strong><span>in rooms</span>
+        <div class="home-online" title="Players in all game rooms" role="status">
+          <span class="home-online-dot" aria-hidden="true"></span><strong id="room-player-total">--</strong><span>live</span>
         </div>
         <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
         <button type="button" id="home-profile-button" class="home-profile-button" onclick="showNamePopup()" title="Profile" aria-label="Edit profile"><span id="home-profile-initials" aria-hidden="true">?</span></button>
       </div>
     </header>
     <main>
+      <p id="home-navigation-status" class="home-navigation-status" role="status" hidden></p>
       <section class="home-hero" aria-labelledby="home-hero-title">
         <div class="home-hero-copy">
           <p class="home-eyebrow"><span aria-hidden="true">&#10022;</span> LESS SCROLLING. MORE PLAYING.</p>
           <h2 id="home-hero-title">Good friends.<br>Great games.<br><span>Time well crushed.</span></h2>
-          <p class="home-hero-description">Turn a little free time into a lot of good times.<br class="home-desktop-break"> Your favorite games. Your favorite people. All right here.</p>
+          <p class="home-hero-description">Time Crushers turns a little free time into a lot of good times.<br class="home-desktop-break"> Free multiplayer games. Your favorite people. All right here.</p>
           <a class="home-primary" href="#home-games">Find your next game <span aria-hidden="true">&#8599;</span></a>
           <div class="home-hero-notes"><span><i aria-hidden="true">&#10003;</i> Free to play</span><span><i aria-hidden="true">&#10003;</i> No downloads</span><span><i aria-hidden="true">&#10003;</i> Just good company</span></div>
         </div>
@@ -82,11 +88,11 @@
       <section class="home-library" id="home-games" aria-labelledby="home-games-title">
         <div class="home-section-heading">
           <div><p class="home-eyebrow">THE GOOD-TIME COLLECTION</p><h2 id="home-games-title">Pick a game. Make a night.</h2></div>
-          <span class="home-game-count">12 games. Endless rematches.</span>
+          <span class="home-game-count">13 games. Endless rematches.</span>
         </div>
         <div class="home-discovery">
           <div class="home-filters" role="group" aria-label="Filter games">
-            <button type="button" data-home-filter="all" aria-pressed="true" onclick="setHomeFilter('all')">All games <span>12</span></button>
+            <button type="button" data-home-filter="all" aria-pressed="true" onclick="setHomeFilter('all')">All games <span>13</span></button>
             <button type="button" data-home-filter="cards" aria-pressed="false" onclick="setHomeFilter('cards')">Cards &amp; bluffing</button>
             <button type="button" data-home-filter="board" aria-pressed="false" onclick="setHomeFilter('board')">Board games</button>
             <button type="button" data-home-filter="party" aria-pressed="false" onclick="setHomeFilter('party')">Party games</button>
@@ -96,56 +102,73 @@
         <p id="home-search-status" class="home-sr-only" role="status" aria-live="polite"></p>
         <div class="game-list" id="home-game-list">
           <button type="button" class="game-card home-featured game-card-coup" data-home-category="cards party" onclick="openGameMenu('coup')">
+            <span class="game-card-activity" id="coup-card-activity" hidden><span id="coup-card-rooms" hidden></span><span id="coup-card-live" hidden></span></span>
             <span class="home-featured-tag">TRUST NO ONE. PLAY EVERYONE.</span>
             <svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#coup"></use></svg>
             <span class="game-card-info"><span class="game-card-title">Coup</span><span class="game-card-desc">A poker face is your best weapon.</span><span class="home-card-meta">Bluff &amp; strategy <span>&middot;</span> 2-6 players</span></span>
             <span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card home-featured game-card-uno" data-home-category="cards party" onclick="openGameMenu('uno')">
+            <span class="game-card-activity" id="uno-card-activity" hidden><span id="uno-card-rooms" hidden></span><span id="uno-card-live" hidden></span></span>
             <span class="home-featured-tag">FRIENDSHIPS MAY BE TESTED.</span>
             <svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#uno"></use></svg>
             <span class="game-card-info"><span class="game-card-title">UNO</span><span class="game-card-desc">One card away from sweet victory.</span><span class="home-card-meta">Match &amp; outplay <span>&middot;</span> 2-6 players</span></span>
             <span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-poker" data-home-category="cards" onclick="openGameMenu('poker')">
+            <span class="game-card-activity" id="poker-card-activity" hidden><span id="poker-card-rooms" hidden></span><span id="poker-card-live" hidden></span></span>
             <span class="home-card-scene"><span class="home-card-badge">THE CLASSICS</span><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#poker"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Poker</span><span class="game-card-desc">Big bluffs. Bigger pots.</span><span class="home-card-meta">Texas Hold'em <span>&middot;</span> 2-8 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-ludo" data-home-category="board" onclick="openGameMenu('ludo')">
+            <span class="game-card-activity" id="ludo-card-activity" hidden><span id="ludo-card-rooms" hidden></span><span id="ludo-card-live" hidden></span></span>
             <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#ludo"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Ludo</span><span class="game-card-desc">A lucky roll changes everything.</span><span class="home-card-meta">Roll &amp; race <span>&middot;</span> 2-4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-nq" data-home-category="party" onclick="openGameMenu('nquestions')">
+            <span class="game-card-activity" id="nquestions-card-activity" hidden><span id="nquestions-card-rooms" hidden></span><span id="nquestions-card-live" hidden></span></span>
             <span class="home-card-scene"><span class="home-card-badge">BRAIN TEASER</span><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#questions"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">20 Questions</span><span class="game-card-desc">One secret. Twenty chances.</span><span class="home-card-meta">Guess together <span>&middot;</span> 2-10 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-commune" data-home-category="cards party" onclick="openGameMenu('commune')">
+            <span class="game-card-activity" id="commune-card-activity" hidden><span id="commune-card-rooms" hidden></span><span id="commune-card-live" hidden></span></span>
             <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#commune"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Commune</span><span class="game-card-desc">Read the room. Call the liar.</span><span class="home-card-meta">Bluff poker hands <span>&middot;</span> 2-10 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-tn" data-home-category="cards" onclick="openGameMenu('twentynine')" data-home-keywords="29 twenty nine twentynine">
+            <span class="game-card-activity" id="twentynine-card-activity" hidden><span id="twentynine-card-rooms" hidden></span><span id="twentynine-card-live" hidden></span></span>
             <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#twentynine"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Twenty-Nine</span><span class="game-card-desc">Find your trump. Trust your partner.</span><span class="home-card-meta">Tricks &amp; teamwork <span>&middot;</span> 4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-hearts" data-home-category="cards" onclick="openGameMenu('hearts')">
+            <span class="game-card-activity" id="hearts-card-activity" hidden><span id="hearts-card-rooms" hidden></span><span id="hearts-card-live" hidden></span></span>
             <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#hearts"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Hearts</span><span class="game-card-desc">A little heartbreak is part of the game.</span><span class="home-card-meta">Dodge the points <span>&middot;</span> 4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-bluff" data-home-category="cards party" onclick="openGameMenu('bluff')">
+            <span class="game-card-activity" id="bluff-card-activity" hidden><span id="bluff-card-rooms" hidden></span><span id="bluff-card-live" hidden></span></span>
             <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#bluff"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Bluff</span><span class="game-card-desc">Convincing lies. Satisfying callouts.</span><span class="home-card-meta">Play your poker face <span>&middot;</span> 2-6 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-blackjack" data-home-category="cards" onclick="openGameMenu('blackjack')">
+            <span class="game-card-activity" id="blackjack-card-activity" hidden><span id="blackjack-card-rooms" hidden></span><span id="blackjack-card-live" hidden></span></span>
             <span class="home-card-scene"><span class="home-card-badge">GO SOLO OR TOGETHER</span><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#blackjack"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Blackjack</span><span class="game-card-desc">Feeling lucky? Make it twenty-one.</span><span class="home-card-meta">Beat the dealer <span>&middot;</span> 1-4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-tictactoe" data-home-category="board" onclick="openGameMenu('tictactoe')" data-home-keywords="tic tac toe tictactoe noughts crosses">
+            <span class="game-card-activity" id="tictactoe-card-activity" hidden><span id="tictactoe-card-rooms" hidden></span><span id="tictactoe-card-live" hidden></span></span>
             <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#tictactoe"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Tic-Tac-Toe</span><span class="game-card-desc">Three in a row. One move ahead.</span><span class="home-card-meta">Board game &middot; 2 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
           <button type="button" class="game-card game-card-scrabble" data-home-category="board" onclick="openGameMenu('scrabble')" data-home-keywords="words letters crossword spelling">
+            <span class="game-card-activity" id="scrabble-card-activity" hidden><span id="scrabble-card-rooms" hidden></span><span id="scrabble-card-live" hidden></span></span>
             <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#scrabble"></use></svg></span>
             <span class="game-card-info"><span class="game-card-title">Scrabble</span><span class="game-card-desc">Seven tiles. Find your word.</span><span class="home-card-meta">Word game &middot; 2-4 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
+          </button>
+          <button type="button" class="game-card game-card-kabo" data-home-category="cards party" onclick="openGameMenu('kabo')" data-home-keywords="cabo memory">
+            <span class="game-card-activity" id="kabo-card-activity" hidden><span id="kabo-card-rooms" hidden></span><span id="kabo-card-live" hidden></span></span>
+            <span class="home-card-scene"><svg class="home-card-art" viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#kabo"></use></svg></span>
+            <span class="game-card-info"><span class="game-card-title">Kabo</span><span class="game-card-desc">A little memory. A little mischief.</span><span class="home-card-meta">Remember &amp; swap &middot; 2-6 players</span></span><span class="game-card-arrow" aria-hidden="true">&#8599;</span>
           </button>
         </div>
         <div id="home-empty" class="home-empty" hidden><h3>No games found. No fun lost.</h3><p>Try another name or explore the whole collection.</p><button type="button" onclick="resetHomeGames()">Show all games <span aria-hidden="true">&#8594;</span></button></div>
@@ -159,14 +182,26 @@
     </main>
     <footer class="site-footer">
       <span>Time well spent. <b>timecrusher.</b></span>
+      <nav class="site-footer-links" aria-label="Information and support">
+        <a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+        <a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a>
+      </nav>
       <span>© Hobbystudio 2026 <a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio <span aria-hidden="true">&#8599;</span></a></span>
     </footer>
   </div>
 
+  <div id="menu-kabo" class="room-stage room-setup" style="display:none">
+    <div class="room-toolbar"><button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button><span class="room-live-count" id="kabo-setup-live" role="status">-- live</span><a class="btn btn-sm room-guide-link" href="/games/kabo/" target="_blank" rel="noopener noreferrer" aria-label="Read Kabo game guide (opens in a new tab)">Game guide</a><button class="btn btn-sm" onclick="toggleAdditionalRules('kabo')">Rules</button></div>
+    <header class="room-banner"><div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Kabo</h1><p>Remember, match, and keep your score low.</p></div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#kabo"></use></svg></header>
+    <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Four hidden cards. Invite up to five friends.</p><button class="btn" onclick="createAdditionalGame('kabo')">Create Kabo Game</button></section>
+    <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p><input id="kabo-join-code" aria-label="Five-character room code" placeholder="Enter code" maxlength="5" autocomplete="off" oninput="document.getElementById('kabo-join-btn').disabled=!this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())joinAdditionalWithCode('kabo')"><button id="kabo-join-btn" class="btn" disabled onclick="joinAdditionalWithCode('kabo')">Join Game</button></section>
+  </div>
   <!-- Coup Menu -->
   <div id="menu-coup" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <span class="room-live-count" id="coup-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/coup/" target="_blank" rel="noopener noreferrer" aria-label="Read Coup game guide (opens in a new tab)">Game guide</a>
       <button class="btn btn-sm" onclick="toggleRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-coup">
@@ -191,6 +226,8 @@
   <div id="menu-poker" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <span class="room-live-count" id="poker-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/poker/" target="_blank" rel="noopener noreferrer" aria-label="Read Poker game guide (opens in a new tab)">Game guide</a>
       <button class="btn btn-sm" onclick="togglePokerRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-poker">
@@ -222,6 +259,8 @@
   <div id="menu-nquestions" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <span class="room-live-count" id="nquestions-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/20-questions/" target="_blank" rel="noopener noreferrer" aria-label="Read 20 Questions game guide (opens in a new tab)">Game guide</a>
       <button class="btn btn-sm" onclick="toggleNQRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-nquestions">
@@ -247,6 +286,8 @@
   <div id="menu-ludo" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <span class="room-live-count" id="ludo-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/ludo/" target="_blank" rel="noopener noreferrer" aria-label="Read Ludo game guide (opens in a new tab)">Game guide</a>
       <button class="btn btn-sm" onclick="toggleLudoRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-ludo">
@@ -266,6 +307,8 @@
   <div id="menu-twentynine" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <span class="room-live-count" id="twentynine-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/twenty-nine/" target="_blank" rel="noopener noreferrer" aria-label="Read 29 game guide (opens in a new tab)">Game guide</a>
       <button class="btn btn-sm" onclick="toggleTNRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-twentynine">
@@ -286,6 +329,8 @@
   <div id="menu-hearts" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <span class="room-live-count" id="hearts-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/hearts/" target="_blank" rel="noopener noreferrer" aria-label="Read Hearts game guide (opens in a new tab)">Game guide</a>
       <button class="btn btn-sm" onclick="toggleHTRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-hearts">
@@ -305,6 +350,8 @@
   <div id="menu-uno" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <span class="room-live-count" id="uno-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/uno/" target="_blank" rel="noopener noreferrer" aria-label="Read UNO game guide (opens in a new tab)">Game guide</a>
       <button class="btn btn-sm" onclick="toggleUNORules()">Rules</button>
     </div>
     <header class="room-banner room-banner-uno">
@@ -333,6 +380,8 @@
   <div id="menu-bluff" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button type="button" class="btn btn-outline btn-sm" onclick="backToGameList()" title="Back" aria-label="Back to games">&larr; All games</button>
+      <span class="room-live-count" id="bluff-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/bluff/" target="_blank" rel="noopener noreferrer" aria-label="Read Bluff game guide (opens in a new tab)">Game guide</a>
       <button type="button" class="btn btn-blue btn-sm" onclick="toggleBluffRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-bluff">
@@ -352,6 +401,8 @@
   <div id="menu-blackjack" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button type="button" class="btn btn-outline btn-sm" onclick="backToGameList()" title="Back" aria-label="Back to games">&larr; All games</button>
+      <span class="room-live-count" id="blackjack-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/blackjack/" target="_blank" rel="noopener noreferrer" aria-label="Read Blackjack game guide (opens in a new tab)">Game guide</a>
       <button type="button" class="btn btn-green btn-sm" onclick="toggleBlackjackRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-blackjack">
@@ -370,7 +421,7 @@
   </div>
 
   <div id="menu-scrabble" class="room-stage room-setup" style="display:none">
-    <div class="room-toolbar"><button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button><button class="btn btn-sm" onclick="toggleAdditionalRules('scrabble')">Rules</button></div>
+    <div class="room-toolbar"><button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button><span class="room-live-count" id="scrabble-setup-live" role="status" title="Live player count loading">-- live</span><a class="btn btn-sm room-guide-link" href="/games/scrabble/" target="_blank" rel="noopener noreferrer" aria-label="Read Scrabble game guide (opens in a new tab)">Game guide</a><button class="btn btn-sm" onclick="toggleAdditionalRules('scrabble')">Rules</button></div>
     <header class="room-banner"><div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Scrabble</h1><p>Build a crossword together. 2-4 players.</p></div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#scrabble"></use></svg></header>
     <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Invite up to three friends to the board.</p><button class="btn" onclick="createAdditionalGame('scrabble')">Create Scrabble Game</button></section>
     <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
@@ -378,7 +429,7 @@
       <button class="btn btn-amber" id="scrabble-join-btn" disabled onclick="joinAdditionalWithCode('scrabble')">Join Game</button></section>
   </div>
   <div id="menu-tictactoe" class="room-stage room-setup" style="display:none">
-    <div class="room-toolbar"><button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button><button class="btn btn-sm" onclick="toggleAdditionalRules('tictactoe')">Rules</button></div>
+    <div class="room-toolbar"><button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button><span class="room-live-count" id="tictactoe-setup-live" role="status" title="Live player count loading">-- live</span><a class="btn btn-sm room-guide-link" href="/games/tic-tac-toe/" target="_blank" rel="noopener noreferrer" aria-label="Read Tic-Tac-Toe game guide (opens in a new tab)">Game guide</a><button class="btn btn-sm" onclick="toggleAdditionalRules('tictactoe')">Rules</button></div>
     <header class="room-banner"><div><p class="room-kicker">TIMECRUSHER / ROOM SETUP</p><h1>Tic-Tac-Toe</h1><p>Three in a row. Two players.</p></div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#tictactoe"></use></svg></header>
     <section class="room-panel room-create"><h2>Create a room</h2><p class="room-hint">Invite a friend for a head-to-head match.</p><button class="btn" onclick="createAdditionalGame('tictactoe')">Create Tic-Tac-Toe Game</button></section>
     <section class="room-panel room-join"><h2>Join with a code</h2><p class="room-hint">Enter the five-character code from your host.</p>
@@ -388,6 +439,8 @@
   <div id="menu-commune" class="room-stage room-setup" style="display:none">
     <div class="room-toolbar">
       <button class="btn btn-outline btn-sm" onclick="backToGameList()">&larr; All games</button>
+      <span class="room-live-count" id="commune-setup-live" role="status" title="Live player count loading">-- live</span>
+      <a class="btn btn-sm room-guide-link" href="/games/commune/" target="_blank" rel="noopener noreferrer" aria-label="Read Commune game guide (opens in a new tab)">Game guide</a>
       <button class="btn btn-sm" onclick="toggleCommuneRules()">Rules</button>
     </div>
     <header class="room-banner room-banner-commune">
@@ -549,6 +602,23 @@
     </div></div>
   </div>
 
+  <div id="kabo-active" style="display:none">
+    <div class="header-bar"><div class="kabo-title"><h2>Kabo</h2><small id="kabo-round"></small></div><button type="button" class="game-settings-open" onclick="openGameSettings()" aria-label="Settings">&#9881;</button></div>
+    <div class="tab-bar"><button class="tab active" id="kabotab-game" onclick="switchAdditionalTab('kabo','game')">Table</button><button class="tab" id="kabotab-chat" onclick="switchAdditionalTab('kabo','chat')">Chat</button></div>
+    <div id="kabo-game-tab">
+      <p id="kabo-final" class="kabo-final" role="status" hidden></p><div id="kabo-opponents" class="kabo-opponents"></div>
+      <div class="kabo-table"><button id="kabo-deck" type="button" class="kabo-pile" onclick="kaboSend('draw',{source:'deck'})" aria-label="Draw from deck"><span class="additional-card additional-card-back"><span aria-hidden="true">&#10022;</span></span><span>Draw</span></button><button id="kabo-discard-pile" type="button" class="kabo-pile" onclick="kaboSend('draw',{source:'discard'})" aria-label="Take discard"><span id="kabo-discard-card"></span><span>Discard</span></button></div>
+      <div class="kabo-own-heading"><div id="kabo-own-name" class="kabo-identity"></div><span id="kabo-turn" class="kabo-turn"></span></div>
+      <div id="kabo-hand" class="kabo-hand" aria-label="Your cards"></div>
+      <div class="kabo-action-tray"><div id="kabo-drawn" hidden></div><p id="kabo-prompt" role="status"></p><button id="kabo-clear" type="button" class="kabo-clear" aria-label="Cancel card selection" onclick="kaboResetSelection();renderKabo()" hidden>&times;</button></div>
+      <div class="kabo-actions"><button id="kabo-action" type="button" class="btn" onclick="kaboPrimary()">Select cards</button><button id="kabo-call" type="button" class="btn btn-secondary" onclick="kaboConfirm('call',{},'Call Kabo?')" hidden>Call Kabo</button><button id="kabo-skip" type="button" class="btn btn-secondary" onclick="kaboSend('skip')" hidden>Skip power</button></div>
+      <div id="kabo-decision" class="kabo-decision" hidden><button type="button" class="btn" onclick="kaboSend('decision',{swap:true})">Swap</button><button type="button" class="btn btn-secondary" onclick="kaboSend('decision',{swap:false})">Keep</button></div>
+      <div id="kabo-results" class="kabo-results" hidden></div>
+      <div class="kabo-actions"><button id="kabo-next-round" type="button" class="btn" onclick="kaboSend('next-round')" hidden>Redeal</button><button id="kabo-end-game" type="button" class="btn btn-secondary" onclick="kaboConfirm('end-game',{},'End match?')" hidden>End game</button><button id="kabo-return" type="button" class="btn" onclick="send('return-to-lobby')" hidden>Return to lobby</button></div>
+      <p id="kabo-last-action" class="kabo-log" role="status"></p>
+    </div>
+    <div id="kabo-chat-tab" style="display:none"><div class="chat-panel"><div id="kabo-chat-messages" class="chat-messages" role="log" aria-label="Room chat"></div><div class="chat-input-row"><input id="kabo-chat-input" aria-label="Chat message" placeholder="Type a message..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()"><button class="btn" onclick="sendChat()">Send</button></div></div></div>
+  </div>
   <!-- Active game (Coup) -->
   <div id="scrabble-active" style="display:none">
     <div class="header-bar"><h2>Scrabble</h2><button type="button" class="game-settings-open" onclick="openGameSettings()" aria-label="Settings">&#9881;</button></div>
@@ -863,7 +933,7 @@
 <div class="chat-toast" id="chat-toast"></div>
 <div class="conn-banner" id="conn-banner">Connection lost — reconnecting...</div>
 
-<dialog id="uno-house-rule-dialog" class="game-settings-dialog uno-house-rule-dialog" aria-labelledby="uno-house-rule-title" aria-describedby="uno-house-rule-description" onkeydown="if(event.key==='Escape'){event.preventDefault();this.close();}">
+<dialog id="uno-house-rule-dialog" class="game-settings-dialog uno-house-rule-dialog rules-panel" aria-labelledby="uno-house-rule-title" aria-describedby="uno-house-rule-description" onkeydown="if(event.key==='Escape'){event.preventDefault();this.close();}">
   <div class="game-settings-heading">
     <h2 id="uno-house-rule-title">House rule</h2>
     <button type="button" class="game-settings-close" onclick="document.getElementById('uno-house-rule-dialog').close()" aria-label="Close house rule">&times;</button>
@@ -889,7 +959,17 @@
   <p id="game-settings-status" class="game-settings-status" role="status"></p>
 </dialog>
 
-<dialog id="bluff-rules-dialog" class="additional-rules-dialog" aria-labelledby="bluff-rules-title">
+<dialog id="kabo-confirm-dialog" class="game-settings-dialog rules-panel" aria-labelledby="kabo-confirm-title" onkeydown="if(event.key==='Escape'){event.preventDefault();this.close();}">
+  <div class="game-settings-heading"><h2 id="kabo-confirm-title">Confirm action</h2><button class="game-settings-close" onclick="document.getElementById('kabo-confirm-dialog').close()" aria-label="Cancel action">&times;</button></div><p id="kabo-confirm-text"></p><button class="game-settings-command" onclick="kaboConfirmAction()">Confirm</button>
+</dialog>
+<dialog id="kabo-rules-dialog" class="additional-rules-dialog rules-panel" aria-labelledby="kabo-rules-title">
+  <div class="game-settings-heading"><h2 id="kabo-rules-title">Kabo rules</h2><button class="game-settings-close" onclick="toggleAdditionalRules('kabo')" aria-label="Close rules">&times;</button></div>
+  <p>2-6 players. Four face-down cards each; privately peek at two, then hide them and confirm ready. Lowest score wins. Ace = 1, numbers at face value, J = 11, Q = 12, black K = 13, red K = -1. No jokers.</p>
+  <p>Draw from the deck or discard. Replace one of your cards, or discard a deck-drawn card. A card taken from discard must replace your card and has no power. Deck-drawn discards: 7/8 peek at your card; 9/10 peek at an opponent card; J/Q swap blindly; black K peek at your card and an opponent card, hide, then optionally swap. Powers are optional.</p>
+  <p>Between turns, before the next draw, match the top discard's rank. Discard your matching card, or discard an opponent's match and give them one of yours. Wrong matches leave the card in place and add one unseen penalty card. Each player may attempt once per discard; wrong attempts keep the window open, but one successful match closes it. No chains.</p>
+  <p>Call Kabo only after drawing, before resolving that card. Complete the card and its power; everyone else then gets one final turn. An empty hand ends the round immediately. Scores are actual hand totals, including negatives, with no caller bonus or penalty. The host may redeal or end after a round. At 100 or more cumulative points, the match ends automatically. Lowest total wins; ties share the win.</p>
+</dialog>
+<dialog id="bluff-rules-dialog" class="additional-rules-dialog rules-panel" aria-labelledby="bluff-rules-title">
   <div class="game-settings-heading"><h2 id="bluff-rules-title">Bluff Rules</h2><button type="button" class="game-settings-close" onclick="toggleBluffRules()" aria-label="Close Bluff rules">&times;</button></div>
   <p>2-6 players. One shuffled 52-card deck, or two decks (104 cards), are dealt across all players. Only your hand is visible.</p>
   <p>Ranks advance A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, then A again. On your turn, play 1-4 cards face down and claim the required rank. Your cards do not have to match the claim.</p>
@@ -897,7 +977,7 @@
   <p>After either resolution, the rank advances and the next active player takes a turn. An empty hand wins only after its claim is accepted or a challenge proves it truthful. A caught bluff must pick up the pile and continue.</p>
   <p>Leaving returns your remaining cards to the pile. Fewer than two active players ends the game without awarding a winner.</p>
 </dialog>
-<dialog id="scrabble-rules-dialog" class="additional-rules-dialog" aria-labelledby="scrabble-rules-title">
+<dialog id="scrabble-rules-dialog" class="additional-rules-dialog rules-panel" aria-labelledby="scrabble-rules-title">
   <div class="game-settings-heading"><h2 id="scrabble-rules-title">Scrabble rules</h2><button class="game-settings-close" onclick="toggleAdditionalRules('scrabble')" aria-label="Close rules">&times;</button></div>
   <p>Choose a rack tile, then a square. Tap a newly placed tile to take it back. Use the arrow keys to explore the board. DL/TL doubles or triples a letter; DW/TW doubles or triples a word.</p>
   <p>Use your seven tiles to form a word in one row or column. Open across the center star; later plays must connect to the board. Every word you form scores. Letter and word bonuses apply only to newly covered squares. Blanks score zero; playing all seven tiles adds 50 points.</p>
@@ -905,11 +985,11 @@
   <p>You may pass or exchange tiles instead of playing. Exchanging requires at least seven tiles in the bag.</p>
   <p>The game ends when a player empties their rack with the bag empty, or after six consecutive scoreless turns. Leftover tiles are deducted from scores; a player who goes out collects the other players' leftover tile values.</p>
 </dialog>
-<dialog id="tictactoe-rules-dialog" class="additional-rules-dialog" aria-labelledby="ttt-rules-title">
+<dialog id="tictactoe-rules-dialog" class="additional-rules-dialog rules-panel" aria-labelledby="ttt-rules-title">
   <div class="game-settings-heading"><h2 id="ttt-rules-title">Tic-Tac-Toe rules</h2><button class="game-settings-close" onclick="toggleAdditionalRules('tictactoe')" aria-label="Close rules">&times;</button></div>
   <p>X goes first. Take turns marking one empty square. Get three of your marks across, down or diagonally to win. If the board fills without a line, the game is a draw.</p>
 </dialog>
-<dialog id="blackjack-rules-dialog" class="additional-rules-dialog" aria-labelledby="blackjack-rules-title">
+<dialog id="blackjack-rules-dialog" class="additional-rules-dialog rules-panel" aria-labelledby="blackjack-rules-title">
   <div class="game-settings-heading"><h2 id="blackjack-rules-title">Blackjack Rules</h2><button type="button" class="game-settings-close" onclick="toggleBlackjackRules()" aria-label="Close Blackjack rules">&times;</button></div>
   <p>1-4 players. Play chips only: everyone starts with 1000 chips. Each round posts a fixed 50-chip bet and uses a fresh shuffled one-deck or two-deck shoe.</p>
   <p>Aces count as 1 or 11; face cards count as 10. Hit draws a card; stand ends your turn. Reaching 21 ends your turn automatically; exceeding 21 loses the bet. Double is available only on your initial two cards with a 50-chip bet and enough chips: add 50, draw exactly one card, and stand.</p>
@@ -933,7 +1013,7 @@
 
 <!-- Coup Rules Overlay -->
 <div class="rules-overlay" id="rules-overlay">
-  <div class="rules-content">
+  <div class="rules-content rules-panel">
     <div class="rules-close"><button onclick="toggleRules()">✕ Close</button></div>
     <h2>📜 Coup Rules</h2>
     <h3>Overview</h3>
@@ -965,8 +1045,8 @@
 
 <!-- Poker Rules Overlay -->
 <div class="rules-overlay" id="poker-rules-overlay">
-  <div class="poker-rules-content">
-    <div class="rules-close"><button onclick="togglePokerRules()" style="background:#d4a017;color:#000">✕ Close</button></div>
+  <div class="poker-rules-content rules-panel">
+    <div class="rules-close"><button onclick="togglePokerRules()">✕ Close</button></div>
     <h2>🃏 Texas Hold'em Rules</h2>
     <h3>Overview</h3>
     <p>Each player is dealt 2 hole cards face down. 5 community cards are dealt face up in stages. Make the best 5-card hand from any combination of your 2 hole cards and the 5 community cards.</p>
@@ -1006,8 +1086,8 @@
 
 <!-- Ludo Rules Overlay -->
 <div class="rules-overlay" id="ludo-rules-overlay">
-  <div class="ludo-rules-content">
-    <div class="rules-close"><button onclick="toggleLudoRules()" style="background:#ef4444">✕ Close</button></div>
+  <div class="ludo-rules-content rules-panel">
+    <div class="rules-close"><button onclick="toggleLudoRules()">✕ Close</button></div>
     <h2>🎲 Ludo Rules</h2>
     <h3>Objective</h3>
     <p>Be the first player to move all 4 tokens from your yard, around the board, and into your home column.</p>
@@ -1042,8 +1122,8 @@
 
 <!-- 29 Rules Overlay -->
 <div class="rules-overlay" id="tn-rules-overlay">
-  <div class="rules-content" style="border-color:#22c55e">
-    <div class="rules-close"><button onclick="toggleTNRules()" style="background:#22c55e;color:#fff">✕ Close</button></div>
+  <div class="rules-content rules-panel">
+    <div class="rules-close"><button onclick="toggleTNRules()">✕ Close</button></div>
     <h2>🃁 29 Card Game Rules</h2>
     <h3>Overview</h3>
     <p>29 is a 4-player <b>partnership trick-taking</b> game popular in South Asia. Partners sit opposite each other. The goal is to win tricks containing valuable cards.</p>
@@ -1066,8 +1146,9 @@
       <li>You <b>must follow suit</b> if you can.</li>
       <li>Trump is hidden initially. The first player unable to follow suit can <b>ask for trump reveal</b>.</li>
       <li>After trump is revealed, trumps beat all other suits.</li>
-      <li>If you trump, next player must <b>over-trump</b> if possible.</li>
+      <li>When void in the led suit, if you choose to play trump you must <b>over-trump</b> if able; you may instead discard a non-trump.</li>
       <li>Winner of each trick leads the next.</li>
+      <li>If trump remains hidden after seven completed tricks, the hand is annulled.</li>
     </ul>
     <h3>Pair (K+Q of Trump)</h3>
     <ul>
@@ -1078,7 +1159,7 @@
     <h3>Scoring</h3>
     <ul>
       <li>If bidding team meets their bid → they gain 1 game point.</li>
-      <li>If they fail → they lose 1 game point (2 if under half the bid).</li>
+      <li>If they fail → they lose 1 game point (2 when card points are below the original bid divided by two, rounded down).</li>
       <li>First team to <b>+6</b> wins. A team at <b>-6</b> loses.</li>
     </ul>
   </div>
@@ -1086,8 +1167,8 @@
 
 <!-- Hearts Rules Overlay -->
 <div class="rules-overlay" id="ht-rules-overlay">
-  <div class="rules-content" style="border-color:#dc2626">
-    <div class="rules-close"><button onclick="toggleHTRules()" style="background:#dc2626;color:#fff">✕ Close</button></div>
+  <div class="rules-content rules-panel">
+    <div class="rules-close"><button onclick="toggleHTRules()">✕ Close</button></div>
     <h2>❤️ Hearts Rules</h2>
     <h3>Overview</h3>
     <p>Hearts is a 4-player <b>trick-avoidance</b> game. The goal is to have the <b>lowest score</b> when any player reaches 100 points.</p>
@@ -1107,8 +1188,8 @@
     <ul>
       <li>Player with <b>2♣</b> leads the first trick</li>
       <li><b>Must follow suit</b> if possible</li>
-      <li>No hearts or Q♠ on the <b>first trick</b></li>
-      <li><b>Hearts can't be led</b> until a heart has been played (broken)</li>
+      <li>No hearts or Q♠ on the <b>first trick</b> when a legal non-penalty card is available.</li>
+      <li><b>Hearts can't be led</b> until hearts or Q♠ have been played (broken), unless only hearts remain in your hand.</li>
       <li>Highest card of led suit wins the trick (no trumps)</li>
     </ul>
     <h3>Shooting the Moon 🌙</h3>
@@ -1120,7 +1201,7 @@
 
 <!-- UNO Rules Overlay -->
 <div class="rules-overlay" id="uno-rules-overlay">
-  <div class="rules-content uno-rules-content">
+  <div class="rules-content uno-rules-content rules-panel">
     <div class="rules-close"><button onclick="toggleUNORules()">✕ Close</button></div>
     <h2>UNO Rules</h2>
     <h3>Setup and goal</h3>
@@ -1148,16 +1229,16 @@
 
 <!-- Commune Rules Overlay -->
 <div class="rules-overlay" id="commune-rules-overlay">
-  <div class="rules-content" style="border-color:#3b82f6">
-    <div class="rules-close"><button onclick="toggleCommuneRules()" style="background:#3b82f6;color:#fff">✕ Close</button></div>
+  <div class="rules-content rules-panel">
+    <div class="rules-close"><button onclick="toggleCommuneRules()">✕ Close</button></div>
     <h2>🫱 Commune Rules</h2>
     <h3>Overview</h3>
-    <p>A bluffing card game using a standard 52-card deck where <b>2s are wild</b>. Two <b>community cards</b> are dealt face-up for all to see. Players declare poker-style hands based on the community cards plus <b>their own hand</b>. Each declaration must be higher than the last — or you can call the bluff!</p>
+    <p>A bluffing card game using a standard 52-card deck where <b>2s are wild</b>. Two <b>community cards</b> are dealt face-up for all to see. Players declare poker-style hands across <b>all dealt cards</b>, including every living player's hand. You see only your own hand and the community cards until a call. Each declaration must be higher than the last — or you can call the bluff!</p>
     <h3>Setup</h3>
     <ul>
       <li>Each player starts with <b>5 tokens</b> (lives).</li>
       <li><b>2 community cards</b> are dealt face-up each round.</li>
-      <li>Each player's hand = <b>6 minus tokens lost</b> cards (minimum 1).</li>
+      <li>Each player's hand = <b>6 minus tokens remaining</b> cards: one at five tokens, two at four tokens, and so on.</li>
       <li>A fresh shuffled deck is dealt each round.</li>
     </ul>
     <h3>Wild Cards</h3>
@@ -1166,7 +1247,7 @@
     </ul>
     <h3>On Your Turn</h3>
     <ul>
-      <li><b>Declare</b> — Claim a poker hand exists in the community cards + your own hand. Must be higher than the previous declaration.</li>
+      <li><b>Declare</b> — Claim a poker hand exists across the community cards and all living players' hands. Must be higher than the previous declaration.</li>
       <li><b>Call</b> — Challenge the previous player's declaration (only if someone already declared).</li>
     </ul>
     <h3>Hand Rankings (lowest to highest)</h3>
@@ -1193,11 +1274,11 @@
 
 <!-- N Questions Rules Overlay -->
 <div class="rules-overlay" id="nq-rules-overlay">
-  <div class="rules-content" style="border-color:#7c3aed">
-    <div class="rules-close"><button onclick="toggleNQRules()" style="background:#7c3aed;color:#fff">✕ Close</button></div>
+  <div class="rules-content rules-panel">
+    <div class="rules-close"><button onclick="toggleNQRules()">✕ Close</button></div>
     <h2>❓ 20 Questions Rules</h2>
     <h3>Overview</h3>
-    <p>One player (the <b>Word-Giver</b>) picks a secret word. Everyone else has <b>20 yes/no questions</b> to figure out what it is!</p>
+    <p>One player (the <b>Word-Giver</b>) picks a secret word. Everyone else shares the question budget chosen by the room creator to figure out what it is.</p>
     <h3>Setup</h3>
     <ul>
       <li>The <b>Word-Giver</b> chooses a <b>category</b> (Name, Place, Animal, or Thing) and enters a secret word.</li>
@@ -1208,17 +1289,18 @@
       <li>Players take <b>turns</b> asking one question at a time.</li>
       <li>Questions should be <b>yes/no</b> style (e.g., "Is it alive?").</li>
       <li>The Word-Giver answers <b>Yes</b>, <b>No</b>, or can type a short comment.</li>
+      <li>The question counter advances after a <b>full rotation of guessers</b>, not after every individual question.</li>
     </ul>
     <h3>Making a Guess</h3>
     <ul>
-      <li><b>Any guesser</b> can make a guess at <b>any time</b> — no need to wait for your turn!</li>
-      <li>Each guess <b>costs a question</b>, so guess wisely.</li>
+      <li><b>Any guesser</b> can guess during the asking phase, except while an answer or another guess verdict is pending.</li>
+      <li>An incorrect guess during the asking phase advances the question counter once.</li>
       <li>The Word-Giver <b>manually verifies</b> each guess as correct or wrong.</li>
       <li>If correct, the game ends and <b>everyone sees both the guess and the secret word</b>.</li>
     </ul>
     <h3>Final Guess Round</h3>
     <ul>
-      <li>After all 20 questions are used up, each guesser gets <b>one final guess</b>.</li>
+      <li>After the selected budget is exhausted, each guesser gets <b>one final guess</b>.</li>
       <li>Players guess one at a time in turn order.</li>
       <li>The Word-Giver verifies each final guess.</li>
       <li>If anyone guesses correctly, the <b>guessers win</b>!</li>
@@ -1238,7 +1320,7 @@
 // Show loader for minimum duration for better UX
 let loaderStartTime = Date.now();
 let scriptsLoaded = 0;
-let totalScripts = 15;
+let totalScripts = 18;
 let minLoaderTime = 800; // Minimum 800ms loader visibility
 
 function checkScriptsLoaded() {
@@ -1256,6 +1338,8 @@ function checkScriptsLoaded() {
   }
 }
 </script>
+<script src="/js/config.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/theme.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/avatars.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/common.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/voice.js" defer onload="checkScriptsLoaded()"></script>
@@ -1271,6 +1355,7 @@ function checkScriptsLoaded() {
 <script src="/js/blackjack.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/tictactoe.js" defer onload="checkScriptsLoaded()"></script>
 <script src="/js/scrabble.js" defer onload="checkScriptsLoaded()"></script>
+<script src="/js/kabo.js" defer onload="checkScriptsLoaded()"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Coup Online with Friends | Time Crushers</title>
+  <meta name="description" content="Learn TimeCrusher's Coup rules for 2-6 players: coins, hidden roles, challenges, blocks, and the Inquisitor variant. Play online with friends for free.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/coup/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container">
+    <div id="screen-menu" class="screen active home-active" data-home-theme="light">
+      <div id="game-list-view">
+        <header class="home-header">
+          <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+          <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=coup">Room setup</a></nav>
+          <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+        </header>
+        <main>
+          <p id="guide-status" role="status"></p>
+          <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Coup</span></nav>
+          <section class="guide-banner" aria-labelledby="guide-title">
+            <div>
+              <p class="home-eyebrow">CARD GAME / BLUFFING / 2-6 PLAYERS</p>
+              <h1 id="guide-title">Play Coup online.<br>Trust your instincts, not the table.</h1>
+              <p>Coup is a short battle of hidden roles and public claims. Your coins are visible, but your influence is not. Will you build quietly, call a suspicious Duke, or force a rival to reveal their last card?</p>
+              <a class="home-primary" href="/?game=coup">Play Coup now <span aria-hidden="true">&rarr;</span></a>
+              <div class="guide-facts"><span>2-6 players</span><span>Free browser game</span><span>Standard &amp; Inquisitor</span></div>
+            </div>
+            <svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#coup"></use></svg>
+          </section>
+          <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+          <article class="guide-article" aria-label="Coup game guide">
+            <section class="guide-section" id="join">
+              <h2>Get your table together</h2>
+              <ol>
+                <li>Choose <strong>Play Coup now</strong>. On the setup screen, create a Standard room with Ambassador or an Inquisitor room.</li>
+                <li>Choose a display name and share the five-character room code with your friends. They select Coup, enter the code, and choose the matching variant.</li>
+                <li>The host starts when at least two players have joined. Rooms are private by default; the host can enable <strong>Public room</strong> to appear in available rooms.</li>
+              </ol>
+              <p class="guide-note">No download, payment, or Google sign-in is required. A saved game in the same browser tab takes priority over a new game link, so following this guide does not silently replace an existing session.</p>
+            </section>
+            <section class="guide-section" id="rules">
+              <h2>The rules used by TimeCrusher</h2>
+              <p>Every player starts with <strong>two coins and two hidden influence cards</strong>, including in a two-player game. The starting player is selected randomly. Losing influence reveals one of your cards; losing both eliminates you. The last player with hidden influence wins.</p>
+              <h3>Actions that do not require a role</h3>
+              <ul>
+                <li><strong>Income:</strong> take one coin. It cannot be blocked or challenged.</li>
+                <li><strong>Foreign Aid:</strong> take two coins, unless an opponent blocks by claiming Duke.</li>
+                <li><strong>Coup:</strong> pay seven coins and choose an opponent to lose one influence. It cannot be blocked or challenged. At ten or more coins, you must Coup instead of taking another action.</li>
+              </ul>
+              <h3>Role claims in the Standard variant</h3>
+              <div class="guide-table-wrap">
+                <table class="guide-table">
+                  <caption class="home-sr-only">Coup Standard role actions and blocks</caption>
+                  <thead><tr><th scope="col">Role</th><th scope="col">Action</th><th scope="col">Block</th></tr></thead>
+                  <tbody>
+                    <tr><th scope="row">Duke</th><td>Tax: take three coins.</td><td>Foreign Aid.</td></tr>
+                    <tr><th scope="row">Assassin</th><td>Pay three coins to make a target lose influence.</td><td>No role-specific block.</td></tr>
+                    <tr><th scope="row">Captain</th><td>Steal up to two coins from a target.</td><td>Stealing from you.</td></tr>
+                    <tr><th scope="row">Ambassador</th><td>Draw two cards, then keep as many hidden cards as you had before the exchange.</td><td>Stealing from you.</td></tr>
+                    <tr><th scope="row">Contessa</th><td>No role-specific action.</td><td>Assassination targeting you.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <h3>Bluffing, challenges, and blocks</h3>
+              <p>You may claim a role you do not hold. Other living players can challenge a role claim, and blocks can be challenged too. If you cannot show a hidden card of the claimed role, you lose influence. If you can prove the role, the challenger loses influence, and your proven card is shuffled back into the deck and replaced.</p>
+              <p>An influence loss does not let you invent a new card: choose from the cards you still hold. Read the current action and response prompts before passing, blocking, or challenging; an assassination challenge can be much riskier than letting a simple Tax resolve.</p>
+              <h3>The Inquisitor variant</h3>
+              <p>Inquisitor replaces Ambassador. <strong>Inquire</strong> draws one card and returns one while preserving your influence count. <strong>Interrogate</strong> targets another player: you see a selected hidden card and can force it to be replaced from the deck. Inquisitor, rather than Ambassador, can block stealing. The other roles and basic coin actions remain the same.</p>
+            </section>
+            <section class="guide-section" id="example">
+              <h2>A challenge changes more than the coin count</h2>
+              <div class="guide-example">
+                <p>Mira has two coins and claims Duke to take Tax. Dev challenges. Mira really has a hidden Duke, so she proves it. Dev chooses an influence to lose; Mira returns the proven Duke to the deck and receives a replacement.</p>
+                <p>After the remaining response resolves, a successful Tax brings Mira to five coins. Dev has learned that the original claim was true, <strong>not that Mira still has a Duke</strong>. Her replacement could be a different role. On a later turn, two more coins would put a seven-coin Coup within reach.</p>
+              </div>
+            </section>
+            <section class="guide-section" id="tips">
+              <h2>Give your bluffs a reason to be believed</h2>
+              <ul>
+                <li><strong>Watch coins first.</strong> Seven coins creates a guaranteed threat; ten forces its use. A quiet player with a large stack can be more dangerous than a loud claimant.</li>
+                <li><strong>Challenge with a purpose.</strong> Risking your last influence over one extra coin is very different from stopping an action that could eliminate you.</li>
+                <li><strong>Remember exchanges.</strong> A successful proof or exchange changes hidden information. Do not treat an earlier reveal as permanent knowledge.</li>
+                <li><strong>Choose the loss deliberately.</strong> Keeping a useful blocker may buy more time than keeping an aggressive role when an opponent is already targeting you.</li>
+              </ul>
+              <p>Ready to test the table? <a href="/?game=coup">Open Coup's room setup</a> and bring a friend.</p>
+            </section>
+          </article>
+          <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">A different kind of next move</h2><div class="guide-related-links"><a href="/games/ludo/">Learn Ludo &rarr;</a><a href="/games/tic-tac-toe/">Learn Tic-Tac-Toe &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+        </main>
+        <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

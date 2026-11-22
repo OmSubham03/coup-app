@@ -1,9 +1,9 @@
 // ========== COMMON: Connection, WebSocket, Screens, Profile, Chat ==========
 
-const isLocal = location.port === '8080' || location.hostname === 'localhost';
-const SERVER = isLocal ? location.hostname + ':8080' : location.host;
-const HTTP = location.protocol === 'https:' ? 'https://' : 'http://';
-const WS = location.protocol === 'https:' ? 'wss://' : 'ws://';
+const backendURL = getBackendURL();
+const SERVER = backendURL.host;
+const HTTP = backendURL.protocol + '//';
+const WS = backendURL.protocol === 'https:' ? 'wss://' : 'ws://';
 let ws = null;
 let playerId = sessionStorage.getItem('coup_pid') || crypto.randomUUID();
 sessionStorage.setItem('coup_pid', playerId);
@@ -25,8 +25,8 @@ let additionalRoomTwoDecks = false;
 let publicJoinPending = false;
 let publicRoomTimer = null;
 let publicRoomRequest = null;
-const GAME_CAPACITIES = { coup: 6, poker: 8, ludo: 4, nquestions: 10, commune: 10, twentynine: 4, hearts: 4, uno: 6, bluff: 6, blackjack: 4, tictactoe: 2, scrabble: 4 };
-const SHARED_TAB_GAMES = ['bluff', 'blackjack', 'tictactoe', 'scrabble'];
+const GAME_CAPACITIES = { coup: 6, poker: 8, ludo: 4, nquestions: 10, commune: 10, twentynine: 4, hearts: 4, uno: 6, bluff: 6, blackjack: 4, tictactoe: 2, scrabble: 4, kabo: 6 };
+const SHARED_TAB_GAMES = ['bluff', 'blackjack', 'tictactoe', 'scrabble', 'kabo'];
 
 function hideAllActiveGames() {
   ['game', 'poker', 'ludo', 'nq', 'commune', 'tn', 'ht', 'uno', ...SHARED_TAB_GAMES].forEach(prefix => {
@@ -192,18 +192,21 @@ function openGameMenu(type) {
   document.getElementById('menu-blackjack').style.display = type === 'blackjack' ? '' : 'none';
   document.getElementById('menu-tictactoe').style.display = type === 'tictactoe' ? '' : 'none';
   document.getElementById('menu-scrabble').style.display = type === 'scrabble' ? '' : 'none';
+  document.getElementById('menu-kabo').style.display = type === 'kabo' ? '' : 'none';
   document.getElementById('join-variant-row').style.display = type === 'coup' ? '' : 'none';
   updateGameHeadings(type);
   startPublicRoomDiscovery(type);
+  loadRoomPlayerCount();
 }
 
 function updateGameHeadings(type) {
   const gameNames = { coup: 'COUP', poker: 'POKER', ludo: 'LUDO', nquestions: '20 QUESTIONS', commune: 'COMMUNE', twentynine: '29', hearts: 'HEARTS', uno: 'UNO' };
   const gameClasses = { coup: 'coup-title', poker: 'poker-title', ludo: 'ludo-title', nquestions: 'nq-title', commune: '', twentynine: '', hearts: '', uno: 'uno-title' };
   const gameSubs = { coup: 'Bluff. Deceive. Survive.', poker: 'Texas Hold\u2019em. All In.', ludo: 'Roll. Race. Win.', nquestions: 'Correct Guess in 20 turns', commune: 'Bluff poker hands. Call the liar.', twentynine: 'Trick-taking trump card game.', hearts: 'Avoid penalty cards. Shoot the moon.', uno: 'Match colors and numbers. Play your hand first.' };
-  Object.assign(gameNames, { bluff: 'BLUFF', blackjack: 'BLACKJACK', tictactoe: 'Tic-Tac-Toe', scrabble: 'Scrabble' });
+  Object.assign(gameNames, { bluff: 'BLUFF', blackjack: 'BLACKJACK', tictactoe: 'Tic-Tac-Toe', scrabble: 'Scrabble', kabo: 'Kabo' });
   Object.assign(gameClasses, { bluff: 'bluff-title', blackjack: 'blackjack-title' });
   Object.assign(gameSubs, { bluff: '2-6 players', blackjack: '1-4 players', tictactoe: 'Three in a row. Two players.', scrabble: 'Build a crossword together. 2-4 players.' });
+  gameSubs.kabo = 'Remember, match, and keep your score low.';
   ['join-game-title', 'entry-game-title', 'lobby-game-title'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.textContent = gameNames[type] || type.toUpperCase(); el.className = (gameClasses[type] || '') + ' '; el.style.fontSize = '36px'; }
@@ -230,6 +233,7 @@ function backToGameList() {
   document.getElementById('menu-blackjack').style.display = 'none';
   document.getElementById('menu-tictactoe').style.display = 'none';
   document.getElementById('menu-scrabble').style.display = 'none';
+  document.getElementById('menu-kabo').style.display = 'none';
 }
 
 function showScreen(name) {
@@ -594,7 +598,8 @@ function resetJoinButtons() {
     { id: 'bluff-join-btn', text: 'Join Game' },
     { id: 'blackjack-join-btn', text: 'Join Game' },
     { id: 'tictactoe-join-btn', text: 'Join Game' },
-    { id: 'scrabble-join-btn', text: 'Join Game' }
+    { id: 'scrabble-join-btn', text: 'Join Game' },
+    { id: 'kabo-join-btn', text: 'Join Game' }
   ];
   buttons.forEach(({ id, text }) => {
     const btn = document.getElementById(id);
@@ -624,6 +629,7 @@ function handleWSMessage(e) {
         updateAdditionalRoomSettings(msg.payload);
         if (bluffState && currentGameType === 'bluff') renderBluffGame();
         if (blackjackState && currentGameType === 'blackjack') renderBlackjackGame();
+        if (kaboState && currentGameType === 'kabo') renderKabo();
         break;
       case 'redirect':
         // Player is already in another active game
@@ -669,6 +675,10 @@ function handleWSMessage(e) {
       case 'scrabble-state':
         currentGameType = 'scrabble';
         handleScrabbleState(msg.payload);
+        break;
+      case 'kabo-state':
+        currentGameType = 'kabo';
+        handleKaboState(msg.payload);
         break;
       case 'game-started':
         gameState = msg.payload?.gameState;
@@ -793,6 +803,8 @@ function handleWSMessage(e) {
           blackjackState = null;
           tttState = null;
           scrabbleState = null;
+          kaboState = null;
+          kaboResetSelection();
           bluffSelectedCards.clear();
           gameActive = false;
           closeAdditionalDialogs();
@@ -850,7 +862,8 @@ function handleWSMessage(e) {
           document.getElementById('conn-banner').textContent = 'Game session ended.';
           document.getElementById('conn-banner').classList.add('show');
           setTimeout(() => { disconnect(); showScreen('menu'); backToGameList(); }, 1500);
-        } else if (gameState || pokerState || unoState || bluffState || blackjackState || tttState || scrabbleState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
+        } else if (kaboState && currentGameType === 'kabo') { kaboError(errMsg); }
+        else if (gameState || pokerState || unoState || bluffState || blackjackState || tttState || scrabbleState) { alert(errMsg); } else { document.getElementById('name-error').textContent = errMsg; }
         break;
     }
   } catch(err) {
@@ -941,6 +954,8 @@ function disconnect() {
   blackjackState = null;
   tttState = null;
   scrabbleState = null;
+  kaboState = null;
+  kaboResetSelection();
   bluffSelectedCards.clear();
   isSpectating = false;
   chatMessages = [];
@@ -985,14 +1000,14 @@ async function copyRoomCode(status) {
 function openSettingsRules() {
   const rules = { coup: toggleRules, poker: togglePokerRules, ludo: toggleLudoRules,
     nquestions: toggleNQRules, commune: toggleCommuneRules, twentynine: toggleTNRules,
-    hearts: toggleHTRules, uno: toggleUNORules, bluff: toggleBluffRules, blackjack: toggleBlackjackRules, tictactoe: () => toggleAdditionalRules('tictactoe'), scrabble: () => toggleAdditionalRules('scrabble') };
+    hearts: toggleHTRules, uno: toggleUNORules, bluff: toggleBluffRules, blackjack: toggleBlackjackRules, tictactoe: () => toggleAdditionalRules('tictactoe'), scrabble: () => toggleAdditionalRules('scrabble'), kabo: () => toggleAdditionalRules('kabo') };
   closeGameSettings();
   rules[currentGameType]?.();
 }
 
 function exitGame() {
   const states = { coup: gameState, poker: pokerState, ludo: ludoState,
-    nquestions: nqState, commune: communeState, twentynine: tnState, hearts: htState, uno: unoState, bluff: bluffState, blackjack: blackjackState, tictactoe: tttState, scrabble: scrabbleState };
+    nquestions: nqState, commune: communeState, twentynine: tnState, hearts: htState, uno: unoState, bluff: bluffState, blackjack: blackjackState, tictactoe: tttState, scrabble: scrabbleState, kabo: kaboState };
   const state = states[currentGameType];
   const finished = !state || ['game_over', 'finished'].includes(state.phase);
   const warnings = { poker: 'You will forfeit your chips.', ludo: 'Your tokens will be removed.',
@@ -1186,44 +1201,6 @@ function showChatToast(name, message) {
 
 let homeFilter = 'all';
 
-function applyHomeTheme(theme) {
-  const dark = theme === 'dark';
-  document.getElementById('screen-menu').dataset.homeTheme = dark ? 'dark' : 'light';
-  for (const id of ['home-theme-toggle', 'lobby-theme-toggle', 'settings-theme-toggle']) {
-    const toggle = document.getElementById(id);
-    toggle.setAttribute('aria-pressed', String(dark));
-    toggle.title = dark ? 'Switch to white theme' : 'Switch to dark blue theme';
-  }
-}
-
-function toggleHomeTheme() {
-  setPlayerTheme(document.getElementById('screen-menu').dataset.homeTheme !== 'dark');
-}
-
-function setPlayerTheme(dark) {
-  const theme = dark ? 'dark' : 'light';
-  applyHomeTheme(theme);
-  try {
-    localStorage.setItem('timecrusher_home_theme', theme);
-  } catch (error) {
-    console.error('Unable to save theme:', error);
-    for (const id of ['home-search-status', 'game-settings-status', 'invite-status']) {
-      document.getElementById(id).textContent = 'Theme changed, but your browser could not save it for your next visit.';
-    }
-  }
-}
-
-function initHomeTheme() {
-  let theme = 'light';
-  try {
-    theme = localStorage.getItem('timecrusher_home_theme');
-  } catch (error) {
-    console.error('Unable to load homepage theme:', error);
-    document.getElementById('home-search-status').textContent = 'Your saved theme could not be loaded. The white theme is available.';
-  }
-  applyHomeTheme(theme);
-}
-
 function setHomeFilter(filter) {
   homeFilter = filter;
   document.querySelectorAll('[data-home-filter]').forEach(button => {
@@ -1237,7 +1214,8 @@ function filterHomeGames() {
   let count = 0;
   document.querySelectorAll('#home-game-list .game-card').forEach(card => {
     const categoryMatches = homeFilter === 'all' || card.dataset.homeCategory.split(' ').includes(homeFilter);
-    const searchText = card.textContent + ' ' + (card.dataset.homeKeywords || '');
+    const activity = card.querySelector('.game-card-activity');
+    const searchText = (activity ? card.textContent.replace(activity.textContent, '') : card.textContent) + ' ' + (card.dataset.homeKeywords || '');
     card.hidden = !categoryMatches || !searchText.toLowerCase().includes(query);
     if (!card.hidden) count++;
   });
@@ -1273,18 +1251,56 @@ function updateProfileBar() {
   button.setAttribute('aria-label', name ? 'Edit profile: ' + getFullName(name) : 'Edit profile');
 }
 
-async function loadRoomPlayerCount() {
+let roomStatsRequest = null;
+
+function loadRoomPlayerCount() {
+  if (!roomStatsRequest) {
+    roomStatsRequest = fetchRoomStats().finally(() => { roomStatsRequest = null; });
+  }
+  return roomStatsRequest;
+}
+
+function renderRoomStats(stats) {
   const total = document.getElementById('room-player-total');
+  const available = stats !== null;
+  total.textContent = available ? stats.players : '--';
+  total.parentElement.title = available ? stats.players + ' players in all game rooms' : 'Live player counts unavailable';
+  total.parentElement.setAttribute('aria-label', available ? stats.players + ' live across all games' : 'Live player counts unavailable');
+  for (const type of Object.keys(GAME_CAPACITIES)) {
+    const gameStats = available ? stats.games[type] : null;
+    const rooms = document.getElementById(type + '-card-rooms');
+    const players = document.getElementById(type + '-card-live');
+    const badge = document.getElementById(type + '-card-activity');
+    rooms.textContent = gameStats ? gameStats.publicRooms + ' rooms' : '';
+    players.textContent = gameStats ? gameStats.players + ' live' : '';
+    rooms.hidden = !gameStats || gameStats.publicRooms === 0;
+    players.hidden = !gameStats || gameStats.players === 0;
+    badge.hidden = rooms.hidden && players.hidden;
+    const setup = document.getElementById(type + '-setup-live');
+    setup.textContent = gameStats ? gameStats.players + ' live' : '-- live';
+    setup.title = gameStats ? gameStats.players + ' players in this game\'s rooms' : 'Live player count unavailable';
+  }
+}
+
+async function fetchRoomStats() {
   try {
     const response = await fetch(HTTP + SERVER + '/api/room-stats', { cache: 'no-store' });
     if (!response.ok) throw new Error('Room stats unavailable');
     const stats = await response.json();
-    if (!Number.isInteger(stats.players) || stats.players < 0) throw new Error('Invalid room stats');
-    total.textContent = stats.players;
-    total.parentElement.title = stats.players + ' players inside game rooms at page load';
+    if (!stats || !Number.isSafeInteger(stats.players) || stats.players < 0 || !stats.games) throw new Error('Invalid room stats');
+    let total = 0;
+    for (const type of Object.keys(GAME_CAPACITIES)) {
+      const gameStats = stats.games[type];
+      if (!gameStats || !Number.isSafeInteger(gameStats.players) || gameStats.players < 0 ||
+          !Number.isSafeInteger(gameStats.publicRooms) || gameStats.publicRooms < 0 ||
+          gameStats.publicRooms > gameStats.players) throw new Error('Invalid room stats for ' + type);
+      total += gameStats.players;
+    }
+    if (total !== stats.players) throw new Error('Room stats total does not match game counts');
+    renderRoomStats(stats);
   } catch (error) {
-    total.textContent = '--';
-    total.parentElement.title = 'Room player count unavailable';
+    console.error('Unable to load live room counts:', error);
+    renderRoomStats(null);
   }
 }
 
@@ -1309,6 +1325,19 @@ function saveNamePopup() {
   document.getElementById('name-popup-overlay').classList.remove('active');
 }
 
+function openRequestedGame() {
+  const requested = new URLSearchParams(location.search || '').getAll('game');
+  if (!requested.length) return;
+  if (requested.length !== 1 || !Object.hasOwn(GAME_CAPACITIES, requested[0])) {
+    console.error('Invalid game link:', requested);
+    const status = document.getElementById('home-navigation-status');
+    status.textContent = 'This game link is not valid. Please choose a game from the collection below.';
+    status.hidden = false;
+    return;
+  }
+  openGameMenu(requested[0]);
+}
+
 // ========== INIT ==========
 (function() {
   initHomeTheme();
@@ -1329,5 +1358,7 @@ function saveNamePopup() {
     currentGameType = sessionStorage.getItem('coup_gameType') || 'coup';
     console.log('[INIT] Rejoining room ' + roomCode + ' as ' + joinedName);
     savedSessionReconnectPending = true;
+  } else {
+    openRequestedGame();
   }
 })();

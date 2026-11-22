@@ -4,10 +4,11 @@ import "coup-server/game"
 
 func (room *Room) removeSeat(playerID string) {
 	delete(room.players, playerID)
-	if (room.ticTacToeState != nil || room.scrabbleState != nil) && len(room.players) == 0 {
+	if (room.ticTacToeState != nil || room.scrabbleState != nil || room.kaboState != nil) && len(room.players) == 0 {
 		// Nobody remains who can return the finished match to the lobby.
 		room.ticTacToeState = nil
 		room.scrabbleState = nil
+		room.kaboState = nil
 		room.broadcast(OutMessage{Type: "state", Payload: nil})
 	}
 }
@@ -15,7 +16,7 @@ func (room *Room) removeSeat(playerID string) {
 func (room *Room) leaveGameRoom(playerID string) error {
 	if room.players[playerID] != nil {
 		switch room.gameType {
-		case "bluff", "blackjack", "tictactoe", "scrabble":
+		case "bluff", "blackjack", "tictactoe", "scrabble", "kabo":
 			if err := room.exitAdditionalPlayer(playerID); err != nil {
 				return err
 			}

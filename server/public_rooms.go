@@ -19,7 +19,7 @@ func roomCapacity(gameType string) int {
 	switch gameType {
 	case "tictactoe":
 		return 2
-	case "coup", "uno", "bluff":
+	case "coup", "uno", "bluff", "kabo":
 		return 6
 	case "poker":
 		return 8
@@ -35,7 +35,7 @@ func roomCapacity(gameType string) int {
 func (room *Room) hasStartedGame() bool {
 	return room.gameState != nil || room.pokerState != nil || room.ludoState != nil ||
 		room.nqState != nil || room.communeState != nil || room.tnState != nil ||
-		room.heartsState != nil || room.unoState != nil || room.bluffState != nil || room.blackjackState != nil || room.ticTacToeState != nil || room.scrabbleState != nil
+		room.heartsState != nil || room.unoState != nil || room.bluffState != nil || room.blackjackState != nil || room.ticTacToeState != nil || room.scrabbleState != nil || room.kaboState != nil
 }
 
 func (room *Room) availablePublicRoom() bool {
@@ -104,6 +104,7 @@ func listPublicRooms(gameType string) []publicRoomSummary {
 }
 
 func handlePublicRooms(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
 	writer.Header().Set("Cache-Control", "no-store")
 	writer.Header().Set("Content-Type", "application/json")
 	if request.Method != http.MethodGet {

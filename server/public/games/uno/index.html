@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play UNO Online with Friends | Time Crushers</title>
+  <meta name="description" content="Learn TimeCrusher's UNO for 2-6 players: matching cards, Wild Draw Four challenges, calling UNO, 500-point matches, and optional stacking and Multi Skip.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/uno/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container"><div id="screen-menu" class="screen active home-active" data-home-theme="light"><div id="game-list-view">
+    <header class="home-header">
+      <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+      <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=uno">Room setup</a></nav>
+      <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+    </header>
+    <main>
+      <p id="guide-status" role="status"></p>
+      <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>UNO</span></nav>
+      <section class="guide-banner" aria-labelledby="guide-title">
+        <div><p class="home-eyebrow">CARD GAME / COLORS AND ACTIONS / 2-6 PLAYERS</p><h1 id="guide-title">Play UNO online.<br>One card left. Say it.</h1>
+          <p>Match a color or symbol, reverse the table, and race to empty your hand. Before the room starts, agree whether you want the base rules or TimeCrusher's optional draw-stacking and Multi Skip twists.</p>
+          <a class="home-primary" href="/?game=uno">Play UNO now <span aria-hidden="true">&rarr;</span></a>
+          <div class="guide-facts"><span>2-6 players</span><span>Seven starting cards</span><span>Optional house rules</span></div>
+        </div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#uno"></use></svg>
+      </section>
+      <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+      <article class="guide-article" aria-label="UNO game guide">
+        <section class="guide-section" id="join"><h2>Agree on the room rules first</h2>
+          <ol><li>Select <strong>Play UNO now</strong>. The creator can enable draw-card stacking and Multi Skip before creating the room; both are optional house rules.</li><li>Share the five-character code and join with display names. Friends do not need to reselect the creator's options when joining.</li><li>The host starts with two to six players. Check the lobby's rule summary so everyone knows which version they are playing.</li></ol>
+          <p class="guide-note">No download or account sign-in is needed. A public room can fill available seats. A saved game reconnects before a new link opens its setup.</p>
+        </section>
+        <section class="guide-section" id="rules"><h2>Match, draw, and manage your last card</h2>
+          <p>Each player starts with seven cards. Play one matching the current color or symbol, or a permitted Wild. You may choose to draw instead of playing a card already in your hand. After drawing, you may play that drawn card if legal, or end your turn.</p>
+          <p>Skip misses the next player. Reverse changes direction and acts as Skip with two players. Draw Two normally makes the next player draw two and miss a turn. A Wild sets the next color.</p>
+          <h3>Wild Draw Four and calling UNO</h3>
+          <p>Wild Draw Four is legal only when its player has no card matching the current color. The next player can challenge: an illegal play makes its actor draw four and lets the challenger continue; a legal play makes the challenger draw six and lose the turn.</p>
+          <p>When you reach one card, call UNO before the next player begins. If another player catches you first, draw two. A hand ends when someone empties their cards, after any final draw penalty is resolved.</p>
+          <h3>The two optional house rules</h3>
+          <ul><li><strong>Stacking:</strong> +2 may follow +2, +4 may follow +2 or +4, and a +2 may follow +4 only if it matches the color chosen after that +4. The next player accepts the accumulated draw total or adds a permitted draw card.</li><li><strong>Multi Skip:</strong> the player about to be skipped may respond with another Skip of any color. Once a player cannot extend the chain, the game skips as many turns as there are Skips, starting with that player and following the current direction. In a two-player game those skipped turns can wrap around.</li></ul>
+          <p>The hand winner scores opponents' remaining cards: numbers at face value, action cards at 20, and Wilds at 50. The first player to reach 500 points wins the match.</p>
+        </section>
+        <section class="guide-section" id="example"><h2>Check the color before stacking</h2><div class="guide-example">
+          <p>Stacking is enabled. A player adds Wild Draw Four to a pending Draw Two and chooses green, bringing the accumulated penalty to six. You can extend it with another Wild Draw Four, or with a green Draw Two if you have one.</p>
+          <p>A red Draw Two cannot answer that green +4 in this house rule. If you accept instead, you draw the accumulated six and the penalty is resolved. Without stacking enabled, do not expect a Draw Two in your hand to cancel a pending draw penalty.</p>
+        </div></section>
+        <section class="guide-section" id="tips"><h2>Watch the rule summary as well as the color</h2>
+          <ul><li>Save a flexible Wild for a hand with few color options, not merely because it looks powerful.</li><li>Call UNO as soon as the one-card opportunity appears; do not wait for someone else to notice.</li><li>Challenge a +4 based on evidence about the matching color, not just frustration about drawing.</li><li>Learn Multi Skip with friends before using it in a two-player match where the chain can wrap.</li></ul>
+          <p><a href="/?game=uno">Open UNO's room setup</a> to choose the house rules.</p>
+        </section>
+      </article>
+      <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">Keep game night light</h2><div class="guide-related-links"><a href="/games/bluff/">Learn Bluff &rarr;</a><a href="/games/ludo/">Learn Ludo &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+    </main>
+    <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+  </div></div></div>
+</body>
+</html>

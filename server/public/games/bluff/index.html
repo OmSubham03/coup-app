@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Bluff Online with Friends | Time Crushers</title>
+  <meta name="description" content="Play Bluff online with 2-6 friends. Learn face-down rank claims, accepting and challenging, pile pickups, and TimeCrusher's optional two-deck setup.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/bluff/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container"><div id="screen-menu" class="screen active home-active" data-home-theme="light"><div id="game-list-view">
+    <header class="home-header">
+      <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+      <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=bluff">Room setup</a></nav>
+      <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+    </header>
+    <main>
+      <p id="guide-status" role="status"></p>
+      <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Bluff</span></nav>
+      <section class="guide-banner" aria-labelledby="guide-title">
+        <div><p class="home-eyebrow">CARD GAME / FACE-DOWN CLAIMS / 2-6 PLAYERS</p><h1 id="guide-title">Play Bluff online.<br>Make the claim. Face the call.</h1>
+          <p>A growing pile and a changing required rank make every face-down play a small gamble in trust. Empty your hand, but make sure your last claim survives: a called bluff can return the whole pile to you.</p>
+          <a class="home-primary" href="/?game=bluff">Play Bluff now <span aria-hidden="true">&rarr;</span></a>
+          <div class="guide-facts"><span>2-6 players</span><span>One or two decks</span><span>Private hands</span></div>
+        </div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#bluff"></use></svg>
+      </section>
+      <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+      <article class="guide-article" aria-label="Bluff game guide">
+        <section class="guide-section" id="join"><h2>Choose a deck and deal everyone in</h2>
+          <ol><li>Open <strong>Play Bluff now</strong>. Choose the optional two-deck setting before creating the room, or leave it off for one deck.</li><li>Choose names and share the five-character code. Joining players use the host's deck setting automatically.</li><li>The host starts with two to six players. The shuffled deck is dealt across everyone; only your hand is visible to you.</li></ol>
+          <p class="guide-note">One deck has 52 cards and two have 104. No download is required. The host can enable public discovery, and saved sessions reconnect before new game links.</p>
+        </section>
+        <section class="guide-section" id="rules"><h2>Ranks move even when a claim is challenged</h2>
+          <p>The first required rank is ace, followed by 2 through 10, jack, queen, king, then ace again. On your turn, select one to four of your cards and play them face down as that required rank. Their actual ranks may differ: that is the bluff.</p>
+          <h3>Who can respond?</h3>
+          <p>Any active player except the actor can challenge the latest play. Only the next active player can accept it. Acceptance keeps the pile on the table, advances the required rank, and gives that next player their turn.</p>
+          <p>A challenge checks <strong>only the most recent play</strong>, not every older card in the pile. If every latest card matches the required rank, the challenger picks up the entire pile. If even one does not match, the actor picks up the entire pile. The rank then advances and play continues after the actor.</p>
+          <h3>Your final cards still need a verdict</h3>
+          <p>An empty hand wins only after its claim is accepted or a challenge proves it truthful. Playing your last cards does not win instantly. If they were a bluff and you are caught, you receive the pile and continue.</p>
+          <p>Leaving returns your remaining cards to the pile. If fewer than two active players remain, the game ends without awarding a winner. This avoids calling a departure the same thing as a successful final claim.</p>
+        </section>
+        <section class="guide-section" id="example"><h2>One wrong card is enough</h2><div class="guide-example">
+          <p>Queens are required. You play a queen and a five, claiming two queens. Another player challenges. The five makes the latest claim false, so you take the whole pile, including cards placed on earlier turns.</p>
+          <p>If both cards had been queens, the challenger would have taken the pile instead. In either case the next required rank becomes king. Remember that the revealed latest cards settle the challenge; an old five already buried in the pile would not make a truthful new pair of queens false.</p>
+        </div></section>
+        <section class="guide-section" id="tips"><h2>Balance hand size against pile size</h2>
+          <ul><li>Count copies of the required rank you hold, especially when evaluating a large claim.</li><li>Remember whether the room uses one or two decks; two decks allow more genuine copies of a rank.</li><li>Challenge the claim, not the player's reputation alone. A habitual bluffer can still make a truthful final play.</li><li>Taking a large pile can change your future options, so watch both the current claim and the ranks coming next.</li></ul>
+          <p><a href="/?game=bluff">Open Bluff's room setup</a> and test your poker face.</p>
+        </section>
+      </article>
+      <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">Keep them guessing</h2><div class="guide-related-links"><a href="/games/commune/">Learn Commune &rarr;</a><a href="/games/coup/">Learn Coup &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+    </main>
+    <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+  </div></div></div>
+</body>
+</html>

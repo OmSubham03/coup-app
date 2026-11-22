@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Commune Online with Friends | Time Crushers</title>
+  <meta name="description" content="Learn Commune's rising poker-hand claims, wild twos, hidden cards, and five-token lives. Play TimeCrusher's free bluffing game with 2-10 players.">
+  <link rel="canonical" href="https://timecrushers.pages.dev/games/commune/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/guides.css">
+  <script src="/js/theme.js" defer onload="initHomeTheme()"></script>
+</head>
+<body class="guide-page">
+  <div class="container"><div id="screen-menu" class="screen active home-active" data-home-theme="light"><div id="game-list-view">
+    <header class="home-header">
+      <a class="home-brand" href="/" aria-label="TimeCrusher home"><img src="/icons/timecrusher-mark.svg" width="38" height="38" alt=""><span class="guide-brand-name">timecrusher<span>.</span></span></a>
+      <nav class="home-nav" aria-label="Main navigation"><a href="/#home-games">All games</a><a href="/?game=commune">Room setup</a></nav>
+      <button type="button" id="home-theme-toggle" class="home-theme-toggle" onclick="toggleHomeTheme()" aria-label="Dark blue theme" aria-pressed="false" title="Switch to dark blue theme"><span class="theme-sun" aria-hidden="true">&#9728;</span><span class="theme-moon" aria-hidden="true">&#9790;</span></button>
+    </header>
+    <main>
+      <p id="guide-status" role="status"></p>
+      <nav class="guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Time Crushers</a><span aria-hidden="true">/</span><span>Commune</span></nav>
+      <section class="guide-banner" aria-labelledby="guide-title">
+        <div><p class="home-eyebrow">CARD GAME / RISING CLAIMS / 2-10 PLAYERS</p><h1 id="guide-title">Play Commune online.<br>How high can the claim go?</h1>
+          <p>A pair becomes three of a kind. Three becomes a straight. Eventually someone must decide whether the table really contains that hand. Your private cards are clues, not the whole answer.</p>
+          <a class="home-primary" href="/?game=commune">Play Commune now <span aria-hidden="true">&rarr;</span></a>
+          <div class="guide-facts"><span>2-10 players</span><span>Twos are wild</span><span>Five tokens each</span></div>
+        </div><svg viewBox="0 0 320 230" aria-hidden="true"><use href="/icons/game-art.svg#commune"></use></svg>
+      </section>
+      <nav class="guide-toc" aria-label="On this page"><a href="#join">Create or join</a><a href="#rules">Rules</a><a href="#example">Worked example</a><a href="#tips">Practical tips</a></nav>
+      <article class="guide-article" aria-label="Commune game guide">
+        <section class="guide-section" id="join"><h2>Gather the hidden hands</h2>
+          <ol><li>Choose <strong>Play Commune now</strong>, create a room, and choose a display name.</li><li>Send the five-character code to friends, or enable a public room so others can find available seats.</li><li>The host starts with two to ten players. Each player sees their own hand and the two shared community cards.</li></ol>
+          <p class="guide-note">Tokens are lives, not money. There is no download or sign-in requirement. A saved game in the same tab reconnects before a new game link opens.</p>
+        </section>
+        <section class="guide-section" id="rules"><h2>Declare higher or call the last claim</h2>
+          <p>The deck contains 52 cards, with all <strong>twos acting as wild cards</strong>. Each player starts with five tokens. Your hand size is six minus your remaining tokens: one card at five tokens, two at four, and so on. Losing a life gives you more private information in the next deal.</p>
+          <p>On your turn, declare a hand stronger than the last declaration, or call the previous claim. Claims are checked across <strong>all dealt cards</strong>: the two community cards plus every living player's hand. You do not need to hold the entire claimed hand yourself.</p>
+          <h3>The declaration ladder</h3>
+          <p>From low to high: high card, pair, two pair, three of a kind, straight, full house, four of a kind, two trips, ultra straight, four plus three, and five of a kind. Ordinary flushes and straight flushes are not declaration categories here. Ultra straight means all ranks from three through ace.</p>
+          <p>Within a category, the selected primary rank and then secondary rank determine whether a claim is higher. Use the picker to choose the category and any required ranks; selecting the category alone does not submit the declaration.</p>
+          <h3>What a call resolves</h3>
+          <p>All dealt cards are revealed. If the claimed hand exists, the caller loses one token; if it does not, the last declarer loses one. At zero tokens a player is eliminated. The last living player wins.</p>
+          <p>For the next round, the deck is reshuffled, two new community cards are dealt, and hand sizes reflect remaining tokens. The previous loser begins if still alive; otherwise the next living player begins. The declaration ladder resets.</p>
+        </section>
+        <section class="guide-section" id="example"><h2>A missing card might be in someone else's hand</h2><div class="guide-example">
+          <p>The shared cards are a king and a two. Your private card is another king. A claim of three kings can be true: the two acts as a third king. A rival who sees only the shared cards may underestimate that claim.</p>
+          <p>If another player raises to four kings and you call, the server checks every hidden hand as well. A king held by a third player can make the claim valid and cost you a token. Your own visible subset cannot prove that a higher claim is impossible.</p>
+        </div></section>
+        <section class="guide-section" id="tips"><h2>Think about the whole deal</h2>
+          <ul><li>Count shared wilds before judging how demanding a declaration is.</li><li>More lost tokens means more cards dealt to that player, not a smaller hand.</li><li>Read the full named declaration and rank selection before raising; the category ladder differs from regular poker.</li><li>A call can save you from an impossible raise, but unseen cards are part of the evidence too.</li></ul>
+          <p><a href="/?game=commune">Open Commune's room setup</a> and try a few low claims before climbing the ladder.</p>
+        </section>
+      </article>
+      <section class="guide-related" aria-labelledby="related-title"><h2 id="related-title">More hidden information</h2><div class="guide-related-links"><a href="/games/coup/">Learn Coup &rarr;</a><a href="/games/bluff/">Learn Bluff &rarr;</a><a href="/#home-games">Explore all games &rarr;</a></div></section>
+    </main>
+    <footer class="site-footer"><span>Time well spent. <b>timecrusher.</b></span><nav class="site-footer-links" aria-label="Information and support"><a href="https://hobbystudio.github.io/Website/Timecrushers/privacy_policy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="https://hobbystudio.github.io/Website/#contact" target="_blank" rel="noopener noreferrer">Contact Us</a></nav><span><a href="https://hobbystudio.github.io/Website/" target="_blank" rel="noopener noreferrer">Made with play by Hobby Studio &rarr;</a></span></footer>
+  </div></div></div>
+</body>
+</html>
